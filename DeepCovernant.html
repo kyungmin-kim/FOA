@@ -3785,12 +3785,15 @@
     if(S.prologue && S.prologue.stage==='braceDone'){
       /* 이 한 턴은 잠식과 심도압박이 모두 보이도록 고정한다. */
       S.erosion = Math.min(100, S.erosion + 15);
-      b.turn = 2; b.ap = b.maxAp; b.tempAp = 0;
+      /* 놋쇠 벽(1 AP)을 쓰고 남긴 2 AP를 직접 보여준다. 다음 턴에는
+         반투명 임시 AP 한 칸이 추가되어, 이월 규칙을 전투판에서 확인할 수 있다. */
+      const carry = b.ap >= TEMP_AP_MIN ? TEMP_AP_CARRY : 0;
+      b.turn = 2; b.ap = b.maxAp; b.tempAp = carry;
       b.hand = prologueHandForStrike();
       b.enemies[0].intent = {type:'attack_reach', val:14, label:'심연의 강타', ic:IC_HEAVY};
       b.enemies[1].intent = {type:'whisper_rear', val:10, label:'속삭임', ic:IC_GAZE};
       S.prologue.stage = 'strike';
-      pushLog('잠식이 차오른다. 원거리 적은 후미의 정신을 노린다.');
+      pushLog(carry ? 'AP를 2개 남겨 임시 AP +1을 얻었다. 반투명한 눈금은 이번 턴에만 쓸 수 있다.' : '잠식이 차오른다. 원거리 적은 후미의 정신을 노린다.');
       render();
       return;
     }
@@ -4693,9 +4696,9 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
     const copy = step==='brace'
       ? ['01 · AP와 방어','AP는 카드 비용으로 사용합니다. <b>놋쇠 벽</b>을 눌러 전열의 방어를 준비하세요.']
       : step==='braceDone'
-      ? ['02 · 예고된 공격','적의 카드 아래에는 다음 행동이 보입니다. 방어 9로 <b>내려찍기 12</b>를 버텨 보세요.']
+      ? ['02 · 예고와 임시 AP','적의 카드 아래에는 다음 행동이 보입니다. 지금 AP가 <b>2개</b> 남았습니다. <b>턴 종료</b>를 누르면 다음 턴에 반투명한 임시 AP +1을 얻습니다. 방어 9로 <b>내려찍기 12</b>를 버텨 보세요.']
       : step==='strike'
-      ? ['03 · 표적과 심도압박','<b>저주받은 조준</b>을 누른 뒤 두 적 중 하나를 골라 보세요. 원거리 공격과 심도압박의 대가를 확인합니다.']
+      ? ['03 · 표적과 심도압박','반투명 AP는 이번 턴에만 쓰이며 먼저 소모됩니다. <b>저주받은 조준</b>을 누른 뒤 두 적 중 하나를 골라 보세요. 원거리 공격과 심도압박의 대가를 확인합니다.']
       : step==='pressure'
       ? ['04 · 심도압박','심도압박은 심연의 감각에 인간의 인식이 동조되는 정도입니다. 방어로 막을 수 없습니다. <b>속죄의 기도</b>를 누른 뒤 압박이 오른 이단 예지자를 선택하세요. 100에 닿으면 가하는 피해는 50% 감소하고 받는 피해는 50% 증가합니다.']
       : step==='abyss'
