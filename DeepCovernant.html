@@ -50,6 +50,17 @@
     --ink:#cec6b5;
     --muted:#7b7a70;
     --crack:#d9452f;
+
+    /* 카드 등급 팔레트 — 보상·강화·합성·손패가 반드시 이 네 계열만 사용한다. */
+    --card-normal:#d9d8d1;
+    --card-normal-hi:#efeee5;
+    --card-class:#5d98c9;
+    --card-class-hi:#78b6e3;
+    --card-class-text:#8cbfe6;
+    --card-epic:var(--corrode);
+    --card-epic-hi:#c5b2ee;
+    --card-legendary:var(--gaslamp);
+    --card-legendary-hi:#f1cf7b;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   /* 픽셀은 픽셀로 — 브라우저가 부드럽게 뭉개지 못하게 막는다 */
@@ -447,6 +458,9 @@
   .hero-card.targetable{ border-color:var(--phosphor); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.5), inset 0 0 18px rgba(127,191,174,0.13), 0 0 15px rgba(127,191,174,0.45); animation:targetPulse 1.2s ease-in-out infinite; cursor:pointer; }
 
   .portrait{ width:41px;height:41px; margin:0 auto 3px; display:flex; align-items:center; justify-content:center; position:relative; }
+  /* 생환 기록 — 한 번 돌아올 때마다 초상 아래의 핏점이 하나 늘며, 다섯 번에서 멈춘다. */
+  .survival-marks{ position:absolute; z-index:3; left:50%; bottom:-3px; transform:translateX(-50%); display:flex; align-items:center; justify-content:center; gap:2px; pointer-events:none; }
+  .survival-mark{ width:4px; height:4px; background:var(--blood-lit); border:1px solid var(--blood-dim); box-shadow:0 0 3px rgba(196,56,60,0.70); }
   .portrait-vanguard{
     border-radius:50%;
     background:radial-gradient(circle at 35% 28%, rgba(125,156,178,0.42), rgba(6,11,15,0.94));
@@ -520,6 +534,7 @@
     background:rgba(14,24,31,0.85); border:1px solid rgba(125,156,178,0.42); border-radius:1px; padding:0 4px;
     box-shadow: inset 0 0 0 1px rgba(0,0,0,0.5);
   }
+  .invulnerable-tag{ position:absolute; top:3px; left:3px; padding:1px 4px; border:1px solid var(--phosphor); color:var(--phosphor); background:rgba(4,18,18,0.86); font-size:8px; letter-spacing:0.08em; }
 
   /* ---------- 중앙 무대: 적과 아군 사이, 상황이 읽히는 자리 ---------- */
   .mid-stage{ flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:8px 14px; }
@@ -681,12 +696,12 @@
     transition:transform 0.15s;
   }
   /* 기본 카드 색: 공용은 흰색, 모든 직업 카드는 같은 파란색으로 읽힌다. */
-  .card.owner-neutral{ border-color:#d9d8d1; border-top:3px solid #efeee5; }
+  .card.owner-neutral{ border-color:var(--card-normal); border-top:3px solid var(--card-normal-hi); }
   .card.owner-vanguard,.card.owner-chemist,.card.owner-priest,.card.owner-oracle,
-  .card.owner-hellion,.card.owner-robber,.card.owner-jester{ border-color:#5d98c9; border-top:3px solid #78b6e3; }
+  .card.owner-hellion,.card.owner-robber,.card.owner-jester{ border-color:var(--card-class); border-top:3px solid var(--card-class-hi); }
   /* 보상·드로우 카드도 소유자 데이터가 비어 있어 색을 잃지 않게 기본 분류색을 둔다. */
-  .card.normal{ border-color:#d9d8d1; border-top-color:#efeee5; }
-  .card.class{ border-color:#5d98c9; border-top-color:#78b6e3; }
+  .card.normal{ border-color:var(--card-normal); border-top-color:var(--card-normal-hi); }
+  .card.class{ border-color:var(--card-class); border-top-color:var(--card-class-hi); }
   .card:active{ transform:translateY(-4px); }
   .card.unplayable{ opacity:0.52; filter:grayscale(0.6); }
   .card.unplayable .card-name, .card.unplayable .card-cost{ opacity:0.72; }
@@ -715,13 +730,13 @@
   }
   .card-desc.glitch{ color:rgba(141,122,176,0.75); }
   .card-owner-tag{ font-family:'Nanum Myeongjo',serif; font-size:7.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.12em; margin-top:auto;}
-  .card.normal .card-owner-tag{ color:#efeee5; }
-  .card.class .card-owner-tag{ color:#8cbfe6; }
+  .card.normal .card-owner-tag{ color:var(--card-normal-hi); }
+  .card.class .card-owner-tag{ color:var(--card-class-text); }
   /* 에픽은 보라색 표식만 남기고, 일반 카드의 크기·정렬·AP 봉인 규칙을 그대로 쓴다. */
-  .card.epic{ border-color:#8d7ab0; border-top-color:#8d7ab0; }
-  .card.legendary{ border-color:#e6bd59; border-top-color:#e6bd59; }
-  .card.epic .card-owner-tag{ color:#c5b2ee; }
-  .card.legendary .card-owner-tag{ color:#f1cf7b; }
+  .card.epic{ border-color:var(--card-epic); border-top-color:var(--card-epic); }
+  .card.legendary{ border-color:var(--card-legendary); border-top-color:var(--card-legendary); }
+  .card.epic .card-owner-tag{ color:var(--card-epic-hi); }
+  .card.legendary .card-owner-tag{ color:var(--card-legendary-hi); }
 
   .end-turn-row{ display:flex; justify-content:center; padding-top:2px;}
 
@@ -756,8 +771,8 @@
   .card.reward-card:hover{ transform:translateY(-3px); box-shadow:inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 20px rgba(230,230,220,0.08), 0 0 10px rgba(230,230,220,0.18); }
   .card.reward-card.normal:hover{ box-shadow:inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 20px rgba(239,238,229,0.10), 0 0 10px rgba(239,238,229,0.22); }
   .card.reward-card.class:hover{ box-shadow:inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 20px rgba(120,182,227,0.12), 0 0 10px rgba(120,182,227,0.28); }
-  .card.reward-card.epic:hover{ border-color:#8d7ab0; border-top-color:#8d7ab0; box-shadow:inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 20px rgba(141,122,176,0.18), 0 0 12px rgba(141,122,176,0.36); }
-  .card.reward-card.legendary:hover{ border-color:#e6bd59; border-top-color:#e6bd59; box-shadow:inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 20px rgba(230,189,89,0.20), 0 0 13px rgba(230,189,89,0.42); }
+  .card.reward-card.epic:hover{ border-color:var(--card-epic); border-top-color:var(--card-epic); box-shadow:inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 20px rgba(141,122,176,0.18), 0 0 12px rgba(141,122,176,0.36); }
+  .card.reward-card.legendary:hover{ border-color:var(--card-legendary); border-top-color:var(--card-legendary); box-shadow:inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 20px rgba(230,189,89,0.20), 0 0 13px rgba(230,189,89,0.42); }
   .card.reward-card .card-name{ margin-top:8px; min-height:30px; }
   .card.reward-card .card-desc{ font-size:9px; line-height:1.4; }
   .draw-swap{ position:absolute; z-index:20; inset:0; padding:18px 14px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; overflow-y:auto; background:rgba(2,7,9,0.90); border:1px solid rgba(224,170,76,0.44); }
@@ -770,29 +785,29 @@
   .af-row{ border:1px solid var(--brass-dim); border-radius:0; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; background:rgba(12,20,22,0.5); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.45); cursor:pointer; text-align:left; user-select:none; -webkit-user-select:none; }
   .af-row.sel{ border-color:var(--phosphor); background:rgba(34,54,52,0.7); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.45), inset 0 0 16px rgba(127,191,174,0.14); }
   /* 강화·합성 목록도 보상 화면과 같은 등급 색을 유지한다. 선택 상태에서는 초록 테두리와 색상 표기를 함께 남긴다. */
-  .af-row.normal{ border-left:3px solid #efeee5; }
-  .af-row.class{ border-left:3px solid #78b6e3; }
-  .af-row.epic{ border-left:3px solid #a894cf; background:rgba(52,40,79,0.44); }
-  .af-row.legendary{ border-left:3px solid #e6bd59; background:rgba(75,57,22,0.44); }
-  .af-row.sel.normal{ border-left-color:#efeee5; }
-  .af-row.sel.class{ border-left-color:#78b6e3; }
-  .af-row.sel.epic{ border-left-color:#a894cf; }
-  .af-row.sel.legendary{ border-left-color:#e6bd59; }
+  .af-row.normal{ border-left:3px solid var(--card-normal-hi); }
+  .af-row.class{ border-left:3px solid var(--card-class-hi); }
+  .af-row.epic{ border-left:3px solid var(--card-epic); background:rgba(52,40,79,0.44); }
+  .af-row.legendary{ border-left:3px solid var(--card-legendary); background:rgba(75,57,22,0.44); }
+  .af-row.sel.normal{ border-left-color:var(--card-normal-hi); }
+  .af-row.sel.class{ border-left-color:var(--card-class-hi); }
+  .af-row.sel.epic{ border-left-color:var(--card-epic); }
+  .af-row.sel.legendary{ border-left-color:var(--card-legendary); }
   .af-row.locked{ opacity:0.42; cursor:not-allowed; }
   .af-row.unavailable{ opacity:0.42; cursor:not-allowed; }
   .af-row-name{ font-size:12px; color:var(--ink); }
   .af-row-owner{ font-size:9.5px; color:var(--muted); white-space:nowrap; margin-left:8px; }
-  .af-row.normal .af-row-owner{ color:#efeee5; }
-  .af-row.class .af-row-owner{ color:#8cbfe6; }
-  .af-row.epic .af-row-owner{ color:#c5b2ee; }
-  .af-row.legendary .af-row-owner{ color:#f1cf7b; }
+  .af-row.normal .af-row-owner{ color:var(--card-normal-hi); }
+  .af-row.class .af-row-owner{ color:var(--card-class-text); }
+  .af-row.epic .af-row-owner{ color:var(--card-epic-hi); }
+  .af-row.legendary .af-row-owner{ color:var(--card-legendary-hi); }
   .af-empty{ font-family:'Nanum Myeongjo',serif; font-size:13px; color:var(--muted); font-style:italic; }
   .af-hint{ font-family:'Nanum Myeongjo',serif; font-size:12.5px; color:var(--muted); font-style:italic; }
   .upgrade-preview{ width:100%; max-width:300px; border:1px solid var(--phosphor); padding:9px 11px; text-align:left; background:rgba(18,42,40,0.42); box-shadow:inset 0 0 16px rgba(127,191,174,0.12); }
-  .upgrade-preview.normal{ border-left:3px solid #efeee5; }
-  .upgrade-preview.class{ border-left:3px solid #78b6e3; }
-  .upgrade-preview.epic{ border-left:3px solid #a894cf; background:rgba(52,40,79,0.48); }
-  .upgrade-preview.legendary{ border-left:3px solid #e6bd59; background:rgba(75,57,22,0.48); }
+  .upgrade-preview.normal{ border-left:3px solid var(--card-normal-hi); }
+  .upgrade-preview.class{ border-left:3px solid var(--card-class-hi); }
+  .upgrade-preview.epic{ border-left:3px solid var(--card-epic); background:rgba(52,40,79,0.48); }
+  .upgrade-preview.legendary{ border-left:3px solid var(--card-legendary); background:rgba(75,57,22,0.48); }
   .upgrade-preview-title{ color:var(--bone); font-size:12px; margin-bottom:4px; }
   .upgrade-preview-line{ color:var(--muted); font-size:10px; line-height:1.6; }
   .upgrade-preview-line b{ color:var(--gaslamp); font-weight:normal; }
@@ -810,16 +825,16 @@
   .upgrade-guide-panel .btn{ display:block; margin:12px auto 0; }
   .fusion-inspect{ width:100%; max-width:300px; display:flex; flex-direction:column; gap:5px; }
   .card-inspect{ border:1px solid rgba(184,147,79,0.68); padding:7px 9px; text-align:left; background:rgba(20,25,26,0.70); box-shadow:inset 0 0 12px rgba(184,147,79,0.08); }
-  .card-inspect.normal{ border-color:#d9d8d1; background:rgba(42,42,39,0.52); }
-  .card-inspect.class{ border-color:#5d98c9; background:rgba(25,42,57,0.58); }
-  .card-inspect.epic{ border-color:#8d7ab0; background:rgba(38,30,58,0.68); }
-  .card-inspect.legendary{ border-color:#e6bd59; background:rgba(62,47,20,0.68); }
+  .card-inspect.normal{ border-color:var(--card-normal); background:rgba(42,42,39,0.52); }
+  .card-inspect.class{ border-color:var(--card-class); background:rgba(25,42,57,0.58); }
+  .card-inspect.epic{ border-color:var(--card-epic); background:rgba(38,30,58,0.68); }
+  .card-inspect.legendary{ border-color:var(--card-legendary); background:rgba(62,47,20,0.68); }
   .card-inspect-head{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; color:var(--bone); font-size:11px; }
   .card-inspect-meta{ color:var(--gaslamp); font-size:9px; white-space:nowrap; }
-  .card-inspect.normal .card-inspect-meta{ color:#efeee5; }
-  .card-inspect.class .card-inspect-meta{ color:#8cbfe6; }
-  .card-inspect.epic .card-inspect-meta{ color:#c5b2ee; }
-  .card-inspect.legendary .card-inspect-meta{ color:#f1cf7b; }
+  .card-inspect.normal .card-inspect-meta{ color:var(--card-normal-hi); }
+  .card-inspect.class .card-inspect-meta{ color:var(--card-class-text); }
+  .card-inspect.epic .card-inspect-meta{ color:var(--card-epic-hi); }
+  .card-inspect.legendary .card-inspect-meta{ color:var(--card-legendary-hi); }
   .card-inspect-effect{ margin-top:2px; color:var(--muted); font-size:10px; line-height:1.5; }
 
   .reveal-stage{ width:100%; display:flex; flex-direction:column; align-items:center; gap:7px; }
@@ -829,10 +844,10 @@
   .reveal-upgrade .card.reveal-card{ animation:upgradeReveal 380ms steps(5,end) both; }
   .reveal-fusion .card.reveal-card{ animation:fusionReveal 460ms steps(6,end) both; }
   /* 보라색 글로우와 파편은 에픽이 실제로 모습을 드러낸 짧은 순간에만 쓴다. */
-  .reveal-epic .reveal-banner{ color:#d8c8ff; text-shadow:0 0 10px #8d7ab0,0 0 24px rgba(141,122,176,0.74); }
+  .reveal-epic .reveal-banner{ color:var(--card-epic-hi); text-shadow:0 0 10px var(--card-epic),0 0 24px rgba(141,122,176,0.74); }
   .reveal-epic .card.reveal-card{ border-color:#a894cf; box-shadow:inset 0 0 0 1px rgba(225,215,255,0.42),inset 0 0 24px rgba(141,122,176,0.34),0 0 26px rgba(141,122,176,0.78); animation:epicReveal 620ms steps(7,end) both; }
   /* 전설은 에픽보다 한 단계 더 큰 황금 섬광과 긴 파편 궤적을 남긴다. */
-  .reveal-legendary .reveal-banner{ color:#fff1b0; font-size:15px; text-shadow:0 0 8px #e6bd59,0 0 22px #d59127,0 0 42px rgba(230,189,89,0.88); animation-duration:0.32s; }
+  .reveal-legendary .reveal-banner{ color:var(--card-legendary-hi); font-size:15px; text-shadow:0 0 8px var(--card-legendary),0 0 22px var(--brass),0 0 42px rgba(230,189,89,0.88); animation-duration:0.32s; }
   .reveal-legendary .card.reveal-card{ border-color:#fff0a2; box-shadow:inset 0 0 0 1px rgba(255,247,185,0.72),inset 0 0 32px rgba(230,189,89,0.50),0 0 38px rgba(230,189,89,0.94),0 0 70px rgba(213,145,39,0.42); animation:legendaryReveal 880ms steps(9,end) both; }
   .reveal-sparks{ position:absolute; inset:0; pointer-events:none; overflow:visible; }
   .reveal-spark{ position:absolute; left:50%; top:50%; width:4px; height:4px; background:#e7dcff; border:1px solid #7c67ad; box-shadow:0 0 7px #9c86d0; transform:translate(-50%,-50%) rotate(calc(var(--i) * 30deg)) translateY(-10px); animation:epicRevealSpark 620ms steps(7,end) both; animation-delay:calc(var(--i) * -34ms); }
@@ -1414,11 +1429,11 @@
     box-shadow: inset 1px 1px 0 rgba(224,170,76,0.28), inset -1px -1px 0 rgba(0,0,0,0.8), 0 0 0 1px #000;
   }
   .pick-card.sel .pick-name{ color:var(--gaslamp); }
-  .pick-card.owner-neutral{ border-color:#d9d8d1; }
+  .pick-card.owner-neutral{ border-color:var(--card-normal); }
   .pick-card.owner-vanguard,.pick-card.owner-chemist,.pick-card.owner-priest,.pick-card.owner-oracle,
-  .pick-card.owner-hellion,.pick-card.owner-robber,.pick-card.owner-jester{ border-color:#5d98c9; }
-  .pick-card.epic{ border-color:#8d7ab0; }
-  .pick-card.legendary{ border-color:#e6bd59; }
+  .pick-card.owner-hellion,.pick-card.owner-robber,.pick-card.owner-jester{ border-color:var(--card-class); }
+  .pick-card.epic{ border-color:var(--card-epic); }
+  .pick-card.legendary{ border-color:var(--card-legendary); }
   /* 칸이 다 찼을 때 못 고르는 것은 물러나 있게 — 막지는 않는다(고른 걸 눌러 빼면 된다) */
   .pick-card.full{ opacity:0.4; }
   .pick-card:active{ transform:translateY(1px); }
@@ -2283,19 +2298,44 @@
   /* 에픽은 주로 합성에서 5%로 나타난다. 이 중 시작용 공용 에픽 3종은
      첫 덱 구성의 공용 후보에 낮은 확률로 섞여 들어갈 수 있다. */
   const EPIC_FUSION_CHANCE = 0.05;
+  const ABYSSAL_VERDICT_EPIC_CHANCE = 0.01;
   const START_EPIC_OFFER_CHANCE = 0.25;
   const START_EPIC_CARD_POOL = [
-    {id:'drowned_sentence', name:'익사의 판결', cost:0, type:'epic_attack', dmg:38, owner:'neutral', range:'ranged', epic:true, desc:'적 한 명을 골라 38 피해.'},
-    {id:'flooded_bulwark', name:'침수된 방벽', cost:0, type:'block_party', block:18, riposte:18, owner:'neutral', range:'support', epic:true, desc:'생존한 아군 전체 방어 18 획득. 공격받으면 공격자에게 18 반격.'},
-    {id:'nameless_hymn', name:'무명자의 찬가', cost:0, type:'calm_party', calm:22, owner:'neutral', range:'support', epic:true, desc:'생존한 아군 전체 심도압박 22 감소.'},
+    {id:'drowned_sentence', name:'익사의 판결', cost:0, type:'drowned_sentence', dmg:40, splashRatio:0.2, owner:'neutral', range:'ranged', epic:true, desc:'적 한 명에게 40 피해. 양옆 적에게 8 피해.'},
+    {id:'flooded_bulwark', name:'침수된 방벽', cost:0, type:'block_party', block:18, riposteRatio:0.5, owner:'neutral', range:'support', epic:true, desc:'생존한 아군 전체 방어 18 획득. 공격받으면 방어 획득값의 50% 반격.'},
+    {id:'nameless_hymn', name:'무명자의 찬가', cost:0, type:'nameless_hymn', owner:'neutral', range:'support', epic:true, desc:'아군 전체 심도압박을 0으로 만들고, 지운 총합의 1/3만큼 모든 적에게 피해.'},
   ];
   const EPIC_CARD_POOL = [
-    {id:'abyssal_verdict', name:'심해왕의 단죄', cost:0, type:'epic_attack', dmg:55, owner:'neutral', range:'ranged', epic:true, desc:'적 한 명을 골라 55 피해.'},
-    {id:'thousand_maws_tide', name:'천 개의 입의 조류', cost:1, type:'epic_attack', dmg:24, owner:'neutral', range:'aoe', epic:true, desc:'모든 적에게 24 피해.'},
-    {id:'sunken_ark', name:'침몰한 성궤', cost:0, type:'block_party', block:28, owner:'neutral', range:'support', epic:true, desc:'생존한 아군 전체 방어 28 획득.'},
-    {id:'saints_last_prayer', name:'성자의 마지막 기도', cost:0, type:'fuse_support', heal:38, calm:35, owner:'neutral', range:'support_ally', epic:true, desc:'아군 한 명 체력 38 회복 + 심도압박 35 감소.'},
+    {id:'abyssal_verdict', name:'심해왕의 단죄', cost:0, type:'abyssal_verdict', owner:'neutral', range:'ranged', epic:true, unupgradable:true, desc:'보스를 제외한 지정 적을 즉시 섬멸.'},
+    {id:'thousand_maws_tide', name:'천 개의 입의 조류', cost:1, type:'thousand_maws_tide', owner:'neutral', range:'ranged', epic:true, unupgradable:true, desc:'선택한 적 양옆의 일반 적을 즉시 섬멸. 엘리트·보스 제외.'},
+    {id:'sunken_ark', name:'침몰한 성궤', cost:0, type:'sunken_ark', owner:'neutral', range:'support', epic:true, unupgradable:true, desc:'한 턴 동안 생존한 아군 전체 무적.'},
+    {id:'saints_last_prayer', name:'성자의 마지막 기도', cost:0, type:'saints_last_prayer', healRatio:0.5, regenTotal:30, regenTurns:3, owner:'neutral', range:'support', epic:true, desc:'생존한 아군 전체 체력 50% 회복. 3턴 동안 추가로 총 30 회복.'},
     {id:'star_eating_chart', name:'별을 먹는 해도', cost:3, type:'epic_attack', dmg:50, owner:'neutral', range:'ranged', epic:true, desc:'아무 열의 적 한 명을 골라 50 피해.'},
   ].concat(START_EPIC_CARD_POOL);
+  /* 심해왕의 단죄는 에픽 풀 안에서도 1%만 모습을 드러낸다. */
+  function pickEpicCard(){
+    const verdict = EPIC_CARD_POOL.find(card=>card.id==='abyssal_verdict');
+    const others = EPIC_CARD_POOL.filter(card=>card.id!=='abyssal_verdict');
+    return verdict && Math.random()<ABYSSAL_VERDICT_EPIC_CHANCE ? verdict : pickOne(others);
+  }
+  /* 저장된 런의 기존 에픽도 새 규칙으로 갱신한다. 이미 강화했던 판결·성궤·조류는
+     강화 불가 카드가 되므로 기본 단계로 되돌리고, 나머지는 기존 강화 단계를 유지한다. */
+  function refreshSpecialEpicCard(card){
+    if(!card) return card;
+    const plainName = String(card.baseName || card.name || '').replace(/\++$/, '');
+    const base = EPIC_CARD_POOL.find(entry=>entry.id===card.id || entry.name===plainName);
+    if(!base) return card;
+    const meta = {uid:card.uid, defId:card.defId, deckOrigin:card.deckOrigin};
+    const oldLevel = Number.isFinite(card.upgradeLevel) ? card.upgradeLevel : (card.upgraded ? 1 : 0);
+    Object.assign(card, base, meta);
+    if(base.unupgradable){
+      card.upgraded = false; card.upgradeLevel = 0; card.baseName = base.name; card.name = base.name;
+      return card;
+    }
+    card.upgradeLevel = 0; card.upgraded = false; card.baseName = base.name; card.name = base.name;
+    for(let level=0; level<oldLevel; level++) raiseCardLevel(card);
+    return card;
+  }
   /* 전설은 심연이 남긴 단 한 번의 예외다. 에픽보다 훨씬 드물며 보스 보상에서만 모습을 드러낸다. */
   const LEGENDARY_CARD_POOL = [
     {id:'sunless_noon', name:'태양 없는 정오', cost:0, type:'double_ap', owner:'neutral', range:'support', legendary:true, desc:'현재 턴에 남은 AP를 두 배로 만든다.'},
@@ -2832,6 +2872,11 @@
              전투 중에는 저장하지 않으므로 여기서는 비워 두면 된다 */
           en.intent = null;
         });
+      }
+      (data.runDeck||[]).forEach(refreshSpecialEpicCard);
+      if(data.aftermath){
+        (data.aftermath.cardOffer||[]).forEach(refreshSpecialEpicCard);
+        if(data.aftermath.reveal && data.aftermath.reveal.card) refreshSpecialEpicCard(data.aftermath.reveal.card);
       }
       restoreStarterDeckIds(data);
       S = data;
@@ -3421,6 +3466,11 @@
     opts = opts || {};
     const stress = opts.stress!==false;
     const attacker = opts.from || null;
+    if((hero.invulnerableTurns||0) > 0){
+      queueFx('guard', hero);
+      pushLog(`${ga(hero.name)} 침몰한 성궤의 보호를 받아 피해를 무시한다.`);
+      return {dealt:0, kind:'invulnerable'};
+    }
     /* 정신이 함몰되면 몸도 함께 무너진다. 방어·흘림 판정 전에 원피해가 50% 늘어난다. */
     if(hero.collapsed) amount = Math.round(amount * 1.5);
     const res = resolveIncoming(hero, amount);
@@ -3527,7 +3577,25 @@
     return res;
   }
 
-  function isAttackCard(card){ return card.type==='attack' || card.type==='fusion_attack' || card.type==='epic_attack' || card.type==='reroll_intent'; }
+  function isEliteEnemy(en){
+    const b = S && S.battle;
+    return !!(en && (en.kind==='elite' || (b && b.node && b.node.type==='elite' && b.enemies[0]===en)));
+  }
+  /* 섬멸은 피해가 아니라 제거다. 회피·흘림·방어와 반격을 거치지 않는다. */
+  function annihilateEnemy(en){
+    if(!en || !en.alive) return false;
+    en.hp = 0;
+    en.block = 0;
+    en.alive = false;
+    queueFx('death', en);
+    return true;
+  }
+
+  function isAttackCard(card){
+    return card.type==='attack' || card.type==='fusion_attack' || card.type==='epic_attack' ||
+      card.type==='drowned_sentence' || card.type==='abyssal_verdict' || card.type==='thousand_maws_tide' ||
+      card.type==='reroll_intent';
+  }
   function ownerOf(card){ return S.party.find(p=>p && p.id===card.owner) || null; }
 
   /* 이 카드가 지금 실제로 닿을 수 있는 적들 */
@@ -3535,7 +3603,8 @@
     const b = S.battle;
     if(!b) return [];
     /* 합성 공격은 특정 병과가 휘두르는 무기가 아니라, 합성으로 부른 심연 그 자체다. */
-    if(card.type==='fusion_attack' || card.type==='epic_attack' || (card.type==='reroll_intent' && card.owner==='neutral')) return b.enemies.filter(e=>e.alive);
+    if(card.type==='abyssal_verdict') return b.enemies.filter(e=>e.alive && e.kind!=='boss');
+    if(card.type==='fusion_attack' || card.type==='epic_attack' || card.type==='drowned_sentence' || card.type==='thousand_maws_tide' || (card.type==='reroll_intent' && card.owner==='neutral')) return b.enemies.filter(e=>e.alive);
     const owner = ownerOf(card);
     if(!owner || !owner.alive) return [];
     if(!canActFrom(owner, heroRank(owner))) return [];
@@ -3545,7 +3614,7 @@
   /* 못 내는 이유를 문장으로 — 카드에 그대로 찍어 보여준다 */
   function cardBlockReason(card){
     if(!isAttackCard(card)) return null;
-    if(card.type==='fusion_attack' || card.type==='epic_attack' || (card.type==='reroll_intent' && card.owner==='neutral')) return null;
+    if(card.type==='fusion_attack' || card.type==='epic_attack' || card.type==='drowned_sentence' || card.type==='abyssal_verdict' || card.type==='thousand_maws_tide' || (card.type==='reroll_intent' && card.owner==='neutral')) return null;
     const owner = ownerOf(card);
     if(!owner || !owner.alive) return '시전자가 없다';
     const oRank = heroRank(owner);
@@ -3633,13 +3702,30 @@
         }
         break;
       }
+      case 'drowned_sentence': {
+        if(enemyTarget){
+          const dmg = Math.round(card.dmg * relicMul('dmgMul', owner));
+          const splash = Math.max(1, Math.round(dmg * card.splashRatio));
+          const targetIndex = b.enemies.indexOf(enemyTarget);
+          pushLog(`${card.name} — ${foeDisplayName(enemyTarget)}에게 ${dmg} 피해, 양옆에 ${splash} 파문 피해.`);
+          damageEnemy(enemyTarget, dmg, {from:owner});
+          [targetIndex-1, targetIndex+1].forEach(i=>{
+            const side = b.enemies[i];
+            if(side && side.alive) damageEnemy(side, splash, {from:owner});
+          });
+        }
+        break;
+      }
       case 'block': { if(owner&&owner.alive){ owner.block+=Math.round(card.block*relicMul('blockMul', owner)); pushLog(`${owner.name}이 방어 태세를 취한다.`); } break; }
       case 'block_party': {
         aliveParty().forEach(p=>{
-          p.block+=Math.round(card.block*relicMul('blockMul', p));
-          if(card.riposte) p.bulwarkRiposte = Math.max(p.bulwarkRiposte||0, card.riposte);
+          const grantedBlock = Math.round(card.block*relicMul('blockMul', p));
+          p.block += grantedBlock;
+          if(card.riposteRatio) p.bulwarkRiposte = Math.max(p.bulwarkRiposte||0, Math.round(grantedBlock*card.riposteRatio));
+          else if(card.riposte) p.bulwarkRiposte = Math.max(p.bulwarkRiposte||0, card.riposte);
         });
-        pushLog(card.riposte ? `파티 전체가 방벽을 세운다. 다음 공격은 ${card.riposte} 반격한다.` : '파티 전체가 대비한다.');
+        const riposte = card.riposteRatio ? Math.round(card.block*card.riposteRatio) : card.riposte;
+        pushLog(riposte ? `파티 전체가 방벽을 세운다. 다음 공격은 ${riposte} 반격한다.` : '파티 전체가 대비한다.');
         break;
       }
       case 'heal': { if(allyTarget){ allyTarget.hp=Math.min(allyTarget.maxHp, allyTarget.hp+Math.round(card.heal*relicMul('healMul', allyTarget))); queueFx('heal', allyTarget); pushLog(`${allyTarget.name}의 상처를 봉합했다.`); } break; }
@@ -3647,6 +3733,45 @@
       case 'calm': { if(allyTarget){ setDp(allyTarget, allyTarget.dp-card.calm); queueFx('calm', allyTarget); pushLog(`${allyTarget.name}이 숨을 고른다.`); } break; }
       case 'calm_party': { aliveParty().forEach(p=>{ setDp(p, p.dp-card.calm); queueFx('calm', p); }); pushLog('파티 전체가 진정된다.'); break; }
       case 'fuse_support': { if(allyTarget){ allyTarget.hp=Math.min(allyTarget.maxHp, allyTarget.hp+Math.round(card.heal*relicMul('healMul', allyTarget))); setDp(allyTarget, allyTarget.dp-card.calm); queueFx('heal', allyTarget); pushLog(`${allyTarget.name}이 정화와 회복을 동시에 받는다.`); } break; }
+      case 'nameless_hymn': {
+        const cleared = aliveParty().reduce((sum,p)=>sum+(p.dp||0),0);
+        aliveParty().forEach(p=>{ setDp(p, 0); queueFx('calm', p); });
+        const dmg = Math.floor(cleared/3);
+        if(dmg>0) reachable.slice().forEach(en=>damageEnemy(en, dmg, {from:owner}));
+        pushLog(`${card.name} — 심도압박 ${cleared}을 지우고, 모든 적에게 ${dmg} 피해.`);
+        break;
+      }
+      case 'saints_last_prayer': {
+        const regenPerTurn = Math.floor(card.regenTotal/card.regenTurns);
+        aliveParty().forEach(p=>{
+          const immediate = Math.round(p.maxHp*card.healRatio*relicMul('healMul', p));
+          p.hp = Math.min(p.maxHp, p.hp+immediate);
+          p.saintRegen = {amount:regenPerTurn, remaining:card.regenTotal-(regenPerTurn*card.regenTurns), turns:card.regenTurns};
+          queueFx('heal', p);
+        });
+        pushLog(`${card.name} — 파티 전체가 최대 체력의 50%를 회복하고 3턴 동안 총 ${card.regenTotal}을 더 회복한다.`);
+        break;
+      }
+      case 'sunken_ark': {
+        aliveParty().forEach(p=>{ p.invulnerableTurns = Math.max(p.invulnerableTurns||0, 1); queueFx('guard', p); });
+        pushLog(`${card.name} — 이번 적 턴 동안 파티 전체가 무적이 된다.`);
+        break;
+      }
+      case 'thousand_maws_tide': {
+        const targetIndex = enemyTarget ? b.enemies.indexOf(enemyTarget) : -1;
+        const victims = [targetIndex-1,targetIndex+1].map(i=>b.enemies[i]).filter(en=>en && en.alive && en.kind!=='boss' && !isEliteEnemy(en));
+        victims.forEach(annihilateEnemy);
+        pushLog(victims.length ? `${card.name} — ${victims.map(foeDisplayName).join(' · ')}을(를) 파도 아래로 섬멸했다.` : `${card.name} — 섬멸할 일반 적이 양옆에 없다.`);
+        break;
+      }
+      case 'abyssal_verdict': {
+        if(enemyTarget && enemyTarget.kind!=='boss'){
+          const name = foeDisplayName(enemyTarget);
+          annihilateEnemy(enemyTarget);
+          pushLog(`${card.name} — ${name}을(를) 심연으로 섬멸했다.`);
+        }
+        break;
+      }
       case 'double_ap': {
         const usable = Math.max(0, b.ap + (b.tempAp||0));
         b.ap = usable * 2; b.tempAp = 0;
@@ -3813,6 +3938,24 @@
     return true;
   }
 
+  function resolvePartyTurnEffects(){
+    const healed = [];
+    aliveParty().forEach(p=>{
+      const regen = p.saintRegen;
+      if(regen && regen.turns>0){
+        const amount = regen.amount + (regen.remaining>0 ? 1 : 0);
+        if(regen.remaining>0) regen.remaining--;
+        regen.turns--;
+        const before = p.hp;
+        p.hp = Math.min(p.maxHp, p.hp+amount);
+        if(p.hp>before){ queueFx('heal', p); healed.push(`${p.name} +${p.hp-before}`); }
+        if(regen.turns<=0) delete p.saintRegen;
+      }
+      if((p.invulnerableTurns||0)>0) p.invulnerableTurns--;
+    });
+    if(healed.length) pushLog(`성자의 마지막 기도의 여운 — ${healed.join(' · ')}`);
+  }
+
   function endPlayerTurn(){
     const b = S.battle;
     if(!b || b.over || b.pendingCardUid || b.pendingDraw) return;
@@ -3824,6 +3967,7 @@
     /* 침수된 방벽의 강제 반격은 이 적 턴에만 유지된다. */
     S.party.forEach(p=>{ if(p) p.bulwarkRiposte = 0; });
     if(b.over){ render(); return; }
+    resolvePartyTurnEffects();
 
     if(S.prologue && S.prologue.stage==='braceDone'){
       /* 이 한 턴은 잠식과 심도압박이 모두 보이도록 고정한다. */
@@ -3995,7 +4139,7 @@
   /* 강화는 덱 속 개별 카드 한 장만 대상으로 삼는다.
      목록은 같은 종류를 묶되, 실제 강화는 그 묶음 안의 카드 한 장에만 적용한다. */
   function groupedUpgradeOptions(){
-    return groupDeckCards(S.runDeck.filter(c=>upgradeLevel(c)<MAX_UPGRADE_LEVEL));
+    return groupDeckCards(S.runDeck.filter(c=>upgradeLevel(c)<MAX_UPGRADE_LEVEL && !c.unupgradable));
   }
   /* +3부터는 같은 카드·같은 강화 단계 두 장을 녹여 한 단계 위 카드 한 장으로 만든다. */
   const MERGE_UPGRADE_START_LEVEL = 3;
@@ -4012,7 +4156,7 @@
   }
   function raiseCardLevel(c){
     const level = upgradeLevel(c);
-    if(level>=MAX_UPGRADE_LEVEL) return false;
+    if(level>=MAX_UPGRADE_LEVEL || c.unupgradable) return false;
     c.baseName = baseCardName(c);
     c.upgradeLevel = level+1;
     c.upgraded = true;
@@ -4060,7 +4204,7 @@
     return FUSION_CLASS_CARD_POOL.filter(c=>presentClasses.has(c.owner));
   }
   function fusionResultCard(){
-    if(Math.random() < EPIC_FUSION_CHANCE) return {base:pickOne(EPIC_CARD_POOL), epic:true};
+    if(Math.random() < EPIC_FUSION_CHANCE) return {base:pickEpicCard(), epic:true};
     const classCards = activeFusionClassCards();
     const pool = classCards.length && Math.random()<0.5 ? classCards : FUSION_CARD_POOL;
     return {base:pickOne(pool), epic:false};
@@ -4091,7 +4235,7 @@
     return fresh.length ? fresh : pool;
   }
   function premiumRewardCard(allowLegendary){
-    return allowLegendary && Math.random()<BOSS_LEGENDARY_CARD_CHANCE ? pickOne(LEGENDARY_CARD_POOL) : pickOne(EPIC_CARD_POOL);
+    return allowLegendary && Math.random()<BOSS_LEGENDARY_CARD_CHANCE ? pickOne(LEGENDARY_CARD_POOL) : pickEpicCard();
   }
   function cardRewardOffer(node){
     const offer = shuffle(cardRewardPool().slice()).slice(0, CARD_REWARD_OFFER_SIZE);
@@ -4104,7 +4248,7 @@
       /* 정예는 일반 보상(5%)의 두 배 확률로 에픽 이상의 카드를 남긴다. */
       offer[rewardSlot] = premiumRewardCard(true);
     } else if(Math.random()<EPIC_FUSION_CHANCE){
-      offer[rewardSlot] = pickOne(EPIC_CARD_POOL);
+      offer[rewardSlot] = pickEpicCard();
     }
     return shuffle(offer);
   }
@@ -4617,6 +4761,11 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
     return b.hand.find(c=>c.uid===b.pendingCardUid) || null;
   }
 
+  function survivalMarks(hero){
+    const count = Math.min(5, Math.max(0, Math.floor(hero && hero.descentWins || 0)));
+    return count ? `<span class="survival-marks" aria-label="생환 ${count}회">${'<i class="survival-mark"></i>'.repeat(count)}</span>` : '';
+  }
+
   function heroCardHtml(hero){
     if(!hero) return `<div class="hero-card empty">공석</div>`;
     const hpPct = Math.max(0,(hero.hp/hero.maxHp)*100);
@@ -4631,7 +4780,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
            style="${dead?'opacity:0.35;':''}"
            data-action="choose-target" data-domain="ally" data-id="${hero.id}">
         ${reactBadge(hero)}
-        <div class="portrait portrait-${hero.cls}">${CLASS_ICON[hero.cls]}</div>
+        <div class="portrait portrait-${hero.cls}">${CLASS_ICON[hero.cls]}${survivalMarks(hero)}</div>
         <div class="hero-rank">${dead?'전사':rankName(rank)} ${reachChip(hero)}</div>
         <div class="hero-name">${hero.name}</div>
         <div class="hero-hpline">
@@ -4643,6 +4792,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
           <div class="dp-num">${shownDp}</div>
         </div>
         ${idle ? `<div class="rank-warn">사거리 밖</div>` : ''}
+        ${(hero.invulnerableTurns||0)>0 ? `<div class="invulnerable-tag">무적</div>` : ''}
         ${hero.block>0 ? `<div class="block-tag">${IC_BLOCK}${hero.block}</div>` : ''}
       </div>`;
   }
@@ -4692,10 +4842,17 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
         if(card.selfDp) s += ` 자신 심도압박 ${card.selfDp} 상승.`;
         return s;
       }
+      case 'drowned_sentence': return `적 한 명에게 ${card.dmg} 피해. 양옆 적에게 ${Math.round(card.dmg*card.splashRatio)} 피해(본 피해의 1/5).`;
+      case 'abyssal_verdict': return '보스를 제외한 지정 적을 즉시 섬멸. 강화 불가.';
+      case 'thousand_maws_tide': return '선택한 적 양옆의 일반 적을 즉시 섬멸. 엘리트·보스 제외 · 강화 불가.';
+      case 'sunken_ark': return '한 턴 동안 생존한 아군 전체 무적. 강화 불가.';
+      case 'nameless_hymn': return '아군 전체 심도압박을 0으로 만들고, 지운 총합의 1/3만큼 모든 적에게 피해.';
+      case 'saints_last_prayer': return `생존한 아군 전체 체력 ${Math.round(card.healRatio*100)}% 회복. ${card.regenTurns}턴 동안 추가로 총 ${card.regenTotal} 회복.`;
       case 'block': return `자신 방어 ${card.block} 획득.`;
       case 'block_party': {
         let s = `생존한 아군 전체 방어 ${card.block} 획득.`;
-        if(card.riposte) s += ` 공격받으면 공격자에게 ${card.riposte} 반격.`;
+        if(card.riposteRatio) s += ` 공격받으면 방어 획득값의 ${Math.round(card.riposteRatio*100)}% 반격.`;
+        else if(card.riposte) s += ` 공격받으면 공격자에게 ${card.riposte} 반격.`;
         return s;
       }
       case 'heal': return `아군 한 명 체력 ${card.heal} 회복.`;
