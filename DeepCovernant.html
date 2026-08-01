@@ -1965,7 +1965,7 @@
     vanguard: {id:'vanguard', name:'잠수 돌격병', reach:'melee',  tagline:'근접 · 철벽과 수호', maxHp:32, blurb:'낡은 놋쇠 잠수복으로 전열을 막아선다. 막고, 버티고, 받아친다.'},
     chemist:  {id:'chemist',  name:'밀수 화학자', reach:'mid',    tagline:'중거리 · 부식과 기동', maxHp:24, blurb:'중간 거리에서 약병을 던진다. 심부까지 밀리면 던질 각이 안 나온다.'},
     priest:   {id:'priest',   name:'파문 사제',   reach:'mid',    tagline:'중거리 · 역병과 정화', maxHp:22, blurb:'금지된 의식으로 상처와 마음을 함께 다스린다.'},
-    oracle:   {id:'oracle',   name:'이단 지도 제작자', reach:'ranged', tagline:'원거리 · 저주와 예지', maxHp:20, blurb:'뒤에서 운명을 비튼다. 전열로 끌려나오면 아무것도 겨눌 수 없다.'},
+    oracle:   {id:'oracle',   name:'이단 예지자', reach:'ranged', tagline:'원거리 · 저주와 예지', maxHp:20, blurb:'뒤에서 운명을 비튼다. 전열로 끌려나오면 아무것도 겨눌 수 없다.'},
     /* 인양할 때마다 여관 문을 열고 들어오는 셋 */
     hellion:  {id:'hellion',  name:'작살 광인',   reach:'melee',  tagline:'근접 · 광기와 화력', maxHp:28, blurb:'작살을 들고 앞장선다. 크게 휘두를수록 제 정신을 깎아 쓴다.'},
     robber:   {id:'robber',   name:'난파선 도굴꾼', reach:'ranged', tagline:'원거리 · 은신과 급소', maxHp:21, blurb:'가라앉은 선실을 뒤지던 손. 그림자에서 급소만 노린다.'},
@@ -2153,16 +2153,16 @@
     };
   }
   function rollNodeKind(step){
-    /* 표층은 첫 하강의 전투 감각을 익히는 구역이다. 쉬거나 줍는 길 없이 조우만 놓는다.
-       단, 구역 마지막의 수문장은 다음 하강을 위해 별도로 rollChoices에서 고정한다. */
+    /* 어느 층이든 첫 갈림길은 조우만 놓는다. 첫 전투로 현재 덱과 대열을 확인한 뒤
+       그 다음부터 휴식·회수·엘리트의 선택지를 열어 준다. */
     if(chapter().tier==='표층') return 'battle';
+    if(step===0) return 'battle';
     /* 마지막 7노드는 회수나 임의 휴식 없이 전투로 압박한다.
        단, 엘리트 직후의 휴식은 기존의 안전 규칙을 지킨다. */
     if(chapter().tier==='끝없는 심연'){
       if(step >= chapter().length-2) return weighted([[72,'battle'],[28,'elite']]);
       return weighted([[58,'battle'],[42,'elite']]);
     }
-    if(step===0) return weighted([[7,'battle'],[3,'treasure']]);
     /* 엘리트 뒤에는 은신처 한 칸이 반드시 필요하다. 수문장 바로 앞에서 엘리트가
        뜨면 그 칸을 만들 수 없으므로, 마지막 두 일반 구간에서는 엘리트를 빼둔다. */
     if(step >= chapter().length-2) return weighted([[55,'battle'],[27,'rest'],[18,'treasure']]);
@@ -3007,13 +3007,19 @@
     }
     return res;
   }
+  /* 심도압박은 항상 0~100의 정수로 유지한다. 유물의 백분율 배율이 소수점을 만들 수 있다. */
+  function setDp(hero, value){
+    const safeValue = Number.isFinite(value) ? value : 0;
+    hero.dp = Math.round(Math.max(0, Math.min(100, safeValue)));
+    return hero.dp;
+  }
   /* 심도압박 상승은 전부 이 문을 지난다 — 유물로 무뎌지는 지점이 한 곳뿐이도록 */
   function addDp(hero, amount){
-    hero.dp = Math.min(100, hero.dp + amount * relicMul('dpMul', hero));
+    setDp(hero, hero.dp + amount * relicMul('dpMul', hero));
   }
   function checkCollapse(hero){
     if(hero.dp>=100 && !hero.collapsed){
-      hero.collapsed = true; hero.dp = 70;
+      hero.collapsed = true; setDp(hero, 70);
       pushLog(`${hero.name}의 정신이 함몰됐다. 가하는 피해 -50% · 받는 피해 +50%.`);
     }
   }
@@ -3164,11 +3170,11 @@
       case 'block_party': { aliveParty().forEach(p=>p.block+=Math.round(card.block*relicMul('blockMul', p))); pushLog('파티 전체가 대비한다.'); break; }
       case 'heal': { if(allyTarget){ allyTarget.hp=Math.min(allyTarget.maxHp, allyTarget.hp+Math.round(card.heal*relicMul('healMul', allyTarget))); queueFx('heal', allyTarget); pushLog(`${allyTarget.name}의 상처를 봉합했다.`); } break; }
       case 'heal_party': { aliveParty().forEach(p=>{ p.hp=Math.min(p.maxHp,p.hp+Math.round(card.heal*relicMul('healMul', p))); queueFx('heal',p); }); pushLog('파티 전체의 상처를 봉합했다.'); break; }
-      case 'calm': { if(allyTarget){ allyTarget.dp=Math.max(0, allyTarget.dp-card.calm); queueFx('calm', allyTarget); pushLog(`${allyTarget.name}이 숨을 고른다.`); } break; }
-      case 'calm_party': { aliveParty().forEach(p=>{ p.dp=Math.max(0,p.dp-card.calm); queueFx('calm', p); }); pushLog('파티 전체가 진정된다.'); break; }
-      case 'fuse_support': { if(allyTarget){ allyTarget.hp=Math.min(allyTarget.maxHp, allyTarget.hp+Math.round(card.heal*relicMul('healMul', allyTarget))); allyTarget.dp=Math.max(0, allyTarget.dp-card.calm); queueFx('heal', allyTarget); pushLog(`${allyTarget.name}이 정화와 회복을 동시에 받는다.`); } break; }
+      case 'calm': { if(allyTarget){ setDp(allyTarget, allyTarget.dp-card.calm); queueFx('calm', allyTarget); pushLog(`${allyTarget.name}이 숨을 고른다.`); } break; }
+      case 'calm_party': { aliveParty().forEach(p=>{ setDp(p, p.dp-card.calm); queueFx('calm', p); }); pushLog('파티 전체가 진정된다.'); break; }
+      case 'fuse_support': { if(allyTarget){ allyTarget.hp=Math.min(allyTarget.maxHp, allyTarget.hp+Math.round(card.heal*relicMul('healMul', allyTarget))); setDp(allyTarget, allyTarget.dp-card.calm); queueFx('heal', allyTarget); pushLog(`${allyTarget.name}이 정화와 회복을 동시에 받는다.`); } break; }
       case 'draw': { drawHand(card.draw); pushLog('카드를 더 끌어온다.'); break; }
-      case 'foresight': { drawHand(card.draw); if(owner&&owner.alive){ owner.dp=Math.max(0,owner.dp-card.calm); } pushLog('마음을 가라앉히며 앞일을 살핀다.'); break; }
+      case 'foresight': { drawHand(card.draw); if(owner&&owner.alive){ setDp(owner, owner.dp-card.calm); } pushLog('마음을 가라앉히며 앞일을 살핀다.'); break; }
       case 'reroll_intent': { if(enemyTarget){ enemyTarget.intent = pickIntent(enemyTarget); pushLog(`${foeDisplayName(enemyTarget)}의 운명이 뒤틀린다.`); } break; }
       case 'swap': {
         if(allyTarget){
@@ -3191,7 +3197,7 @@
       /* 잠식(전투 바깥의 귀환 제한)과 심도압박(개인 상태)을 섞지 않는다.
          조준의 대가가 지도 제작자 개인의 게이지에 남도록 눈에 보이는 값으로 고정한다. */
       const oracle = S.party.find(p=>p.cls==='oracle');
-      if(oracle) oracle.dp = Math.max(oracle.dp, 42);
+      if(oracle) setDp(oracle, Math.max(oracle.dp, 42));
       b.hand = prologueHandForCalm();
       pushLog('힘을 빌린 대가로 심도압박이 올랐다. 사제의 기도로 이를 가라앉힐 수 있다.');
     }
@@ -3410,7 +3416,7 @@
     S.party.forEach(p=>{
       if(!p || !p.alive) return;
       p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp*0.4));
-      p.dp = Math.max(0, p.dp - 30);
+      setDp(p, p.dp - 30);
       p.block = 0;
       p.collapsed = false;
     });
@@ -3421,7 +3427,7 @@
   function confirmRest(){
     const alive = aliveParty();
     if(S.rest.choice==='heal'){ alive.forEach(p=>p.hp=Math.min(p.maxHp,p.hp+Math.round(10*relicMul('healMul', p)))); S.logMsg='상처를 돌본다.'; }
-    else if(S.rest.choice==='calm'){ alive.forEach(p=>p.dp=Math.max(0,p.dp-18)); S.logMsg='잠시 눈을 감고 숨을 고른다.'; }
+    else if(S.rest.choice==='calm'){ alive.forEach(p=>setDp(p, p.dp-18)); S.logMsg='잠시 눈을 감고 숨을 고른다.'; }
     completeCurrentNode();
     render();
   }
@@ -3972,6 +3978,7 @@
   function heroCardHtml(hero){
     if(!hero) return `<div class="hero-card empty">공석</div>`;
     const hpPct = Math.max(0,(hero.hp/hero.maxHp)*100);
+    const shownDp = Math.round(Number.isFinite(hero.dp) ? hero.dp : 0);
     const dead = !hero.alive;
     const rank = heroRank(hero);
     const idle = !dead && !canActFrom(hero, rank);
@@ -3990,8 +3997,8 @@
           <div class="hero-num mono">${hero.hp}/${hero.maxHp}</div>
         </div>
         <div class="dp-gauge">
-          <div class="dp-ring" style="${dpRingStyle(hero.dp)}"></div>
-          <div class="dp-num">${hero.dp}</div>
+          <div class="dp-ring" style="${dpRingStyle(shownDp)}"></div>
+          <div class="dp-num">${shownDp}</div>
         </div>
         ${idle ? `<div class="rank-warn">사거리 밖</div>` : ''}
         ${hero.block>0 ? `<div class="block-tag">${IC_BLOCK}${hero.block}</div>` : ''}
@@ -4089,7 +4096,7 @@
       : step==='strike'
       ? ['03 · 표적과 심도압박','<b>저주받은 조준</b>을 누른 뒤 두 적 중 하나를 골라 보세요. 원거리 공격과 심도압박의 대가를 확인합니다.']
       : step==='pressure'
-      ? ['04 · 심도압박','심도압박은 방어로 막을 수 없습니다. <b>속죄의 기도</b>를 누른 뒤 압박이 오른 이단 지도 제작자를 선택하세요. 100에 닿으면 가하는 피해는 50% 감소하고 받는 피해는 50% 증가합니다.']
+      ? ['04 · 심도압박','심도압박은 방어로 막을 수 없습니다. <b>속죄의 기도</b>를 누른 뒤 압박이 오른 이단 예지자를 선택하세요. 100에 닿으면 가하는 피해는 50% 감소하고 받는 피해는 50% 증가합니다.']
       : step==='abyss'
       ? ['05 · 잠식','턴이 지나자 잠식이 25% 올랐습니다. 잠식이 100%가 되면 탐색은 즉시 끝납니다.']
       : null;
