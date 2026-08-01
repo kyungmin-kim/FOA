@@ -735,6 +735,15 @@
   .rest-opt.sel{ border-color:var(--phosphor); background:linear-gradient(180deg, rgba(38,60,58,0.7), rgba(8,16,16,0.7)); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.5), inset 0 0 20px rgba(127,191,174,0.14); }
   .rest-opt .t{ font-size:13px; font-weight:600; margin-bottom:3px; color:var(--bone);}
   .rest-opt .d{ font-size:11px; color:var(--muted); }
+  .rest-party-status{ width:100%; max-width:300px; text-align:left; border:1px solid var(--brass-dim); padding:8px; background:rgba(8,14,16,0.58); box-shadow:inset 0 0 12px rgba(0,0,0,0.44); }
+  .rest-party-title{ color:var(--gaslamp); font-size:10px; letter-spacing:0.08em; margin:0 0 6px; }
+  .rest-party-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; }
+  .rest-party-member{ min-width:0; padding:5px 6px; border:1px solid rgba(184,147,79,0.38); background:rgba(22,32,34,0.44); }
+  .rest-party-member.dead{ opacity:0.52; border-color:rgba(139,51,52,0.62); }
+  .rest-party-name{ color:var(--ink); font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rest-party-meta{ margin-top:2px; color:var(--muted); font-family:'Space Mono',monospace; font-size:8.5px; white-space:nowrap; }
+  .rest-party-meta .dp{ color:var(--phosphor); }
+  .rest-party-member.dead .dp{ color:var(--blood); }
 
   .af-list{ display:flex; flex-direction:column; gap:6px; width:100%; max-width:300px; max-height:230px; overflow-y:auto; padding:2px;}
   .af-row{ border:1px solid var(--brass-dim); border-radius:0; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; background:rgba(12,20,22,0.5); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.45); cursor:pointer; text-align:left; }
@@ -2063,9 +2072,9 @@
     ],
   };
 
-  /* 에픽은 덱 구성·보상·강화에서 새로 뽑히지 않는다. 오직 중립 카드 두 장을
-     합성할 때 0.1%로 일반 결과를 밀어내고 나타난다. */
-  const EPIC_FUSION_CHANCE = 0.001;
+  /* 에픽은 덱 구성·보상·강화에서 새로 뽑히지 않는다. 어떤 카드든 두 장을
+     합성할 때 5%로 일반 결과를 밀어내고 나타난다. */
+  const EPIC_FUSION_CHANCE = 0.05;
   const EPIC_CARD_POOL = [
     {id:'abyssal_verdict', name:'심해왕의 단죄', cost:0, type:'epic_attack', dmg:55, owner:'neutral', range:'ranged', epic:true, desc:'적 한 명을 골라 55 피해.'},
     {id:'thousand_maws_tide', name:'천 개의 입의 조류', cost:1, type:'epic_attack', dmg:24, owner:'neutral', range:'aoe', epic:true, desc:'모든 적에게 24 피해.'},
@@ -2097,6 +2106,20 @@
     {name:'심해 작살포',       cost:2, type:'fusion_attack', dmg:18,           owner:'neutral', range:'ranged', desc:'적 한 명을 골라 18 피해.'},
     {name:'가라앉은 해류',     cost:2, type:'fusion_attack', dmg:9,            owner:'neutral', range:'aoe', desc:'모든 적에게 9 피해.'},
     {name:'봉합의 의식',       cost:2, type:'heal_party',    heal:6,           owner:'neutral', range:'support', desc:'생존한 아군 전체 체력 6 회복.'},
+  ];
+
+  /* 합성으로만 나오는 직업 카드. 현재 인양대에 있는 전문가의 카드만 결과 후보가 된다. */
+  const FUSION_CLASS_CARD_POOL = [
+    {name:'심해 방패진',       cost:1, type:'block',       block:16,              owner:'vanguard', range:'support', desc:'자신 방어 16 획득.'},
+    {name:'닻의 처형',         cost:2, type:'attack',      dmg:18,                owner:'vanguard', range:'melee', desc:'닿는 가장 앞의 적에게 18 피해.'},
+    {name:'황산 폭뢰',         cost:2, type:'attack',      dmg:12,                owner:'chemist',  range:'aoe', desc:'모든 적에게 12 피해.'},
+    {name:'심해 응고제',       cost:1, type:'heal',        heal:14,               owner:'chemist',  range:'support_ally', desc:'아군 한 명 체력 14 회복.'},
+    {name:'소금의 성유',       cost:1, type:'calm_party',  calm:11,               owner:'priest',   range:'support', desc:'생존한 아군 전체 심도압박 11 감소.'},
+    {name:'침몰자의 고해',     cost:2, type:'heal_party',  heal:10,               owner:'priest',   range:'support', desc:'생존한 아군 전체 체력 10 회복.'},
+    {name:'심연 좌표',         cost:1, type:'attack',      dmg:16, selfDp:6,      owner:'oracle',   range:'ranged', desc:'적 한 명을 골라 16 피해. 자신 심도압박 6 상승.'},
+    {name:'별빛 역류',         cost:0, type:'foresight',   draw:2, calm:8,        owner:'oracle',   range:'support', desc:'카드 2장 드로우. 자신 심도압박 8 감소.'},
+    {name:'광기의 작살비',     cost:2, type:'attack',      dmg:13, selfDp:5,      owner:'hellion',  range:'aoe', desc:'모든 적에게 13 피해. 자신 심도압박 5 상승.'},
+    {name:'익사의 합주',       cost:1, type:'calm_party',  calm:15,               owner:'jester',   range:'support', desc:'생존한 아군 전체 심도압박 15 감소.'},
   ];
 
   /* ============ MAP DATA (chapters) ============
@@ -3479,6 +3502,16 @@
     const c = S.runDeck.find(c=>c.defId===defId);
     return c && applyUpgradeCard(c) ? c : null;
   }
+  function activeFusionClassCards(){
+    const presentClasses = new Set(S.party.filter(p=>p && p.alive).map(p=>p.cls));
+    return FUSION_CLASS_CARD_POOL.filter(c=>presentClasses.has(c.owner));
+  }
+  function fusionResultCard(){
+    if(Math.random() < EPIC_FUSION_CHANCE) return {base:pickOne(EPIC_CARD_POOL), epic:true};
+    const classCards = activeFusionClassCards();
+    const pool = classCards.length && Math.random()<0.5 ? classCards : FUSION_CARD_POOL;
+    return {base:pickOne(pool), epic:false};
+  }
   function applyFusion(defIdA, defIdB){
     const ia = S.runDeck.findIndex(c=>c.defId===defIdA);
     const ib = S.runDeck.findIndex(c=>c.defId===defIdB);
@@ -3486,8 +3519,9 @@
     const first = Math.max(ia,ib), second = Math.min(ia,ib);
     S.runDeck.splice(first,1);
     S.runDeck.splice(second,1);
-    const epic = Math.random() < EPIC_FUSION_CHANCE;
-    const base = epic ? pickOne(EPIC_CARD_POOL) : pickOne(FUSION_CARD_POOL);
+    const result = fusionResultCard();
+    const epic = result.epic;
+    const base = result.base;
     const newCard = Object.assign({defId:nextId(), upgraded:false, upgradeLevel:0}, base);
     S.runDeck.push(newCard);
     S.logMsg = epic ? '심연이 합성에 응답했다. 에픽 카드가 모습을 드러냈다.' : '두 카드가 하나로 융합되었다.';
@@ -4169,11 +4203,21 @@
 
   function renderRest(){
     const r = S.rest;
+    const partyStatus = S.party.map((p,i)=>{
+      if(!p) return `<div class="rest-party-member dead"><div class="rest-party-name">${rankName(i)} · 공석</div><div class="rest-party-meta">기록 없음</div></div>`;
+      const dp = Math.round(Number.isFinite(p.dp) ? p.dp : 0);
+      const state = p.alive ? `${rankName(i)} · 생존` : `${rankName(i)} · 전사`;
+      return `<div class="rest-party-member ${p.alive?'':'dead'}"><div class="rest-party-name">${p.name}</div><div class="rest-party-meta">${state}<br>HP ${p.hp}/${p.maxHp} · <span class="dp">압박 ${dp}</span></div></div>`;
+    }).join('');
     contentEl.innerHTML = `
       ${renderTopbar()}
       <div class="screen rest-screen">
         <div class="tier-tag">은신처</div>
         <h3 style="margin:0;">잠시 숨을 고른다</h3>
+        <div class="rest-party-status">
+          <div class="rest-party-title">현재 인양대 상태</div>
+          <div class="rest-party-grid">${partyStatus}</div>
+        </div>
         <div class="rest-opts">
           <div class="rest-opt ${r.choice==='heal'?'sel':''}" data-action="rest-pick" data-kind="heal">
             <div class="t">상처를 봉합한다</div>
@@ -4230,10 +4274,10 @@
         </div><button class="btn primary" data-action="do-upgrade" data-defid="${selected.defId}">이 카드를 강화한다</button>` : `<div class="af-hint">카드를 선택하면 현재 정보와 강화 후 효과를 확인합니다.</div>`}
         <button class="btn" data-action="aftermath-back">뒤로</button>`;
     } else if(a.selecting==='fuse'){
-      const opts = S.runDeck.filter(c=>c.owner==='neutral');
+      const opts = S.runDeck.filter(c=>!c.epic);
       const materials = a.fuseSelected.map(id=>opts.find(c=>c.defId===id)).filter(Boolean);
       const inspect = c => `<div class="card-inspect ${c.epic?'epic':''}">
-        <div class="card-inspect-head"><span>${c.epic?'✦ ':''}${c.name}</span><span class="card-inspect-meta">AP ${c.cost} · ${c.epic?'EPIC':'중립'}</span></div>
+        <div class="card-inspect-head"><span>${c.epic?'✦ ':''}${c.name}</span><span class="card-inspect-meta">AP ${c.cost} · ${c.epic?'EPIC':ownerLabel(c.owner)}</span></div>
         <div class="card-inspect-effect">${describeCard(c)}</div>
       </div>`;
       body = `
@@ -4241,17 +4285,18 @@
           ${opts.map(c=>`
             <div class="af-row ${a.fuseSelected.includes(c.defId)?'sel':''}" data-action="toggle-fuse" data-defid="${c.defId}">
               <div class="af-row-name">${c.name}</div>
-              <div class="af-row-owner">중립</div>
+              <div class="af-row-owner">${ownerLabel(c.owner)}</div>
             </div>`).join('')}
         </div>
         ${materials.length ? `<div class="fusion-inspect"><div class="af-hint">선택한 합성 재료</div>${materials.map(inspect).join('')}</div>` : `<div class="af-hint">카드를 선택하면 AP와 효과를 확인할 수 있습니다.</div>`}
-        ${a.fuseSelected.length===2 ? `<button class="btn primary" data-action="do-fuse">합성하기</button>` : `<div class="af-hint">중립 카드 2장을 선택하세요 (${a.fuseSelected.length}/2)</div>`}
+        <div class="af-hint">결과: 중립 또는 현재 인양대 직업 카드 무작위 · 에픽 출현 5%</div>
+        ${a.fuseSelected.length===2 ? `<button class="btn primary" data-action="do-fuse">합성하기</button>` : `<div class="af-hint">중립 또는 직업 카드 2장을 선택하세요 (${a.fuseSelected.length}/2)</div>`}
         <button class="btn" data-action="aftermath-back">뒤로</button>`;
     } else {
       body = `
         <div class="rest-opts">
           <div class="rest-opt" data-action="aftermath-pick" data-kind="upgrade"><div class="t">카드 강화</div><div class="d">보유 카드 한 장을 골라 영구히 강화한다</div></div>
-          <div class="rest-opt" data-action="aftermath-pick" data-kind="fuse"><div class="t">카드 합성</div><div class="d">중립 카드 두 장을 하나의 강화된 카드로 합친다</div></div>
+          <div class="rest-opt" data-action="aftermath-pick" data-kind="fuse"><div class="t">카드 합성</div><div class="d">중립·직업 카드 2장을 무작위 중립·직업·에픽 카드로 합친다</div></div>
         </div>
         <button class="btn" data-action="aftermath-skip">그냥 넘어가기</button>`;
     }
