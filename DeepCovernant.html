@@ -684,6 +684,9 @@
   .card.owner-neutral{ border-color:#d9d8d1; border-top:3px solid #efeee5; }
   .card.owner-vanguard,.card.owner-chemist,.card.owner-priest,.card.owner-oracle,
   .card.owner-hellion,.card.owner-robber,.card.owner-jester{ border-color:#5d98c9; border-top:3px solid #78b6e3; }
+  /* 보상·드로우 카드도 소유자 데이터가 비어 있어 색을 잃지 않게 기본 분류색을 둔다. */
+  .card.normal{ border-color:#d9d8d1; border-top-color:#efeee5; }
+  .card.class{ border-color:#5d98c9; border-top-color:#78b6e3; }
   .card:active{ transform:translateY(-4px); }
   .card.unplayable{ opacity:0.52; filter:grayscale(0.6); }
   .card.unplayable .card-name, .card.unplayable .card-cost{ opacity:0.72; }
@@ -712,9 +715,13 @@
   }
   .card-desc.glitch{ color:rgba(141,122,176,0.75); }
   .card-owner-tag{ font-family:'Nanum Myeongjo',serif; font-size:7.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.12em; margin-top:auto;}
+  .card.normal .card-owner-tag{ color:#efeee5; }
+  .card.class .card-owner-tag{ color:#8cbfe6; }
   /* 에픽은 보라색 표식만 남기고, 일반 카드의 크기·정렬·AP 봉인 규칙을 그대로 쓴다. */
   .card.epic{ border-color:#8d7ab0; border-top-color:#8d7ab0; }
   .card.legendary{ border-color:#e6bd59; border-top-color:#e6bd59; }
+  .card.epic .card-owner-tag{ color:#c5b2ee; }
+  .card.legendary .card-owner-tag{ color:#f1cf7b; }
 
   .end-turn-row{ display:flex; justify-content:center; padding-top:2px;}
 
@@ -745,7 +752,12 @@
   .af-list{ display:flex; flex-direction:column; gap:6px; width:100%; max-width:300px; max-height:230px; overflow-y:auto; padding:2px; touch-action:pan-y; }
   .card-reward-grid{ width:100%; max-width:350px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
   .card.reward-card{ min-width:0; width:auto; flex:auto; height:170px; padding:8px 6px; cursor:pointer; }
-  .card.reward-card:hover{ transform:translateY(-3px); border-color:var(--gaslamp); }
+  /* 공통 hover가 에픽·전설의 고유 테두리를 금색으로 덮지 않도록 이동·광택만 준다. */
+  .card.reward-card:hover{ transform:translateY(-3px); box-shadow:inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 20px rgba(230,230,220,0.08), 0 0 10px rgba(230,230,220,0.18); }
+  .card.reward-card.normal:hover{ box-shadow:inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 20px rgba(239,238,229,0.10), 0 0 10px rgba(239,238,229,0.22); }
+  .card.reward-card.class:hover{ box-shadow:inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 20px rgba(120,182,227,0.12), 0 0 10px rgba(120,182,227,0.28); }
+  .card.reward-card.epic:hover{ border-color:#8d7ab0; border-top-color:#8d7ab0; box-shadow:inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 20px rgba(141,122,176,0.18), 0 0 12px rgba(141,122,176,0.36); }
+  .card.reward-card.legendary:hover{ border-color:#e6bd59; border-top-color:#e6bd59; box-shadow:inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 20px rgba(230,189,89,0.20), 0 0 13px rgba(230,189,89,0.42); }
   .card.reward-card .card-name{ margin-top:8px; min-height:30px; }
   .card.reward-card .card-desc{ font-size:9px; line-height:1.4; }
   .draw-swap{ position:absolute; z-index:20; inset:0; padding:18px 14px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; overflow-y:auto; background:rgba(2,7,9,0.90); border:1px solid rgba(224,170,76,0.44); }
@@ -757,13 +769,30 @@
   .draw-replace-row:hover{ border-color:var(--blood-lit); background:rgba(70,23,27,0.58); }
   .af-row{ border:1px solid var(--brass-dim); border-radius:0; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; background:rgba(12,20,22,0.5); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.45); cursor:pointer; text-align:left; user-select:none; -webkit-user-select:none; }
   .af-row.sel{ border-color:var(--phosphor); background:rgba(34,54,52,0.7); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.45), inset 0 0 16px rgba(127,191,174,0.14); }
+  /* 강화·합성 목록도 보상 화면과 같은 등급 색을 유지한다. 선택 상태에서는 초록 테두리와 색상 표기를 함께 남긴다. */
+  .af-row.normal{ border-left:3px solid #efeee5; }
+  .af-row.class{ border-left:3px solid #78b6e3; }
+  .af-row.epic{ border-left:3px solid #a894cf; background:rgba(52,40,79,0.44); }
+  .af-row.legendary{ border-left:3px solid #e6bd59; background:rgba(75,57,22,0.44); }
+  .af-row.sel.normal{ border-left-color:#efeee5; }
+  .af-row.sel.class{ border-left-color:#78b6e3; }
+  .af-row.sel.epic{ border-left-color:#a894cf; }
+  .af-row.sel.legendary{ border-left-color:#e6bd59; }
   .af-row.locked{ opacity:0.42; cursor:not-allowed; }
   .af-row.unavailable{ opacity:0.42; cursor:not-allowed; }
   .af-row-name{ font-size:12px; color:var(--ink); }
   .af-row-owner{ font-size:9.5px; color:var(--muted); white-space:nowrap; margin-left:8px; }
+  .af-row.normal .af-row-owner{ color:#efeee5; }
+  .af-row.class .af-row-owner{ color:#8cbfe6; }
+  .af-row.epic .af-row-owner{ color:#c5b2ee; }
+  .af-row.legendary .af-row-owner{ color:#f1cf7b; }
   .af-empty{ font-family:'Nanum Myeongjo',serif; font-size:13px; color:var(--muted); font-style:italic; }
   .af-hint{ font-family:'Nanum Myeongjo',serif; font-size:12.5px; color:var(--muted); font-style:italic; }
   .upgrade-preview{ width:100%; max-width:300px; border:1px solid var(--phosphor); padding:9px 11px; text-align:left; background:rgba(18,42,40,0.42); box-shadow:inset 0 0 16px rgba(127,191,174,0.12); }
+  .upgrade-preview.normal{ border-left:3px solid #efeee5; }
+  .upgrade-preview.class{ border-left:3px solid #78b6e3; }
+  .upgrade-preview.epic{ border-left:3px solid #a894cf; background:rgba(52,40,79,0.48); }
+  .upgrade-preview.legendary{ border-left:3px solid #e6bd59; background:rgba(75,57,22,0.48); }
   .upgrade-preview-title{ color:var(--bone); font-size:12px; margin-bottom:4px; }
   .upgrade-preview-line{ color:var(--muted); font-size:10px; line-height:1.6; }
   .upgrade-preview-line b{ color:var(--gaslamp); font-weight:normal; }
@@ -781,10 +810,16 @@
   .upgrade-guide-panel .btn{ display:block; margin:12px auto 0; }
   .fusion-inspect{ width:100%; max-width:300px; display:flex; flex-direction:column; gap:5px; }
   .card-inspect{ border:1px solid rgba(184,147,79,0.68); padding:7px 9px; text-align:left; background:rgba(20,25,26,0.70); box-shadow:inset 0 0 12px rgba(184,147,79,0.08); }
+  .card-inspect.normal{ border-color:#d9d8d1; background:rgba(42,42,39,0.52); }
+  .card-inspect.class{ border-color:#5d98c9; background:rgba(25,42,57,0.58); }
   .card-inspect.epic{ border-color:#8d7ab0; background:rgba(38,30,58,0.68); }
   .card-inspect.legendary{ border-color:#e6bd59; background:rgba(62,47,20,0.68); }
   .card-inspect-head{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; color:var(--bone); font-size:11px; }
   .card-inspect-meta{ color:var(--gaslamp); font-size:9px; white-space:nowrap; }
+  .card-inspect.normal .card-inspect-meta{ color:#efeee5; }
+  .card-inspect.class .card-inspect-meta{ color:#8cbfe6; }
+  .card-inspect.epic .card-inspect-meta{ color:#c5b2ee; }
+  .card-inspect.legendary .card-inspect-meta{ color:#f1cf7b; }
   .card-inspect-effect{ margin-top:2px; color:var(--muted); font-size:10px; line-height:1.5; }
 
   .reveal-stage{ width:100%; display:flex; flex-direction:column; align-items:center; gap:7px; }
@@ -2135,9 +2170,9 @@
      지금은 첫 구역의 표식만 획득할 수 있고, 나머지 둘은 후속 구역 확장용으로 보관한다. */
   const MARKER_KEY = 'fathom.markers.v1';
   const MARKER_DEFS = [
-    {id:'black_tide_spine', name:'검은 조석의 척추', asset:'assets/검은조석의척추.png', flavor:'심연이 처음 인간의 언어를 배운 곳에서 건져 올린 검은 척추.'},
-    {id:'red_eye_gauge', name:'적안의 후심계', asset:'assets/적안의 후심계.png', flavor:'아직 닿지 않은 붉은 해류가 수면의 맥박을 재고 있다.'},
-    {id:'nameless_star_chart', name:'무명성의 해도', asset:'assets/무명헝의해도.png', flavor:'별이 아니라, 별을 바라보는 어둠의 항로.'},
+    {id:'black_tide_spine', name:'검은 조석의 척추', asset:'assets/marker-black-tide-spine.png', flavor:'심연이 처음 인간의 언어를 배운 곳에서 건져 올린 검은 척추.'},
+    {id:'red_eye_gauge', name:'적안의 후심계', asset:'assets/marker-red-eye-gauge.png', flavor:'아직 닿지 않은 붉은 해류가 수면의 맥박을 재고 있다.'},
+    {id:'nameless_star_chart', name:'무명성의 해도', asset:'assets/marker-nameless-star-chart.png', flavor:'별이 아니라, 별을 바라보는 어둠의 항로.'},
   ];
   function loadMarkers(){
     try{
@@ -2208,7 +2243,7 @@
       {name:'저주받은 조준', cost:1, type:'attack', dmg:8, selfDp:5, owner:'oracle', range:'ranged', desc:'적 한 명을 골라 8 피해. 자신 심도압박 5 상승.'},
       {name:'운명 비틀기', cost:1, type:'reroll_intent', owner:'oracle', range:'ranged', desc:'적 한 명의 예고된 행동을 다시 정한다.'},
       {name:'예지의 눈', cost:0, type:'foresight', draw:1, calm:4, owner:'oracle', range:'support', desc:'카드 1장 드로우. 자신 심도압박 4 감소.'},
-      {name:'심연의 시선', cost:2, type:'attack', dmg:14, selfDp:8, owner:'oracle', range:'ranged', desc:'적 한 명을 골라 14 피해. 자신 심도압박 8 상승. 먼저 본 쪽이 누구였는지는 알 수 없다.'},
+      {name:'심연의 시선', cost:2, type:'attack', dmg:14, selfDp:8, owner:'oracle', range:'ranged', desc:'적 한 명을 골라 14 피해. 자신 심도압박 8 상승.'},
       {name:'별자리 재배열', cost:2, type:'draw', draw:3, owner:'oracle', range:'support', desc:'카드 3장을 드로우한다.'},
     ],
     hellion: [
@@ -2237,7 +2272,7 @@
       {name:'숨고르기', cost:1, type:'calm', calm:10, owner:'neutral', range:'support_ally', desc:'아군 한 명 심도압박 10 감소.'},
       {name:'위치 교환', cost:1, type:'swap', owner:'neutral', range:'support_ally', desc:'아군 한 명을 전열로 이동시킨다. (이미 전열이면 중열과 교대)'},
       {name:'젖은 붕대', cost:0, type:'heal', heal:4, owner:'neutral', range:'support_ally', desc:'아군 한 명 체력 4 회복.'},
-      {name:'등불 심지', cost:0, type:'draw', draw:1, owner:'neutral', range:'support', desc:'카드 1장을 드로우한다. 불꽃은 어둠을 밝히지 않고, 어둠이 이쪽을 보게 한다.'},
+      {name:'등불 심지', cost:0, type:'draw', draw:1, owner:'neutral', range:'support', desc:'카드 1장을 드로우한다.'},
       {name:'선체 잔해', cost:1, type:'block_party', block:4, owner:'neutral', range:'support', desc:'생존한 아군 전체 방어 4 획득.'},
       {name:'구명줄', cost:2, type:'heal', heal:14, owner:'neutral', range:'support_ally', desc:'아군 한 명 체력 14 회복.'},
       {name:'묵주 세기', cost:2, type:'calm_party', calm:7, owner:'neutral', range:'support', desc:'생존한 아군 전체 심도압박 7 감소.'},
@@ -2250,27 +2285,35 @@
   const EPIC_FUSION_CHANCE = 0.05;
   const START_EPIC_OFFER_CHANCE = 0.25;
   const START_EPIC_CARD_POOL = [
-    {id:'drowned_sentence', name:'익사의 판결', cost:0, type:'epic_attack', dmg:38, owner:'neutral', range:'ranged', epic:true, desc:'적 한 명을 골라 38 피해. 심연이 기억하는 이름으로 판결한다.'},
-    {id:'flooded_bulwark', name:'침수된 방벽', cost:0, type:'block_party', block:18, riposte:18, owner:'neutral', range:'support', epic:true, desc:'생존한 아군 전체 방어 18 획득. 공격받으면 공격자에게 18 반격. 바다가 한 박자 늦게 닿는다.'},
-    {id:'nameless_hymn', name:'무명자의 찬가', cost:0, type:'calm_party', calm:22, owner:'neutral', range:'support', epic:true, desc:'생존한 아군 전체 심도압박 22 감소. 누구의 목소리인지 알 수 없는 자장가.'},
+    {id:'drowned_sentence', name:'익사의 판결', cost:0, type:'epic_attack', dmg:38, owner:'neutral', range:'ranged', epic:true, desc:'적 한 명을 골라 38 피해.'},
+    {id:'flooded_bulwark', name:'침수된 방벽', cost:0, type:'block_party', block:18, riposte:18, owner:'neutral', range:'support', epic:true, desc:'생존한 아군 전체 방어 18 획득. 공격받으면 공격자에게 18 반격.'},
+    {id:'nameless_hymn', name:'무명자의 찬가', cost:0, type:'calm_party', calm:22, owner:'neutral', range:'support', epic:true, desc:'생존한 아군 전체 심도압박 22 감소.'},
   ];
   const EPIC_CARD_POOL = [
-    {id:'abyssal_verdict', name:'심해왕의 단죄', cost:0, type:'epic_attack', dmg:55, owner:'neutral', range:'ranged', epic:true, desc:'적 한 명을 골라 55 피해. 왕은 없고, 왕좌를 바라보는 눈만 있다.'},
-    {id:'thousand_maws_tide', name:'천 개의 입의 조류', cost:1, type:'epic_attack', dmg:24, owner:'neutral', range:'aoe', epic:true, desc:'모든 적에게 24 피해. 파도는 하나의 입으로 같은 이름을 부른다.'},
-    {id:'sunken_ark', name:'침몰한 성궤', cost:0, type:'block_party', block:28, owner:'neutral', range:'support', epic:true, desc:'생존한 아군 전체 방어 28 획득. 궤 안에서 누군가 숨을 참는다.'},
-    {id:'saints_last_prayer', name:'성자의 마지막 기도', cost:0, type:'fuse_support', heal:38, calm:35, owner:'neutral', range:'support_ally', epic:true, desc:'아군 한 명 체력 38 회복 + 심도압박 35 감소. 기도는 위가 아니라 아래로 향한다.'},
-    {id:'star_eating_chart', name:'별을 먹는 해도', cost:3, type:'epic_attack', dmg:50, owner:'neutral', range:'ranged', epic:true, desc:'아무 열의 적 한 명을 골라 50 피해. 별자리는 하늘이 아니라 검은 수면 아래에 있다.'},
+    {id:'abyssal_verdict', name:'심해왕의 단죄', cost:0, type:'epic_attack', dmg:55, owner:'neutral', range:'ranged', epic:true, desc:'적 한 명을 골라 55 피해.'},
+    {id:'thousand_maws_tide', name:'천 개의 입의 조류', cost:1, type:'epic_attack', dmg:24, owner:'neutral', range:'aoe', epic:true, desc:'모든 적에게 24 피해.'},
+    {id:'sunken_ark', name:'침몰한 성궤', cost:0, type:'block_party', block:28, owner:'neutral', range:'support', epic:true, desc:'생존한 아군 전체 방어 28 획득.'},
+    {id:'saints_last_prayer', name:'성자의 마지막 기도', cost:0, type:'fuse_support', heal:38, calm:35, owner:'neutral', range:'support_ally', epic:true, desc:'아군 한 명 체력 38 회복 + 심도압박 35 감소.'},
+    {id:'star_eating_chart', name:'별을 먹는 해도', cost:3, type:'epic_attack', dmg:50, owner:'neutral', range:'ranged', epic:true, desc:'아무 열의 적 한 명을 골라 50 피해.'},
   ].concat(START_EPIC_CARD_POOL);
   /* 전설은 심연이 남긴 단 한 번의 예외다. 에픽보다 훨씬 드물며 보스 보상에서만 모습을 드러낸다. */
   const LEGENDARY_CARD_POOL = [
-    {id:'sunless_noon', name:'태양 없는 정오', cost:0, type:'double_ap', owner:'neutral', range:'support', legendary:true, desc:'현재 턴에 남은 AP를 두 배로 만든다. 수면 위에는 태양이 없었고, 태양은 아래에서 떠올랐다.'},
-    {id:'crown_of_the_deep', name:'심해왕의 왕관', cost:2, type:'epic_attack', dmg:48, owner:'neutral', range:'aoe', legendary:true, desc:'모든 적에게 48 피해. 왕관은 쓰는 것이 아니라, 쓰는 자의 목을 조인다.'},
+    {id:'sunless_noon', name:'태양 없는 정오', cost:0, type:'double_ap', owner:'neutral', range:'support', legendary:true, desc:'현재 턴에 남은 AP를 두 배로 만든다.'},
+    {id:'crown_of_the_deep', name:'심해왕의 왕관', cost:2, type:'epic_attack', dmg:48, owner:'neutral', range:'aoe', legendary:true, desc:'모든 적에게 48 피해.'},
     {id:'last_diving_bell', name:'마지막 잠수종', cost:1, type:'legendary_sanctuary', heal:22, calm:22, block:14, owner:'neutral', range:'support', legendary:true, desc:'생존한 아군 전체 체력 22 회복, 심도압박 22 감소, 방어 14 획득.'},
   ];
   function isLegendaryCard(card){ return !!(card && card.legendary); }
   function isEpicCard(card){ return !!(card && card.epic); }
-  function cardRarityLabel(card){ return isLegendaryCard(card) ? 'LEGENDARY' : (isEpicCard(card) ? 'EPIC' : ''); }
-  function cardVisualClass(card){ return isLegendaryCard(card) ? 'legendary' : (isEpicCard(card) ? 'epic' : ''); }
+  function cardRarityLabel(card){
+    if(isLegendaryCard(card)) return '전설';
+    if(isEpicCard(card)) return '에픽';
+    return card && card.owner==='neutral' ? '일반' : '직업';
+  }
+  function cardVisualClass(card){
+    if(isLegendaryCard(card)) return 'legendary';
+    if(isEpicCard(card)) return 'epic';
+    return card && card.owner==='neutral' ? 'normal' : 'class';
+  }
 
   /* 일반 합성 결과. 에픽이 아닌 결과도 매번 같은 카드가 되지 않도록 20종을 둔다.
      합성 공격은 특정 직군의 무기가 아니므로 사거리·대열 제약 없이 심연 자체가 적을 겨눈다. */
@@ -4289,7 +4332,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
         ` : `
           <button class="btn primary" data-action="new-run">새로운 탐색</button>
         `}
-        <div class="title-version">v0.1.0-alpha.1</div>
+        <div class="title-version">v0.1.0-alpha.2</div>
       </div>`;
   }
 
@@ -4635,8 +4678,8 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
   }
 
   function describeCard(card){
-    /* 에픽 카드의 문구는 효과만이 아니라, 심연이 남긴 짧은 기록이다. */
-    if((card.epic || card.legendary) && card.desc) return card.desc;
+    /* 설명은 원본 문구가 아니라 카드의 현재 수치로 조립한다.
+       따라서 강화·합성으로 바뀐 피해, 방어, 회복 등의 값이 모든 등급에서 즉시 반영된다. */
     switch(card.type){
       case 'attack':
       case 'fusion_attack':
@@ -4650,7 +4693,11 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
         return s;
       }
       case 'block': return `자신 방어 ${card.block} 획득.`;
-      case 'block_party': return `생존한 아군 전체 방어 ${card.block} 획득.`;
+      case 'block_party': {
+        let s = `생존한 아군 전체 방어 ${card.block} 획득.`;
+        if(card.riposte) s += ` 공격받으면 공격자에게 ${card.riposte} 반격.`;
+        return s;
+      }
       case 'heal': return `아군 한 명 체력 ${card.heal} 회복.`;
       case 'heal_party': return `생존한 아군 전체 체력 ${card.heal} 회복.`;
       case 'calm': return `아군 한 명 심도압박 ${card.calm} 감소.`;
@@ -4866,15 +4913,15 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
             const unavailable = upgradeNeedsMerge(g) && !canUpgradeGroup(g);
             const blocked = locked || unavailable;
             const materialNote = upgradeNeedsMerge(g) ? ` · 동일 +${g.level} ${g.count}/2장` : '';
-            return `<div class="af-row ${isSelected?'sel':''} ${locked?'locked':''} ${unavailable?'unavailable':''}" ${blocked?'':`data-action="select-upgrade" data-defid="${g.defId}"`}>
+            return `<div class="af-row ${cardVisualClass(g.card)} ${isSelected?'sel':''} ${locked?'locked':''} ${unavailable?'unavailable':''}" ${blocked?'':`data-action="select-upgrade" data-defid="${g.defId}"`}>
               <div class="af-row-name">${g.name}</div>
-              <div class="af-row-owner">${ownerLabel(g.owner)} · 보유 ${g.count}장 · +${g.level}/+${MAX_UPGRADE_LEVEL}${materialNote}</div>
+              <div class="af-row-owner">${cardRarityLabel(g.card)} · ${ownerLabel(g.owner)} · 보유 ${g.count}장 · +${g.level}/+${MAX_UPGRADE_LEVEL}${materialNote}</div>
             </div>`;
           }).join('') : `<div class="af-empty">강화할 수 있는 덱 카드가 없다.</div>`}
         </div>
-        ${selected&&preview ? `<div class="upgrade-preview">
+        ${selected&&preview ? `<div class="upgrade-preview ${cardVisualClass(selected.card)}">
           <div class="upgrade-preview-title">${selected.name} · +${selected.level} → <b>+${selected.level+1}</b></div>
-          <div class="upgrade-preview-line">AP ${selected.card.cost} · ${ownerLabel(selected.owner)} · ${upgradeNeedsMerge(selected) ? `동일 카드 +${selected.level} 2장을 합성` : '선택한 카드 1장'}</div>
+          <div class="upgrade-preview-line">AP ${selected.card.cost} · ${cardRarityLabel(selected.card)} · ${ownerLabel(selected.owner)} · ${upgradeNeedsMerge(selected) ? `동일 카드 +${selected.level} 2장을 합성` : '선택한 카드 1장'}</div>
           <div class="upgrade-preview-line">현재: ${describeCard(selected.card)}</div>
           <div class="upgrade-preview-line"><b>강화 후:</b> ${describeCard(preview)}</div>
         </div><div class="af-hint">선택한 카드를 다시 누르면 선택을 해제할 수 있습니다.</div><button class="btn primary" data-action="do-upgrade" data-defid="${selected.defId}">${upgradeNeedsMerge(selected) ? '두 카드를 합쳐 강화한다' : '이 카드를 강화한다'}</button>` : `<div class="af-hint">카드를 선택하면 현재 정보와 강화 후 효과를 확인합니다. +3부터는 동일 카드 2장이 필요합니다.</div>`}
@@ -4884,16 +4931,16 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       const opts = groupedFusionOptions();
       const materials = a.fuseSelected.map(id=>materialCards.find(c=>c.defId===id)).filter(Boolean);
       const inspect = c => `<div class="card-inspect ${cardVisualClass(c)}">
-        <div class="card-inspect-head"><span>${cardRarityLabel(c)==='LEGENDARY'?'◆ ':cardRarityLabel(c)==='EPIC'?'✦ ':''}${c.name}</span><span class="card-inspect-meta">AP ${c.cost} · ${cardRarityLabel(c)||ownerLabel(c.owner)}</span></div>
+        <div class="card-inspect-head"><span>${isLegendaryCard(c)?'◆ ':isEpicCard(c)?'✦ ':''}${c.name}</span><span class="card-inspect-meta">AP ${c.cost} · ${cardRarityLabel(c)} · ${ownerLabel(c.owner)}</span></div>
         <div class="card-inspect-effect">${describeCard(c)}</div>
       </div>`;
       body = `
         <div class="af-list">
           ${opts.length ? opts.map(g=>{
             const chosen = g.defIds.some(id=>a.fuseSelected.includes(id));
-            return `<div class="af-row ${chosen?'sel':''}" data-action="toggle-fuse" data-defid="${g.defId}">
+            return `<div class="af-row ${cardVisualClass(g.card)} ${chosen?'sel':''}" data-action="toggle-fuse" data-defid="${g.defId}">
               <div class="af-row-name">${g.name}</div>
-              <div class="af-row-owner">${ownerLabel(g.owner)} · 보유 ${g.count}장</div>
+              <div class="af-row-owner">${cardRarityLabel(g.card)} · ${ownerLabel(g.owner)} · 보유 ${g.count}장</div>
             </div>`;
           }).join('') : `<div class="af-empty">합성할 수 있는 덱 카드가 없다.</div>`}
         </div>
