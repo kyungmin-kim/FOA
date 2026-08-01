@@ -718,7 +718,12 @@
   .card.epic{ overflow:hidden; border-color:#f2ca63; background:linear-gradient(160deg,rgba(62,38,76,0.94),rgba(11,15,24,0.98)); box-shadow:inset 0 0 0 1px rgba(255,239,167,0.50),inset 0 0 24px rgba(222,166,53,0.24),0 0 13px rgba(238,188,71,0.46); animation:epicBorderGleam 1.7s steps(2,end) infinite; }
   .card.epic::after{ content:''; position:absolute; z-index:0; pointer-events:none; inset:-38% -76%; background:linear-gradient(105deg,transparent 43%,rgba(255,248,191,0.08) 47%,rgba(255,248,191,0.74) 50%,rgba(255,248,191,0.08) 53%,transparent 57%); transform:translateX(-64%) rotate(8deg); animation:epicShineSweep 2.8s steps(10,end) infinite; }
   .card.epic > *{ position:relative; z-index:1; }
-  .card.epic .card-name{ color:#fff0bb; text-shadow:0 0 8px rgba(238,188,71,0.68); }
+  /* 에픽도 일반 카드와 같은 왼쪽 기준선·글자 배치를 쓴다.
+     제목의 흐린 광채는 픽셀 글꼴을 반 칸 떠 보이게 하므로, 빛은 테두리에만 남긴다. */
+  .card.epic .card-name,
+  .card.epic .card-desc,
+  .card.epic .card-owner-tag{ text-align:left; }
+  .card.epic .card-name{ color:#fff0bb; text-shadow:none; }
   .card.epic .card-owner-tag{ color:#f0cf7d; }
   @keyframes epicBorderGleam{ 0%,100%{ border-color:#d9a93f; box-shadow:inset 0 0 0 1px rgba(255,231,144,0.34),inset 0 0 18px rgba(222,166,53,0.16),0 0 7px rgba(238,188,71,0.22); } 50%{ border-color:#fff1a7; box-shadow:inset 0 0 0 1px rgba(255,249,209,0.84),inset 0 0 26px rgba(237,188,70,0.32),0 0 18px rgba(255,209,94,0.70); } }
   @keyframes epicShineSweep{ 0%,22%{ transform:translateX(-64%) rotate(8deg); } 58%,100%{ transform:translateX(64%) rotate(8deg); } }
@@ -2551,7 +2556,10 @@
     return placements.map(cid => cid ? makeHero(cid) : null);
   }
 
-  function mkDeckCard(base){ return Object.assign({defId:nextId(), upgraded:false, upgradeLevel:0}, base); }
+  /* 시작할 때 고른 카드는 이후 강화·합성 재료 목록의 기준이 된다.
+     인양 뒤 영입하거나 합성해서 얻은 카드는 전투 덱에는 들어가도, 이 두 메뉴의
+     후보를 끝없이 불리는 일은 없다. */
+  function mkDeckCard(base, deckOrigin){ return Object.assign({defId:nextId(), upgraded:false, upgradeLevel:0, deckOrigin:deckOrigin||'earned'}, base); }
   /* 고른 카드는 세 장씩 들어간다.
      직군 3인 × 1장 + 공용 4장 = 7종 × 3장 = 21장. 직업은 한 장의 정체성을,
      공용은 네 장의 생존 수단을 고르는 구조다. */
@@ -2569,18 +2577,32 @@
   const CLASS_OFFER_SIZE = 3;
   const NEUTRAL_OFFER_SIZE = 6;
 
-  function addPicked(deck, list, names){
+  function addPicked(deck, list, names, deckOrigin){
     names.forEach(n=>{
       const base = list.find(c=>c.name===n);
       if(!base) return;
-      for(let i=0;i<DECK_COPIES;i++) deck.push(mkDeckCard(base));
+      for(let i=0;i<DECK_COPIES;i++) deck.push(mkDeckCard(base, deckOrigin));
     });
   }
   function buildRunDeck(selectedClassIds, picks){
     const deck=[];
-    selectedClassIds.forEach(cid=>addPicked(deck, CARD_DB[cid], (picks&&picks[cid])||[]));
-    addPicked(deck, startNeutralCardPool(), (picks&&picks.neutral)||[]);
+    selectedClassIds.forEach(cid=>addPicked(deck, CARD_DB[cid], (picks&&picks[cid])||[], 'starter'));
+    addPicked(deck, startNeutralCardPool(), (picks&&picks.neutral)||[], 'starter');
     return deck;
+  }
+  function starterDeckCards(){
+    const ids = Array.isArray(S.starterDeckCardIds) ? S.starterDeckCardIds : [];
+    return (S.runDeck||[]).filter(c=>ids.includes(c.defId));
+  }
+  /* 이전 버전 저장은 시작 덱 ID가 없으므로, 당시 선택 기록으로 한 번만 복구한다. */
+  function restoreStarterDeckIds(data){
+    if(Array.isArray(data.starterDeckCardIds)) return;
+    const picks = (data.setup&&data.setup.picks)||{};
+    const chosen = new Set();
+    Object.keys(picks).forEach(owner=>(picks[owner]||[]).forEach(name=>chosen.add(`${owner}|${String(name).replace(/\\++$/, '')}`)));
+    data.starterDeckCardIds = (data.runDeck||[])
+      .filter(c=>chosen.has(`${c.owner}|${String(c.baseName||c.name||'').replace(/\\++$/, '')}`))
+      .map(c=>c.defId);
   }
   function startNeutralCardPool(){ return CARD_DB.neutral.concat(START_EPIC_CARD_POOL); }
   function startNeutralOffer(){
@@ -2668,6 +2690,7 @@
           en.intent = null;
         });
       }
+      restoreStarterDeckIds(data);
       S = data;
       return true;
     }catch(e){ return false; }
@@ -2727,6 +2750,7 @@
       afterAftermath: null,
       aftermath: null,
       runDeck: null,
+      starterDeckCardIds: [],
       party: null,
       battle: null,
       rest: null,
@@ -3667,7 +3691,7 @@
   /* 강화는 덱 속 개별 카드 한 장만 대상으로 삼는다.
      같은 이름의 복제본을 한 줄로 묶으면 무엇이 선택됐는지 모호해지므로 그대로 나열한다. */
   function groupedUpgradeOptions(){
-    return S.runDeck
+    return starterDeckCards()
       .filter(c=>upgradeLevel(c)<MAX_UPGRADE_LEVEL)
       .map(c=>({defId:c.defId, card:c, name:c.name, owner:c.owner, level:upgradeLevel(c), count:1}));
   }
@@ -3721,7 +3745,7 @@
     const result = fusionResultCard();
     const epic = result.epic;
     const base = result.base;
-    const newCard = Object.assign({defId:nextId(), upgraded:false, upgradeLevel:0}, base);
+    const newCard = mkDeckCard(base, 'fused');
     S.runDeck.push(newCard);
     S.logMsg = epic ? '심연이 합성에 응답했다. 에픽 카드가 모습을 드러냈다.' : '두 카드가 하나로 융합되었다.';
     return newCard;
@@ -4474,7 +4498,7 @@
               <div class="af-row-name">${g.name}</div>
               <div class="af-row-owner">${ownerLabel(g.owner)} · +${g.level}/+${MAX_UPGRADE_LEVEL}</div>
             </div>`;
-          }).join('') : `<div class="af-empty">강화할 수 있는 카드가 없다.</div>`}
+          }).join('') : `<div class="af-empty">강화할 수 있는 시작 덱 카드가 없다.</div>`}
         </div>
         ${selected&&preview ? `<div class="upgrade-preview">
           <div class="upgrade-preview-title">${selected.name} · +${selected.level} → <b>+${selected.level+1}</b></div>
@@ -4484,7 +4508,7 @@
         </div><div class="af-hint">선택한 카드를 다시 누르면 선택을 해제할 수 있습니다.</div><button class="btn primary" data-action="do-upgrade" data-defid="${selected.defId}">이 카드를 강화한다</button>` : `<div class="af-hint">카드를 선택하면 현재 정보와 강화 후 효과를 확인합니다.</div>`}
         <button class="btn" data-action="aftermath-back">뒤로</button>`;
     } else if(a.selecting==='fuse'){
-      const opts = S.runDeck.filter(c=>!c.epic);
+      const opts = starterDeckCards().filter(c=>!c.epic);
       const materials = a.fuseSelected.map(id=>opts.find(c=>c.defId===id)).filter(Boolean);
       const inspect = c => `<div class="card-inspect ${c.epic?'epic':''}">
         <div class="card-inspect-head"><span>${c.epic?'✦ ':''}${c.name}</span><span class="card-inspect-meta">AP ${c.cost} · ${c.epic?'EPIC':ownerLabel(c.owner)}</span></div>
@@ -4492,14 +4516,14 @@
       </div>`;
       body = `
         <div class="af-list">
-          ${opts.map(c=>`
+          ${opts.length ? opts.map(c=>`
             <div class="af-row ${a.fuseSelected.includes(c.defId)?'sel':''}" data-action="toggle-fuse" data-defid="${c.defId}">
               <div class="af-row-name">${c.name}</div>
               <div class="af-row-owner">${ownerLabel(c.owner)}</div>
-            </div>`).join('')}
+            </div>`).join('') : `<div class="af-empty">합성할 수 있는 시작 덱 카드가 없다.</div>`}
         </div>
         ${materials.length ? `<div class="fusion-inspect"><div class="af-hint">선택한 합성 재료</div>${materials.map(inspect).join('')}</div>` : `<div class="af-hint">카드를 선택하면 AP와 효과를 확인할 수 있습니다.</div>`}
-        <div class="af-hint">결과: 중립 또는 현재 인양대 직업 카드 무작위 · 에픽 출현 5%</div>
+        <div class="af-hint">시작 시 고른 카드만 재료로 선택할 수 있습니다. 결과: 중립 또는 현재 인양대 직업 카드 무작위 · 에픽 출현 5%</div>
         ${a.fuseSelected.length===2 ? `<button class="btn primary" data-action="do-fuse">합성하기</button>` : `<div class="af-hint">중립 또는 직업 카드 2장을 선택하세요 (${a.fuseSelected.length}/2)</div>`}
         <button class="btn" data-action="aftermath-back">뒤로</button>`;
     } else {
@@ -4865,6 +4889,7 @@
       if(st.placements.filter(Boolean).length===partyLimit() && total===need){
         S.party = buildPartyFromPlacements(st.placements);
         S.runDeck = buildRunDeck(st.selected, st.picks);
+        S.starterDeckCardIds = S.runDeck.map(c=>c.defId);
         S.screen = 'map';
       }
       render();
