@@ -748,6 +748,7 @@
   .af-list{ display:flex; flex-direction:column; gap:6px; width:100%; max-width:300px; max-height:230px; overflow-y:auto; padding:2px; touch-action:pan-y; }
   .af-row{ border:1px solid var(--brass-dim); border-radius:0; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; background:rgba(12,20,22,0.5); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.45); cursor:pointer; text-align:left; user-select:none; -webkit-user-select:none; }
   .af-row.sel{ border-color:var(--phosphor); background:rgba(34,54,52,0.7); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.45), inset 0 0 16px rgba(127,191,174,0.14); }
+  .af-row.locked{ opacity:0.42; cursor:not-allowed; }
   .af-row-name{ font-size:12px; color:var(--ink); }
   .af-row-owner{ font-size:9.5px; color:var(--muted); white-space:nowrap; margin-left:8px; }
   .af-empty{ font-family:'IM Fell English','Nanum Myeongjo',serif; font-size:13px; color:var(--muted); font-style:italic; }
@@ -4270,18 +4271,21 @@
       const preview = selected ? previewUpgradeCard(selected.card) : null;
       body = `
         <div class="af-list">
-          ${opts.length ? opts.map(g=>`
-            <div class="af-row ${selected&&selected.defId===g.defId?'sel':''}" data-action="select-upgrade" data-defid="${g.defId}">
+          ${opts.length ? opts.map(g=>{
+            const isSelected = !!selected && selected.defId===g.defId;
+            const locked = !!selected && !isSelected;
+            return `<div class="af-row ${isSelected?'sel':''} ${locked?'locked':''}" ${locked?'':`data-action="select-upgrade" data-defid="${g.defId}"`}>
               <div class="af-row-name">${g.name}</div>
               <div class="af-row-owner">${ownerLabel(g.owner)} · +${g.level}/+${MAX_UPGRADE_LEVEL}</div>
-            </div>`).join('') : `<div class="af-empty">강화할 수 있는 카드가 없다.</div>`}
+            </div>`;
+          }).join('') : `<div class="af-empty">강화할 수 있는 카드가 없다.</div>`}
         </div>
         ${selected&&preview ? `<div class="upgrade-preview">
           <div class="upgrade-preview-title">${selected.name} · +${selected.level} → <b>+${selected.level+1}</b></div>
           <div class="upgrade-preview-line">AP ${selected.card.cost} · ${ownerLabel(selected.owner)} · 선택한 카드 1장</div>
           <div class="upgrade-preview-line">현재: ${describeCard(selected.card)}</div>
           <div class="upgrade-preview-line"><b>강화 후:</b> ${describeCard(preview)}</div>
-        </div><button class="btn primary" data-action="do-upgrade" data-defid="${selected.defId}">이 카드를 강화한다</button>` : `<div class="af-hint">카드를 선택하면 현재 정보와 강화 후 효과를 확인합니다.</div>`}
+        </div><div class="af-hint">선택한 카드를 다시 누르면 선택을 해제할 수 있습니다.</div><button class="btn primary" data-action="do-upgrade" data-defid="${selected.defId}">이 카드를 강화한다</button>` : `<div class="af-hint">카드를 선택하면 현재 정보와 강화 후 효과를 확인합니다.</div>`}
         <button class="btn" data-action="aftermath-back">뒤로</button>`;
     } else if(a.selecting==='fuse'){
       const opts = S.runDeck.filter(c=>!c.epic);
@@ -4672,7 +4676,9 @@
     else if(action==='aftermath-back'){ S.aftermath.selecting=null; S.aftermath.fuseSelected=[]; S.aftermath.upgradeSelected=null; render(); }
     else if(action==='aftermath-skip'){ proceedAfterAftermath(); }
     else if(action==='select-upgrade'){
-      S.aftermath.upgradeSelected = el.dataset.defid;
+      const selectedId = S.aftermath.upgradeSelected;
+      if(selectedId && selectedId!==el.dataset.defid) return;
+      S.aftermath.upgradeSelected = selectedId===el.dataset.defid ? null : el.dataset.defid;
       render();
     }
     else if(action==='do-upgrade'){
