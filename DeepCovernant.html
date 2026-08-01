@@ -715,6 +715,7 @@
   .card-owner-tag{ font-family:'Nanum Myeongjo',serif; font-size:7.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.12em; margin-top:auto;}
   /* 에픽은 표기만 남기고, 일반 카드의 크기·정렬·AP 봉인 규칙을 그대로 쓴다. */
   .card.epic{ border-color:#f2ca63; }
+  .card.legendary{ border-color:#b98ae4; }
 
   .end-turn-row{ display:flex; justify-content:center; padding-top:2px;}
 
@@ -758,6 +759,7 @@
   .af-row{ border:1px solid var(--brass-dim); border-radius:0; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; background:rgba(12,20,22,0.5); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.45); cursor:pointer; text-align:left; user-select:none; -webkit-user-select:none; }
   .af-row.sel{ border-color:var(--phosphor); background:rgba(34,54,52,0.7); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.45), inset 0 0 16px rgba(127,191,174,0.14); }
   .af-row.locked{ opacity:0.42; cursor:not-allowed; }
+  .af-row.unavailable{ opacity:0.42; cursor:not-allowed; }
   .af-row-name{ font-size:12px; color:var(--ink); }
   .af-row-owner{ font-size:9.5px; color:var(--muted); white-space:nowrap; margin-left:8px; }
   .af-empty{ font-family:'Nanum Myeongjo',serif; font-size:13px; color:var(--muted); font-style:italic; }
@@ -766,9 +768,22 @@
   .upgrade-preview-title{ color:var(--bone); font-size:12px; margin-bottom:4px; }
   .upgrade-preview-line{ color:var(--muted); font-size:10px; line-height:1.6; }
   .upgrade-preview-line b{ color:var(--gaslamp); font-weight:normal; }
+  .upgrade-guide-overlay{
+    position:absolute; inset:0; z-index:20; display:flex; align-items:center; justify-content:center;
+    padding:18px; background:rgba(2,5,7,0.78);
+  }
+  .upgrade-guide-panel{
+    width:100%; max-width:310px; padding:16px; border:1px solid var(--gaslamp);
+    background:#101719; box-shadow:inset 1px 1px 0 rgba(232,196,121,0.24),inset -1px -1px 0 #000,0 0 0 1px #000;
+    text-align:left;
+  }
+  .upgrade-guide-panel h3{ margin:0 0 8px; color:var(--bone); font-size:14px; }
+  .upgrade-guide-panel p{ margin:0 0 8px; color:var(--ink); font-size:11px; line-height:1.7; word-break:keep-all; }
+  .upgrade-guide-panel .btn{ display:block; margin:12px auto 0; }
   .fusion-inspect{ width:100%; max-width:300px; display:flex; flex-direction:column; gap:5px; }
   .card-inspect{ border:1px solid rgba(184,147,79,0.68); padding:7px 9px; text-align:left; background:rgba(20,25,26,0.70); box-shadow:inset 0 0 12px rgba(184,147,79,0.08); }
   .card-inspect.epic{ border-color:#f2ca63; background:rgba(58,38,42,0.68); }
+  .card-inspect.legendary{ border-color:#b98ae4; background:rgba(41,29,59,0.68); }
   .card-inspect-head{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; color:var(--bone); font-size:11px; }
   .card-inspect-meta{ color:var(--gaslamp); font-size:9px; white-space:nowrap; }
   .card-inspect-effect{ margin-top:2px; color:var(--muted); font-size:10px; line-height:1.5; }
@@ -908,6 +923,15 @@
   .topbar-relics{ max-width:none; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:3px; justify-content:stretch; margin-top:6px; }
   .topbar-relics .relic-chip{ min-width:0; font-size:8.5px; padding:1px 5px; }
   .topbar-relics .relic-chip span{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* 관측 표식은 소모 유물이 아니라 장기 진행 기록이다. 유물 한도와 별도의 작은 선반에 둔다. */
+  .marker-tray{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:3px; margin-top:6px; }
+  .marker-chip{
+    min-width:0; display:flex; align-items:center; gap:4px; padding:2px 4px;
+    border:1px solid rgba(166,79,79,0.62); background:rgba(48,9,13,0.38); color:#d9b5af;
+    font-size:8px; line-height:1.25;
+  }
+  .marker-chip img{ width:15px; height:15px; flex:0 0 15px; object-fit:contain; background:#050607; image-rendering:auto; }
+  .marker-chip span{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
   .chapter-tag{
     display:flex; align-items:center; gap:8px;
@@ -1342,6 +1366,7 @@
   }
   .pick-card.sel .pick-name{ color:var(--gaslamp); }
   .pick-card.epic{ border-color:#f2ca63; }
+  .pick-card.legendary{ border-color:#b98ae4; }
   /* 칸이 다 찼을 때 못 고르는 것은 물러나 있게 — 막지는 않는다(고른 걸 눌러 빼면 된다) */
   .pick-card.full{ opacity:0.4; }
   .pick-card:active{ transform:translateY(1px); }
@@ -2089,6 +2114,33 @@
 
   /* 해금은 런을 넘어 남는다 — 죽어도 한 번 만난 사람은 여관에 계속 앉아 있다. */
   const UNLOCK_KEY = 'fathom.unlocked.v1';
+  /* 관측 표식은 일반 유물과 달리 런을 넘어 남는 세계 진행 기록이다.
+     지금은 첫 구역의 표식만 획득할 수 있고, 나머지 둘은 후속 구역 확장용으로 보관한다. */
+  const MARKER_KEY = 'fathom.markers.v1';
+  const MARKER_DEFS = [
+    {id:'black_tide_spine', name:'검은 조석의 척추', asset:'assets/검은조석의척추.png', flavor:'심연이 처음 인간의 언어를 배운 곳에서 건져 올린 검은 척추.'},
+    {id:'red_eye_gauge', name:'적안의 후심계', asset:'assets/적안의 후심계.png', flavor:'아직 닿지 않은 붉은 해류가 수면의 맥박을 재고 있다.'},
+    {id:'nameless_star_chart', name:'무명성의 해도', asset:'assets/무명헝의해도.png', flavor:'별이 아니라, 별을 바라보는 어둠의 항로.'},
+  ];
+  function loadMarkers(){
+    try{
+      const ids = JSON.parse(Store.get(MARKER_KEY) || '[]');
+      return Array.isArray(ids) ? ids.filter(id=>MARKER_DEFS.some(marker=>marker.id===id)) : [];
+    }catch(e){ return []; }
+  }
+  let OWNED_MARKERS = loadMarkers();
+  function ownedMarkers(){ return OWNED_MARKERS.map(id=>MARKER_DEFS.find(marker=>marker.id===id)).filter(Boolean); }
+  function acquireMarker(id){
+    const marker = MARKER_DEFS.find(entry=>entry.id===id);
+    if(!marker || OWNED_MARKERS.indexOf(id)>=0) return null;
+    OWNED_MARKERS.push(id);
+    Store.set(MARKER_KEY, JSON.stringify(OWNED_MARKERS));
+    return marker;
+  }
+  function markerRewardForChapter(chapterIndex){
+    /* 첫 구역만 구현한다. 나머지 두 표식은 각자의 구역이 만들어질 때 연결한다. */
+    return chapterIndex===0 ? acquireMarker('black_tide_spine') : null;
+  }
   function loadUnlocks(){
     try{
       const arr = JSON.parse(Store.get(UNLOCK_KEY) || '[]');
@@ -2192,6 +2244,16 @@
     {id:'saints_last_prayer', name:'성자의 마지막 기도', cost:0, type:'fuse_support', heal:38, calm:35, owner:'neutral', range:'support_ally', epic:true, desc:'아군 한 명 체력 38 회복 + 심도압박 35 감소. 기도는 위가 아니라 아래로 향한다.'},
     {id:'star_eating_chart', name:'별을 먹는 해도', cost:3, type:'epic_attack', dmg:50, owner:'neutral', range:'ranged', epic:true, desc:'아무 열의 적 한 명을 골라 50 피해. 별자리는 하늘이 아니라 검은 수면 아래에 있다.'},
   ].concat(START_EPIC_CARD_POOL);
+  /* 전설은 심연이 남긴 단 한 번의 예외다. 에픽보다 훨씬 드물며 보스 보상에서만 모습을 드러낸다. */
+  const LEGENDARY_CARD_POOL = [
+    {id:'sunless_noon', name:'태양 없는 정오', cost:0, type:'double_ap', owner:'neutral', range:'support', legendary:true, desc:'현재 턴에 남은 AP를 두 배로 만든다. 수면 위에는 태양이 없었고, 태양은 아래에서 떠올랐다.'},
+    {id:'crown_of_the_deep', name:'심해왕의 왕관', cost:2, type:'epic_attack', dmg:48, owner:'neutral', range:'aoe', legendary:true, desc:'모든 적에게 48 피해. 왕관은 쓰는 것이 아니라, 쓰는 자의 목을 조인다.'},
+    {id:'last_diving_bell', name:'마지막 잠수종', cost:1, type:'legendary_sanctuary', heal:22, calm:22, block:14, owner:'neutral', range:'support', legendary:true, desc:'생존한 아군 전체 체력 22 회복, 심도압박 22 감소, 방어 14 획득.'},
+  ];
+  function isLegendaryCard(card){ return !!(card && card.legendary); }
+  function isEpicCard(card){ return !!(card && card.epic); }
+  function cardRarityLabel(card){ return isLegendaryCard(card) ? 'LEGENDARY' : (isEpicCard(card) ? 'EPIC' : ''); }
+  function cardVisualClass(card){ return isLegendaryCard(card) ? 'legendary' : (isEpicCard(card) ? 'epic' : ''); }
 
   /* 일반 합성 결과. 에픽이 아닌 결과도 매번 같은 카드가 되지 않도록 20종을 둔다.
      합성 공격은 특정 직군의 무기가 아니므로 사거리·대열 제약 없이 심연 자체가 적을 겨눈다. */
@@ -2283,6 +2345,11 @@
   };
 
   let nodeSeq = 0;
+  const MAX_RESTS_PER_CHAPTER = 3;
+  function restsInCurrentChapter(){
+    return S.mapVisited.slice(Math.max(0, S.mapVisited.length-S.stepInChapter)).filter(node=>node && node.type==='rest').length;
+  }
+  function canOfferRest(){ return restsInCurrentChapter() < MAX_RESTS_PER_CHAPTER; }
   function makeNode(kind){
     const ch = chapter();
     const pool = NODE_TEXT[kind];
@@ -2307,8 +2374,8 @@
     }
     /* 엘리트 뒤에는 은신처 한 칸이 반드시 필요하다. 수문장 바로 앞에서 엘리트가
        뜨면 그 칸을 만들 수 없으므로, 마지막 두 일반 구간에서는 엘리트를 빼둔다. */
-    if(step >= chapter().length-2) return weighted([[55,'battle'],[27,'rest'],[18,'treasure']]);
-    return weighted([[45,'battle'],[15,'elite'],[25,'rest'],[15,'treasure']]);
+    if(step >= chapter().length-2) return canOfferRest() ? weighted([[55,'battle'],[27,'rest'],[18,'treasure']]) : weighted([[72,'battle'],[28,'treasure']]);
+    return canOfferRest() ? weighted([[45,'battle'],[15,'elite'],[25,'rest'],[15,'treasure']]) : weighted([[53,'battle'],[22,'elite'],[25,'treasure']]);
   }
   /* 한 갈림길은 1~3개. 표층은 같은 '조우'만 주되 장소 문구를 달리해 선택지가
      반복된 카드처럼 보이지 않게 한다. 다른 층은 가능한 한 서로 다른 종류를 먼저 뽑는다. */
@@ -2317,7 +2384,7 @@
     const last = S.mapVisited[S.mapVisited.length-1];
     /* 보스급 보상과 정화를 마친 직후에는 다음 길을 흔들지 않는다. 반드시 숨을 고른다.
        수문장은 구역을 끝내므로 이 지점에 다시 돌아오지 않는다. */
-    if(last && last.type==='elite') return [makeNode('rest')];
+    if(last && last.type==='elite' && canOfferRest()) return [makeNode('rest')];
     if(step >= chapter().length-1) return [makeNode('boss')];
     const count = 1 + Math.floor(Math.random()*3);
     const kinds = [];
@@ -2670,7 +2737,10 @@
      되살리려면 복잡해지고, 실패하면 런 전체를 잃는다.
      전투에서 나가면 그 노드 입구부터 다시 시작한다. */
   const RUN_KEY = 'fathom.run.v1';
+  const UPGRADE_GUIDE_KEY = 'fathom.upgrade-guide.v1';
   const SAFE_SCREENS = ['map','rest','aftermath','escape','tavern','relicSwap'];
+  function hasSeenUpgradeGuide(){ return Store.get(UPGRADE_GUIDE_KEY)==='1'; }
+  function markUpgradeGuideSeen(){ Store.set(UPGRADE_GUIDE_KEY, '1'); }
 
   function foeIconByName(name){
     const all = FOE_SURFACE.concat(FOE_ELITES, FOE_ENDLESS, [FOE_BOSS, FOE_ENDLESS_BOSS]);
@@ -2712,7 +2782,9 @@
   function wipeAllSaves(){
     clearRun();
     Store.remove(UNLOCK_KEY);
+    Store.remove(MARKER_KEY);
     UNLOCKED = [];
+    OWNED_MARKERS = [];
   }
 
   /* 여관에서 대열을 다시 짠다.
@@ -3125,6 +3197,9 @@
 
   /* 효과미상은 한 턴의 교란일 뿐, 덱 전체가 영구히 오염되지는 않는다. */
   const UNKNOWN_CARD_MAX_PER_TURN = 3;
+  /* 중층의 기존 15% 빈도는 절반으로 낮춘다. 하지만 심해와 끝없는 심연에서는
+     심연의 관측이 강해지므로 다시 가파르게 늘어난다. */
+  const UNKNOWN_CARD_CHANCE = {'중층':0.075, '심해':0.12, '끝없는 심연':0.18};
   function drawNextBattleCard(){
     const b = S.battle;
     if(b.deck.length===0){
@@ -3134,7 +3209,8 @@
     const c = b.deck.pop();
     c.contaminated = false;
     const unknownCount = b.hand.filter(card=>card.contaminated).length;
-    if(b.tier==='중층' && unknownCount < UNKNOWN_CARD_MAX_PER_TURN && Math.random() < 0.15) c.contaminated = true;
+    const unknownChance = UNKNOWN_CARD_CHANCE[b.tier] || 0;
+    if(unknownCount < UNKNOWN_CARD_MAX_PER_TURN && Math.random() < unknownChance) c.contaminated = true;
     return c;
   }
   function drawHand(n){
@@ -3455,6 +3531,22 @@
       case 'calm': { if(allyTarget){ setDp(allyTarget, allyTarget.dp-card.calm); queueFx('calm', allyTarget); pushLog(`${allyTarget.name}이 숨을 고른다.`); } break; }
       case 'calm_party': { aliveParty().forEach(p=>{ setDp(p, p.dp-card.calm); queueFx('calm', p); }); pushLog('파티 전체가 진정된다.'); break; }
       case 'fuse_support': { if(allyTarget){ allyTarget.hp=Math.min(allyTarget.maxHp, allyTarget.hp+Math.round(card.heal*relicMul('healMul', allyTarget))); setDp(allyTarget, allyTarget.dp-card.calm); queueFx('heal', allyTarget); pushLog(`${allyTarget.name}이 정화와 회복을 동시에 받는다.`); } break; }
+      case 'double_ap': {
+        const usable = Math.max(0, b.ap + (b.tempAp||0));
+        b.ap = usable * 2; b.tempAp = 0;
+        pushLog(`태양 없는 정오 — 이 턴에 쓸 수 있는 AP가 ${usable}에서 ${b.ap}(으)로 늘었다.`);
+        break;
+      }
+      case 'legendary_sanctuary': {
+        aliveParty().forEach(p=>{
+          p.hp=Math.min(p.maxHp,p.hp+Math.round(card.heal*relicMul('healMul', p)));
+          setDp(p, p.dp-card.calm);
+          p.block+=Math.round(card.block*relicMul('blockMul', p));
+          queueFx('heal',p); queueFx('calm',p);
+        });
+        pushLog('마지막 잠수종이 닫히며 인양대 전체를 감싼다.');
+        break;
+      }
       case 'emergency_escape': { attemptEmergencyEscape(); return; }
       case 'draw': { drawHand(card.draw); pushLog('카드를 더 끌어온다.'); break; }
       case 'foresight': { drawHand(card.draw); if(owner&&owner.alive){ setDp(owner, owner.dp-card.calm); } pushLog('마음을 가라앉히며 앞일을 살핀다.'); break; }
@@ -3572,26 +3664,28 @@
   }
   const EMERGENCY_ESCAPE_CHANCE = {'표층':1, '중층':0.8, '심해':0.5, '끝없는 심연':0.1};
   function emergencyEscapeChance(tier){ return EMERGENCY_ESCAPE_CHANCE[tier] || 0.1; }
+  /* 비상 탈출은 패배 판정이 아니라 버릴 수 있는 마지막 선택지다.
+     조건·확률에 막히면 카드는 이미 소모되지만, 전투와 인양대는 그대로 남는다. */
+  function failEmergencyEscape(reason){
+    S.logMsg = reason;
+    pushLog(reason);
+    render();
+    return false;
+  }
   function attemptEmergencyEscape(){
     const b = S.battle;
     if(!b || b.over) return false;
     const badlyWounded = S.party.filter(p=>p && p.hp<=p.maxHp*0.5);
     if(badlyWounded.length>=2){
-      triggerGameOver('절반 이하의 체력을 지닌 대원이 둘 이상이다. 인양줄은 무게를 버티지 못했다.');
-      render();
-      return false;
+      return failEmergencyEscape('비상 탈출 실패 — 체력이 절반 이하인 대원이 둘 이상이다. 인양줄을 놓쳤다.');
     }
     const evacuees = S.party.filter(p=>p && p.alive && p.dp<50);
     if(!evacuees.length){
-      triggerGameOver('심도압박이 50 미만인 대원이 없다. 인양줄을 붙잡을 사람이 없었다.');
-      render();
-      return false;
+      return failEmergencyEscape('비상 탈출 실패 — 심도압박 50 미만인 대원이 없다. 누구도 인양줄을 붙잡지 못했다.');
     }
     const chance = emergencyEscapeChance(b.tier);
     if(Math.random()>=chance){
-      triggerGameOver(`${b.tier}의 수압이 인양줄을 끊었다. 비상 탈출에 실패했다. (성공 확률 ${Math.round(chance*100)}%)`);
-      render();
-      return false;
+      return failEmergencyEscape(`${b.tier}의 수압이 인양줄을 끊었다. 비상 탈출에 실패했다. (성공 확률 ${Math.round(chance*100)}%)`);
     }
     b.over = true;
     const leftBehind = S.party.filter(p=>p && evacuees.indexOf(p)<0);
@@ -3693,14 +3787,17 @@
     S.party.forEach(p=>{ if(p) p.block=0; });
     const actions = aftermathActionsFor(node);
     const dropped = isBossTier(node) ? dropRelic() : null;
-    const cardOffer = (node.type==='battle' || node.type==='elite') && S.runDeck.length<MAX_DECK_SIZE ? cardRewardOffer() : null;
+    const cardOffer = (node.type==='battle' || node.type==='elite') && S.runDeck.length<MAX_DECK_SIZE ? cardRewardOffer(node) : null;
     const surfaced = S.stepInChapter >= chapter().length;
     S.afterAftermath = !surfaced ? 'map' : (isFinalChapter() ? 'result' : 'escape');
     if(surfaced){
       const finalAbyss = isFinalChapter();
       const growth = rewardExtractionSurvivors(finalAbyss ? 2 : 1.3, finalAbyss);
       if(finalAbyss) S.finalGrowth = growth;
-      else S.escape = {offer:relicOffer(), taken:null, plates:unlockCandidates().map(d=>d.id), growth:growth};
+      else {
+        const marker = markerRewardForChapter(S.chapter);
+        S.escape = {offer:relicOffer(), taken:null, plates:unlockCandidates().map(d=>d.id), growth:growth, marker:marker};
+      }
     }
     if(actions>0){
       S.aftermath = {actionsLeft:actions, selecting:null, fuseSelected:[], reveal:null, dropped:dropped, cardOffer:cardOffer, cardTaken:null};
@@ -3779,11 +3876,18 @@
   function groupedUpgradeOptions(){
     return groupDeckCards(S.runDeck.filter(c=>upgradeLevel(c)<MAX_UPGRADE_LEVEL));
   }
+  /* +3부터는 같은 카드·같은 강화 단계 두 장을 녹여 한 단계 위 카드 한 장으로 만든다. */
+  const MERGE_UPGRADE_START_LEVEL = 3;
+  function upgradeNeedsMerge(cardOrGroup){
+    const level = Number.isFinite(cardOrGroup.level) ? cardOrGroup.level : upgradeLevel(cardOrGroup);
+    return level >= MERGE_UPGRADE_START_LEVEL;
+  }
+  function canUpgradeGroup(group){ return !upgradeNeedsMerge(group) || group.count >= 2; }
   function groupedFusionOptions(){
-    return groupDeckCards(S.runDeck.filter(c=>!c.epic));
+    return groupDeckCards(S.runDeck.filter(c=>!isEpicCard(c) && !isLegendaryCard(c)));
   }
   function fusionMaterialCards(){
-    return S.runDeck.filter(c=>!c.epic);
+    return S.runDeck.filter(c=>!isEpicCard(c) && !isLegendaryCard(c));
   }
   function raiseCardLevel(c){
     const level = upgradeLevel(c);
@@ -3800,6 +3904,8 @@
     if(c.selfDp) c.selfDp = Math.max(0, c.selfDp-2);
     if(c.type==='draw' || c.type==='foresight') c.draw = (c.draw||0)+1;
     if(c.type==='swap' || c.type==='reroll_intent') c.cost = Math.max(0, c.cost-1);
+    /* +4 카드 두 장을 녹여 +5가 되는 순간, 평범한 기술은 심연의 에픽으로 변한다. */
+    if(c.upgradeLevel===MAX_UPGRADE_LEVEL && !isLegendaryCard(c)){ c.epic=true; c.cost=1; }
     return true;
   }
   function previewUpgradeCard(c){
@@ -3813,7 +3919,20 @@
   }
   function applyUpgradeByDefId(defId){
     const c = S.runDeck.find(c=>c.defId===defId);
-    return c && applyUpgradeCard(c) ? c : null;
+    if(!c) return null;
+    let material = null;
+    if(upgradeNeedsMerge(c)){
+      const key = cardManageKey(c);
+      material = S.runDeck.find(other=>other.defId!==c.defId && cardManageKey(other)===key);
+      if(!material) return null;
+    }
+    if(!applyUpgradeCard(c)) return null;
+    if(material){
+      const materialIdx = S.runDeck.findIndex(other=>other.defId===material.defId);
+      if(materialIdx>=0) S.runDeck.splice(materialIdx, 1);
+      S.logMsg = `${baseCardName(c)} +${upgradeLevel(c)-1} 두 장이 합쳐져 ${c.name}이(가) 되었다.`;
+    }
+    return c;
   }
   function activeFusionClassCards(){
     const presentClasses = new Set(S.party.filter(p=>p && p.alive).map(p=>p.cls));
@@ -3841,6 +3960,8 @@
     return newCard;
   }
   const CARD_REWARD_OFFER_SIZE = 3;
+  const ELITE_PREMIUM_CARD_CHANCE = EPIC_FUSION_CHANCE * 2;
+  const BOSS_LEGENDARY_CARD_CHANCE = 0.05;
   function cardRewardPool(){
     const activeClasses = new Set(S.party.filter(p=>p && p.alive).map(p=>p.cls));
     const pool = CARD_DB.neutral.concat(Array.from(activeClasses).flatMap(cls=>CARD_DB[cls]||[]));
@@ -3848,9 +3969,22 @@
     const fresh = pool.filter(c=>!owned.has(`${c.owner}|${c.name}`));
     return fresh.length ? fresh : pool;
   }
-  function cardRewardOffer(){
+  function premiumRewardCard(allowLegendary){
+    return allowLegendary && Math.random()<BOSS_LEGENDARY_CARD_CHANCE ? pickOne(LEGENDARY_CARD_POOL) : pickOne(EPIC_CARD_POOL);
+  }
+  function cardRewardOffer(node){
     const offer = shuffle(cardRewardPool().slice()).slice(0, CARD_REWARD_OFFER_SIZE);
-    if(offer.length && Math.random()<EPIC_FUSION_CHANCE) offer[Math.floor(Math.random()*offer.length)] = pickOne(EPIC_CARD_POOL);
+    if(!offer.length) return offer;
+    const rewardSlot = Math.floor(Math.random()*offer.length);
+    if(node && node.boss){
+      /* 구역 수문장은 에픽을 반드시 남긴다. 그중 5%는 전설로 바뀐다. */
+      offer[rewardSlot] = premiumRewardCard(true);
+    } else if(isBossTier(node) && Math.random()<ELITE_PREMIUM_CARD_CHANCE){
+      /* 정예는 일반 보상(5%)의 두 배 확률로 에픽 이상의 카드를 남긴다. */
+      offer[rewardSlot] = premiumRewardCard(true);
+    } else if(Math.random()<EPIC_FUSION_CHANCE){
+      offer[rewardSlot] = pickOne(EPIC_CARD_POOL);
+    }
     return shuffle(offer);
   }
   function claimCardReward(index){
@@ -4057,6 +4191,7 @@
           <div class="ero-case ${danger}"><div class="ero-fill" style="width:${pct}%"></div></div>
           <div class="ero-num mono ${danger}">${Math.round(S.erosion)}%</div>
         </div>
+        ${ownedMarkers().length ? `<div class="marker-tray topbar-markers">${ownedMarkers().map(marker=>markerChip(marker)).join('')}</div>` : ''}
         ${S.relics.length ? `<div class="relic-tray topbar-relics">${S.relics.map(r=>relicChip(r,true)).join('')}</div>` : ''}
       </div>`;
   }
@@ -4112,7 +4247,7 @@
      직군마다 무작위 세 장 중 한 장, 공용은 무작위 여섯 장 중 넷을 고른다. */
   function pickRow(group, base, sel, full){
     return `
-      <div class="pick-card ${base.epic?'epic':''} ${sel?'sel':''} ${(!sel&&full)?'full':''}"
+      <div class="pick-card ${cardVisualClass(base)} ${sel?'sel':''} ${(!sel&&full)?'full':''}"
            data-action="toggle-pick" data-group="${group}" data-name="${base.name}">
         <div class="pick-cost">${base.cost}</div>
         <div class="pick-body">
@@ -4284,10 +4419,13 @@
   function relicChip(r, compact){
     return `<div class="relic-chip" title="${r.boon}">${relicPortrait(r,false,compact)}<span>${r.name}</span></div>`;
   }
+  function markerChip(marker){
+    return `<div class="marker-chip" title="${marker.name} — ${marker.flavor}"><img src="${marker.asset}" alt="${marker.name}"><span>${marker.name}</span></div>`;
+  }
 
   function renderEscape(){
     const ch = chapter();
-    const esc = S.escape || {offer:[], taken:null, growth:[]};
+    const esc = S.escape || {offer:[], taken:null, growth:[], marker:null};
     const next = CHAPTERS[S.chapter+1];
     const picked = esc.taken;
     contentEl.innerHTML = `
@@ -4300,6 +4438,13 @@
         ${esc.growth && esc.growth.length ? `<div class="escape-growth">
           <div class="escape-growth-title">생환자 적응 · 하강이 몸에 남았다</div>
           ${esc.growth.map(g=>`<div class="escape-growth-row"><span>${g.name} · 생환 ${g.descent}회</span><small>최대 체력 ×${g.hpMultiplier} (${g.hpGain>0?'+':''}${g.hpGain}) · 회피/흘림 +${g.reactPct}%</small></div>`).join('')}
+        </div>` : ''}
+        ${esc.marker ? `<div class="relic-card drop">
+          <div class="drop-banner">관측 표식을 회수했다</div>
+          <div class="relic-glyph"><img class="px" src="${esc.marker.asset}" alt="${esc.marker.name}" style="width:74px;height:74px;object-fit:contain;margin:auto;"></div>
+          <div class="relic-name">${esc.marker.name}</div>
+          <div class="relic-boon">영구 관측 기록 · ${ownedMarkers().length}/${MARKER_DEFS.length}</div>
+          <div class="relic-desc">${esc.marker.flavor}<br>상단의 관측 표식 탭에 보관된다.</div>
         </div>` : ''}
         ${(picked && S.relics.indexOf(picked)<0) ? `
           <div class="escape-note">자리가 없어 ${picked.name}은(는) 두고 왔다.</div>
@@ -4409,7 +4554,7 @@
 
   function describeCard(card){
     /* 에픽 카드의 문구는 효과만이 아니라, 심연이 남긴 짧은 기록이다. */
-    if(card.epic && card.desc) return card.desc;
+    if((card.epic || card.legendary) && card.desc) return card.desc;
     switch(card.type){
       case 'attack':
       case 'fusion_attack':
@@ -4429,6 +4574,8 @@
       case 'calm': return `아군 한 명 심도압박 ${card.calm} 감소.`;
       case 'calm_party': return `생존한 아군 전체 심도압박 ${card.calm} 감소.`;
       case 'fuse_support': return `아군 한 명 체력 ${card.heal} 회복 + 심도압박 ${card.calm} 감소.`;
+      case 'double_ap': return '현재 턴에 사용할 수 있는 남은 AP를 두 배로 만든다.';
+      case 'legendary_sanctuary': return `생존한 아군 전체 체력 ${card.heal} 회복 + 심도압박 ${card.calm} 감소 + 방어 ${card.block} 획득.`;
       case 'emergency_escape': return '현재 구역에서 비상 탈출을 시도한다.';
       case 'draw': return `카드 ${card.draw}장을 드로우한다.`;
       case 'foresight': return `카드 ${card.draw}장 드로우. 자신 심도압박 ${card.calm} 감소.`;
@@ -4453,11 +4600,11 @@
       (S.prologue.stage==='pressure' && card.name==='속죄의 기도')
     ));
     return `
-      <div class="card owner-${card.owner} ${card.epic?'epic':''} ${playable?'':'unplayable'} ${tutorialPulse?'tutorial-pulse':''} ${glitch?'contaminated':''} ${selecting?'selecting':''}" data-uid="${card.uid}" data-action="play-card">
+      <div class="card owner-${card.owner} ${cardVisualClass(card)} ${playable?'':'unplayable'} ${tutorialPulse?'tutorial-pulse':''} ${glitch?'contaminated':''} ${selecting?'selecting':''}" data-uid="${card.uid}" data-action="play-card">
         <div class="card-cost mono">${card.cost}</div>
         <div class="card-name ${glitch?'glitch':''}">${glitch ? garble(card.name) : card.name}</div>
         <div class="card-desc ${glitch?'glitch':''}">${desc}</div>
-        <div class="card-owner-tag">${card.epic?'EPIC · ':''}${ownerLabel(card.owner)}</div>
+        <div class="card-owner-tag">${cardRarityLabel(card) ? cardRarityLabel(card)+' · ' : ''}${ownerLabel(card.owner)}</div>
       </div>`;
   }
 
@@ -4505,11 +4652,11 @@
       <div class="draw-swap">
         <div class="draw-swap-title">손패가 가득 찼다</div>
         <div class="draw-swap-copy">새로 뽑힌 카드를 받으려면 손에 든 카드 한 장을 버려야 합니다.</div>
-        <div class="card owner-${b.pendingDraw.card.owner} ${b.pendingDraw.card.epic?'epic':''} draw-swap-card">
+        <div class="card owner-${b.pendingDraw.card.owner} ${cardVisualClass(b.pendingDraw.card)} draw-swap-card">
           <div class="card-cost mono">${b.pendingDraw.card.cost}</div>
           <div class="card-name">${b.pendingDraw.card.name}</div>
           <div class="card-desc">${describeCard(b.pendingDraw.card)}</div>
-          <div class="card-owner-tag">${b.pendingDraw.card.epic?'EPIC · ':''}${ownerLabel(b.pendingDraw.card.owner)}</div>
+          <div class="card-owner-tag">${cardRarityLabel(b.pendingDraw.card) ? cardRarityLabel(b.pendingDraw.card)+' · ' : ''}${ownerLabel(b.pendingDraw.card.owner)}</div>
         </div>
         <div class="draw-swap-copy">버릴 카드 선택</div>
         <div class="draw-replace-list">${b.hand.map(c=>`<div class="draw-replace-row" data-action="replace-draw" data-uid="${c.uid}">${c.name} · AP ${c.cost}</div>`).join('')}</div>
@@ -4597,11 +4744,11 @@
         <div class="tier-tag">전투 보상 · 덱 ${S.runDeck.length}/${MAX_DECK_SIZE}</div>
         <div class="af-hint">심연이 남긴 카드 3장 중 하나를 덱에 넣습니다.</div>
         <div class="card-reward-grid">${a.cardOffer.map((card,i)=>`
-          <div class="card owner-${card.owner} ${card.epic?'epic':''} reward-card" data-action="take-card-reward" data-index="${i}">
+          <div class="card owner-${card.owner} ${cardVisualClass(card)} reward-card" data-action="take-card-reward" data-index="${i}">
             <div class="card-cost mono">${card.cost}</div>
             <div class="card-name">${card.name}</div>
             <div class="card-desc">${describeCard(card)}</div>
-            <div class="card-owner-tag">${card.epic?'EPIC · ':''}${ownerLabel(card.owner)}</div>
+            <div class="card-owner-tag">${cardRarityLabel(card) ? cardRarityLabel(card)+' · ' : ''}${ownerLabel(card.owner)}</div>
           </div>`).join('')}</div>`;
     } else if(a.reveal){
       const card = a.reveal.card;
@@ -4609,13 +4756,13 @@
       const revealFx = a.reveal.kind==='upgrade' ? 'upgrade' : 'fusion';
       body = `
         <div class="reveal-stage reveal-${revealFx}">
-          <div class="reveal-banner">${a.reveal.kind==='upgrade' ? '카드가 강화되었다' : card.epic ? '심연이 응답했다 — 에픽 카드 획득' : '두 카드가 합성되었다'}</div>
+          <div class="reveal-banner">${a.reveal.kind==='upgrade' ? '카드가 강화되었다' : isLegendaryCard(card) ? '전설 카드가 모습을 드러냈다' : isEpicCard(card) ? '심연이 응답했다 — 에픽 카드 획득' : '두 카드가 합성되었다'}</div>
           <div class="reveal-card-wrap">
-            <div class="card owner-${card.owner} ${card.epic?'epic':''} reveal-card">
+            <div class="card owner-${card.owner} ${cardVisualClass(card)} reveal-card">
               <div class="card-cost mono">${card.cost}</div>
               <div class="card-name">${card.name}</div>
               <div class="card-desc">${describeCard(card)}</div>
-              <div class="card-owner-tag">${card.epic?'EPIC · ':''}${ownerLabel(card.owner)}</div>
+              <div class="card-owner-tag">${cardRarityLabel(card) ? cardRarityLabel(card)+' · ' : ''}${ownerLabel(card.owner)}</div>
             </div>
           </div>
           <button class="btn primary" data-action="reveal-confirm">계속하기</button>
@@ -4629,25 +4776,28 @@
           ${opts.length ? opts.map(g=>{
             const isSelected = !!selected && selected.defId===g.defId;
             const locked = !!selected && !isSelected;
-            return `<div class="af-row ${isSelected?'sel':''} ${locked?'locked':''}" ${locked?'':`data-action="select-upgrade" data-defid="${g.defId}"`}>
+            const unavailable = upgradeNeedsMerge(g) && !canUpgradeGroup(g);
+            const blocked = locked || unavailable;
+            const materialNote = upgradeNeedsMerge(g) ? ` · 동일 +${g.level} ${g.count}/2장` : '';
+            return `<div class="af-row ${isSelected?'sel':''} ${locked?'locked':''} ${unavailable?'unavailable':''}" ${blocked?'':`data-action="select-upgrade" data-defid="${g.defId}"`}>
               <div class="af-row-name">${g.name}</div>
-              <div class="af-row-owner">${ownerLabel(g.owner)} · 보유 ${g.count}장 · +${g.level}/+${MAX_UPGRADE_LEVEL}</div>
+              <div class="af-row-owner">${ownerLabel(g.owner)} · 보유 ${g.count}장 · +${g.level}/+${MAX_UPGRADE_LEVEL}${materialNote}</div>
             </div>`;
           }).join('') : `<div class="af-empty">강화할 수 있는 덱 카드가 없다.</div>`}
         </div>
         ${selected&&preview ? `<div class="upgrade-preview">
           <div class="upgrade-preview-title">${selected.name} · +${selected.level} → <b>+${selected.level+1}</b></div>
-          <div class="upgrade-preview-line">AP ${selected.card.cost} · ${ownerLabel(selected.owner)} · 선택한 카드 1장</div>
+          <div class="upgrade-preview-line">AP ${selected.card.cost} · ${ownerLabel(selected.owner)} · ${upgradeNeedsMerge(selected) ? `동일 카드 +${selected.level} 2장을 합성` : '선택한 카드 1장'}</div>
           <div class="upgrade-preview-line">현재: ${describeCard(selected.card)}</div>
           <div class="upgrade-preview-line"><b>강화 후:</b> ${describeCard(preview)}</div>
-        </div><div class="af-hint">선택한 카드를 다시 누르면 선택을 해제할 수 있습니다.</div><button class="btn primary" data-action="do-upgrade" data-defid="${selected.defId}">이 카드를 강화한다</button>` : `<div class="af-hint">카드를 선택하면 현재 정보와 강화 후 효과를 확인합니다.</div>`}
+        </div><div class="af-hint">선택한 카드를 다시 누르면 선택을 해제할 수 있습니다.</div><button class="btn primary" data-action="do-upgrade" data-defid="${selected.defId}">${upgradeNeedsMerge(selected) ? '두 카드를 합쳐 강화한다' : '이 카드를 강화한다'}</button>` : `<div class="af-hint">카드를 선택하면 현재 정보와 강화 후 효과를 확인합니다. +3부터는 동일 카드 2장이 필요합니다.</div>`}
         <button class="btn" data-action="aftermath-back">뒤로</button>`;
     } else if(a.selecting==='fuse'){
       const materialCards = fusionMaterialCards();
       const opts = groupedFusionOptions();
       const materials = a.fuseSelected.map(id=>materialCards.find(c=>c.defId===id)).filter(Boolean);
-      const inspect = c => `<div class="card-inspect ${c.epic?'epic':''}">
-        <div class="card-inspect-head"><span>${c.epic?'✦ ':''}${c.name}</span><span class="card-inspect-meta">AP ${c.cost} · ${c.epic?'EPIC':ownerLabel(c.owner)}</span></div>
+      const inspect = c => `<div class="card-inspect ${cardVisualClass(c)}">
+        <div class="card-inspect-head"><span>${cardRarityLabel(c)==='LEGENDARY'?'◆ ':cardRarityLabel(c)==='EPIC'?'✦ ':''}${c.name}</span><span class="card-inspect-meta">AP ${c.cost} · ${cardRarityLabel(c)||ownerLabel(c.owner)}</span></div>
         <div class="card-inspect-effect">${describeCard(c)}</div>
       </div>`;
       body = `
@@ -4672,6 +4822,16 @@
         </div>
         <button class="btn" data-action="aftermath-skip">그냥 넘어가기</button>`;
     }
+    const upgradeGuide = a.selecting==='upgrade' && a.upgradeGuide ? `
+      <div class="upgrade-guide-overlay" role="dialog" aria-modal="true" aria-label="강화 규칙 안내">
+        <div class="upgrade-guide-panel">
+          <h3>강화 규칙</h3>
+          <p>카드는 <b>+3까지</b> 한 장씩 강화할 수 있습니다.</p>
+          <p><b>+3 → +4</b>, <b>+4 → +5</b> 강화에는 같은 카드·같은 강화 단계의 카드 2장이 필요합니다.</p>
+          <p>예: <b>놋쇠 벽 +3</b> 두 장을 합쳐 <b>놋쇠 벽 +4</b> 한 장을 만듭니다.</p>
+          <button class="btn primary" data-action="dismiss-upgrade-guide">알겠습니다</button>
+        </div>
+      </div>` : '';
     contentEl.innerHTML = `
       ${renderTopbar()}
       <div class="screen rest-screen">
@@ -4688,7 +4848,8 @@
             <div class="relic-desc">${a.dropped.flavor}</div>
           </div>` : ''}
         ${body}
-      </div>`;
+      </div>
+      ${upgradeGuide}`;
   }
 
   /* 여관 — 인양된 자리에서만 열린다. 빈 자리를 채우고 다시 내려간다. */
@@ -5109,12 +5270,14 @@
       S.aftermath.selecting = el.dataset.kind;
       S.aftermath.upgradeSelected = null;
       if(el.dataset.kind==='fuse') S.aftermath.fuseSelected=[];
+      if(el.dataset.kind==='upgrade' && !hasSeenUpgradeGuide()) S.aftermath.upgradeGuide = true;
       render();
     }
     else if(action==='take-card-reward'){
       if(claimCardReward(parseInt(el.dataset.index,10))) render();
     }
     else if(action==='aftermath-back'){ S.aftermath.selecting=null; S.aftermath.fuseSelected=[]; S.aftermath.upgradeSelected=null; render(); }
+    else if(action==='dismiss-upgrade-guide'){ markUpgradeGuideSeen(); S.aftermath.upgradeGuide=false; render(); }
     else if(action==='aftermath-skip'){ proceedAfterAftermath(); }
     else if(action==='select-upgrade'){
       const selectedId = S.aftermath.upgradeSelected;
