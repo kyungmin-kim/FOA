@@ -1,1 +1,5 @@
 .DS_Store
+_t.html
+_verify_*.html
+_nativetest.html
+_webtest.html
