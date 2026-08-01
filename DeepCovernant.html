@@ -931,20 +931,21 @@
     border:1px solid var(--brass-dim); background:rgba(184,147,79,0.09);
     padding:2px 7px; font-size:9.5px; color:var(--brass); letter-spacing:0.03em;
   }
-  /* 유물 4칸 + 관측 표식 3칸을 한 줄에 나란히 둔다. */
-.topbar-collection{ display:flex; align-items:stretch; gap:3px; margin-top:6px; min-width:0; }
-.topbar-collection:not(.with-markers) .topbar-relics,
-.topbar-collection:not(.with-relics) .topbar-markers{ flex:1 1 0; }
-  .topbar-relics{ min-width:0; flex:4 1 0; max-width:none; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:3px; justify-content:stretch; margin:0; }
-  .topbar-relics .relic-chip{ min-width:0; font-size:8.5px; padding:1px 5px; }
+  /* 유물은 남은 폭을 이름 길이에 맞춰 나누고, 표식은 항상 우측의 작은 아이콘 줄에 둔다. */
+  .topbar-collection{ display:flex; align-items:center; gap:4px; margin-top:6px; min-width:0; }
+  .topbar-relics{ min-width:0; flex:1 1 auto; max-width:none; display:flex; gap:3px; margin:0; --relic-font-size:10px; }
+  .topbar-relics.relic-count-2{ --relic-font-size:9px; }
+  .topbar-relics.relic-count-3{ --relic-font-size:8px; }
+  .topbar-relics.relic-count-4{ --relic-font-size:7px; }
+  .topbar-relics .relic-chip{ min-width:0; flex:1 1 auto; font-size:var(--relic-font-size); padding:1px 4px; }
   .topbar-relics .relic-chip span{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  /* 관측 표식은 소모 유물이 아니라 장기 진행 기록이다. 유물 한도와 별도의 작은 선반에 둔다. */
-  .topbar-markers{ min-width:0; flex:3 1 0; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:3px; margin:0; }
+  /* 관측 표식은 보유 개수만큼만 우측에 붙는다. 세 개가 차도 유물 이름 영역을 침범하지 않는다. */
+  .topbar-markers{ flex:0 0 auto; display:flex; justify-content:flex-end; gap:3px; margin-left:auto; }
   .marker-chip{
-    min-width:0; display:flex; align-items:center; justify-content:center; padding:1px;
+    width:26px; height:26px; flex:0 0 26px; display:flex; align-items:center; justify-content:center; padding:1px;
     border:1px solid rgba(166,79,79,0.62); background:rgba(48,9,13,0.38);
   }
-  .marker-chip img{ width:20px; height:20px; display:block; object-fit:contain; background:#050607; image-rendering:auto; }
+  .marker-chip img{ width:100%; height:100%; display:block; object-fit:contain; background:#050607; image-rendering:auto; }
 
   .chapter-tag{
     display:flex; align-items:center; gap:8px;
@@ -1462,7 +1463,7 @@
   }
   #app .card-desc{ line-height:1.55; }
   /* 상단 선반은 정보 밀도가 높아 별도로 30% 줄인다. 일반 유물 선택창은 읽기 크기를 유지한다. */
-  #app .topbar-relics .relic-chip{ font-size:8px; line-height:1.35; gap:3px; padding:1px 4px; }
+  #app .topbar-relics .relic-chip{ font-size:var(--relic-font-size,8px) !important; line-height:1.35; gap:3px; padding:1px 4px; }
   /* 자간을 벌려야 읽히는 것은 대문자·기호로 된 표제뿐이다 */
   #app .title-en,#app .ero-label,#app .ap-label,#app .tier-tag,
   #app .zone-label,#app .rank-slot-label{ letter-spacing:1px; }
@@ -4230,7 +4231,7 @@
           <div class="ero-num mono ${danger}">${Math.round(S.erosion)}%</div>
         </div>
 ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${S.relics.length?'with-relics':''} ${ownedMarkers().length?'with-markers':''}">
-          ${S.relics.length ? `<div class="relic-tray topbar-relics">${S.relics.map(r=>relicChip(r,true)).join('')}</div>` : ''}
+          ${S.relics.length ? `<div class="relic-tray topbar-relics relic-count-${Math.min(4,S.relics.length)}">${S.relics.map(r=>relicChip(r,true)).join('')}</div>` : ''}
           ${ownedMarkers().length ? `<div class="topbar-markers">${ownedMarkers().map(marker=>markerChip(marker)).join('')}</div>` : ''}
         </div>` : ''}
       </div>`;
