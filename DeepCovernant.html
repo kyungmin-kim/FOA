@@ -875,6 +875,10 @@
     font-family:'IM Fell English','Nanum Myeongjo',serif; font-size:11.5px; color:var(--muted);
     line-height:1.7; max-width:300px; font-style:italic;
   }
+  .escape-growth{ width:100%; max-width:330px; padding:8px 10px; border:1px solid rgba(127,191,174,0.48); background:rgba(10,27,28,0.64); box-shadow:inset 0 0 14px rgba(127,191,174,0.08); }
+  .escape-growth-title{ color:var(--phosphor); font-size:10px; letter-spacing:0.06em; margin-bottom:4px; }
+  .escape-growth-row{ display:flex; justify-content:space-between; gap:8px; padding:3px 0; border-top:1px solid rgba(127,191,174,0.14); color:var(--bone); font-size:10px; }
+  .escape-growth-row small{ color:var(--muted); font-size:9px; text-align:right; }
   .relic-offer{ display:flex; flex-direction:column; gap:8px; width:100%; max-width:330px; }
   .relic-opt{
     min-width:0; border:1px solid var(--brass-dim); border-radius:0; padding:11px 13px; text-align:left; cursor:pointer;
@@ -1972,9 +1976,10 @@
     const base = (unit && unit.reactMod) || REACT[unit && unit.reach] || REACT.mid;
     if(!unit || !unit.isHero) return base;
     /* 유물은 아군에게만 붙는다 — 적은 언제나 맨몸의 기본값으로 판정한다 */
+    const veteranReact = unit.descentReact || 0;
     return {
-      dodge:   Math.min(0.60, base.dodge   + relicSum('dodge', unit)),
-      guard:   Math.min(0.70, base.guard   + relicSum('guard', unit)),
+      dodge:   Math.min(0.60, base.dodge   + relicSum('dodge', unit) + veteranReact),
+      guard:   Math.min(0.70, base.guard   + relicSum('guard', unit) + veteranReact),
       riposte: Math.min(0.70, base.riposte + relicSum('riposte', unit)),
       rip:     base.rip + relicSum('rip', unit),
     };
@@ -2437,7 +2442,25 @@
   function makeHero(classId){
     const def = CLASS_DEFS[classId];
     return {id:classId, name:def.name, cls:classId, reach:def.reach, isHero:true,
-            maxHp:def.maxHp, hp:def.maxHp, block:0, dp:0, collapsed:false, alive:true, react:null};
+            maxHp:def.maxHp, hp:def.maxHp, block:0, dp:0, collapsed:false, alive:true, react:null,
+            descentWins:0, descentHp:0, descentReact:0};
+  }
+  /* 인양에 살아 돌아온 사람은 같은 심연을 두 번 겪지 않는다.
+     성공한 하강 수가 깊어질수록 한 번의 생환이 더 큰 몸의 적응으로 남는다. */
+  const EXTRACTION_REACT_PER_DESCENT = 0.005;
+  function rewardExtractionSurvivors(hpMultiplier, finalAbyss){
+    const descent = S.chapter + 1;
+    return aliveParty().map(hero=>{
+      const beforeHp = hero.maxHp;
+      hero.maxHp = Math.max(1, Math.round(hero.maxHp * hpMultiplier));
+      const hpGain = hero.maxHp - beforeHp;
+      const reactGain = EXTRACTION_REACT_PER_DESCENT * descent;
+      hero.descentWins = (hero.descentWins || 0) + 1;
+      hero.descentHp = (hero.descentHp || 0) + hpGain;
+      hero.descentReact = (hero.descentReact || 0) + reactGain;
+      hero.hp += hpGain;
+      return {name:hero.name, descent:hero.descentWins, hpGain, hpMultiplier, finalAbyss:!!finalAbyss, reactPct:Math.round(reactGain*1000)/10};
+    });
   }
   function buildPartyFromPlacements(placements){
     return placements.map(cid => cid ? makeHero(cid) : null);
@@ -2628,6 +2651,7 @@
       rest: null,
       relics: [],
       escape: null,
+      finalGrowth: null,
       tavern: null,
       prologue: null,
       logMsg: '',
@@ -3495,7 +3519,12 @@
     const dropped = isBossTier(node) ? dropRelic() : null;
     const surfaced = S.stepInChapter >= chapter().length;
     S.afterAftermath = !surfaced ? 'map' : (isFinalChapter() ? 'result' : 'escape');
-    if(surfaced && !isFinalChapter()) S.escape = {offer:relicOffer(), taken:null, unlocked:unlockNextClass()};
+    if(surfaced){
+      const finalAbyss = isFinalChapter();
+      const growth = rewardExtractionSurvivors(finalAbyss ? 2 : 1.3, finalAbyss);
+      if(finalAbyss) S.finalGrowth = growth;
+      else S.escape = {offer:relicOffer(), taken:null, unlocked:unlockNextClass(), growth:growth};
+    }
     if(actions>0){
       S.aftermath = {actionsLeft:actions, selecting:null, fuseSelected:[], reveal:null, dropped:dropped};
       S.screen = 'aftermath';
@@ -4041,7 +4070,7 @@
 
   function renderEscape(){
     const ch = chapter();
-    const esc = S.escape || {offer:[], taken:null};
+    const esc = S.escape || {offer:[], taken:null, growth:[]};
     const next = CHAPTERS[S.chapter+1];
     const picked = esc.taken;
     contentEl.innerHTML = `
@@ -4051,6 +4080,10 @@
         <div class="escape-note">
           인양줄이 당겨진다. 수면 위의 공기는 낯설지만, 파도는 이제 당신의 이름을 알고 있다.
         </div>
+        ${esc.growth && esc.growth.length ? `<div class="escape-growth">
+          <div class="escape-growth-title">생환자 적응 · 하강이 몸에 남았다</div>
+          ${esc.growth.map(g=>`<div class="escape-growth-row"><span>${g.name} · 생환 ${g.descent}회</span><small>최대 체력 ×${g.hpMultiplier} (${g.hpGain>0?'+':''}${g.hpGain}) · 회피/흘림 +${g.reactPct}%</small></div>`).join('')}
+        </div>` : ''}
         ${(picked && S.relics.indexOf(picked)<0) ? `
           <div class="escape-note">자리가 없어 ${picked.name}은(는) 두고 왔다.</div>
           <div class="escape-note">부두 끝에 불이 켜진 여관이 하나 있다. 하강 전에 들를 수 있는 마지막 자리다.</div>
@@ -4297,7 +4330,8 @@
       if(!p) return `<div class="rest-party-member dead"><div class="rest-party-name">${rankName(i)} · 공석</div><div class="rest-party-meta">기록 없음</div></div>`;
       const dp = Math.round(Number.isFinite(p.dp) ? p.dp : 0);
       const state = p.alive ? `${rankName(i)} · 생존` : `${rankName(i)} · 전사`;
-      return `<div class="rest-party-member ${p.alive?'':'dead'}"><div class="rest-party-name">${p.name}</div><div class="rest-party-meta">${state}<br>HP ${p.hp}/${p.maxHp} · <span class="dp">압박 ${dp}</span></div></div>`;
+      const veteran = p.descentWins ? `<br>생환 ${p.descentWins}회 · 적응 HP +${p.descentHp||0} · 회피/흘림 +${Math.round((p.descentReact||0)*1000)/10}%` : '';
+      return `<div class="rest-party-member ${p.alive?'':'dead'}"><div class="rest-party-name">${p.name}</div><div class="rest-party-meta">${state}<br>HP ${p.hp}/${p.maxHp} · <span class="dp">압박 ${dp}</span>${veteran}</div></div>`;
     }).join('');
     contentEl.innerHTML = `
       ${renderTopbar()}
@@ -4515,11 +4549,16 @@
 
   function renderResult(){
     const upgradedCount = S.runDeck.filter(c=>c.upgraded).length;
+    const finalGrowth = S.finalGrowth || [];
     contentEl.innerHTML = `
       <div class="screen result-screen">
         <img class="title-crest" src="${ART_CREST}" alt="">
         <div class="title-en">Recovered</div>
         <h2 style="margin:0;">심연의 꿈에서 돌아왔다</h2>
+        ${finalGrowth.length ? `<div class="escape-growth">
+          <div class="escape-growth-title">심연 생환 · 마지막 적응</div>
+          ${finalGrowth.map(g=>`<div class="escape-growth-row"><span>${g.name} · 생환 ${g.descent}회</span><small>최대 체력 ×2 (${g.hpGain>0?'+':''}${g.hpGain}) · 회피/흘림 +${g.reactPct}%</small></div>`).join('')}
+        </div>` : ''}
         ${S.relics.length ? `
         <div class="relic-tray">${S.relics.map(r=>relicChip(r)).join('')}</div>` : ''}
         <div class="result-list mono">
