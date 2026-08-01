@@ -755,6 +755,18 @@
   .rest-party-member.dead .dp{ color:var(--blood); }
 
   .af-list{ display:flex; flex-direction:column; gap:6px; width:100%; max-width:300px; max-height:230px; overflow-y:auto; padding:2px; touch-action:pan-y; }
+  .card-reward-grid{ width:100%; max-width:350px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
+  .card.reward-card{ min-width:0; width:auto; flex:auto; height:170px; padding:8px 6px; cursor:pointer; }
+  .card.reward-card:hover{ transform:translateY(-3px); border-color:var(--gaslamp); }
+  .card.reward-card .card-name{ margin-top:8px; min-height:30px; }
+  .card.reward-card .card-desc{ font-size:9px; line-height:1.4; }
+  .draw-swap{ position:absolute; z-index:20; inset:0; padding:18px 14px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; overflow-y:auto; background:rgba(2,7,9,0.90); border:1px solid rgba(224,170,76,0.44); }
+  .draw-swap-title{ color:var(--gaslamp); font-size:14px; text-align:center; }
+  .draw-swap-copy{ max-width:300px; color:var(--muted); font-size:11px; text-align:center; line-height:1.55; }
+  .draw-swap-card{ transform:scale(0.9); margin:-8px 0; pointer-events:none; }
+  .draw-replace-list{ width:100%; max-width:310px; display:flex; flex-direction:column; gap:5px; }
+  .draw-replace-row{ border:1px solid var(--brass-dim); padding:8px 10px; color:var(--bone); background:rgba(15,26,28,0.78); cursor:pointer; text-align:left; }
+  .draw-replace-row:hover{ border-color:var(--blood-lit); background:rgba(70,23,27,0.58); }
   .af-row{ border:1px solid var(--brass-dim); border-radius:0; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; background:rgba(12,20,22,0.5); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.45); cursor:pointer; text-align:left; user-select:none; -webkit-user-select:none; }
   .af-row.sel{ border-color:var(--phosphor); background:rgba(34,54,52,0.7); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.45), inset 0 0 16px rgba(127,191,174,0.14); }
   .af-row.locked{ opacity:0.42; cursor:not-allowed; }
@@ -2556,20 +2568,20 @@
     return placements.map(cid => cid ? makeHero(cid) : null);
   }
 
-  /* 시작할 때 고른 카드는 이후 강화·합성 재료 목록의 기준이 된다.
-     인양 뒤 영입하거나 합성해서 얻은 카드는 전투 덱에는 들어가도, 이 두 메뉴의
-     후보를 끝없이 불리는 일은 없다. */
+  /* 덱에 들어간 카드는 강화·합성 후보에도 그대로 반영된다.
+     시작 덱은 얇게 출발하고, 전투 보상으로 최대 21장까지 자란다. */
   function mkDeckCard(base, deckOrigin){ return Object.assign({defId:nextId(), upgraded:false, upgradeLevel:0, deckOrigin:deckOrigin||'earned'}, base); }
-  /* 고른 카드는 세 장씩 들어간다.
-     직군 3인 × 1장 + 공용 4장 = 7종 × 3장 = 21장. 직업은 한 장의 정체성을,
-     공용은 네 장의 생존 수단을 고르는 구조다. */
+  /* 시작은 직업별 2장 × 3인(네 번째 슬롯이 열리면 × 4인) + 공용 4장이다.
+     복제본은 넣지 않고, 전투 보상으로 21장 한도까지 덱을 채운다. */
   /* 턴이 끝날 때 정규 AP 가 이만큼 남아 있으면, 다음 턴에 임시 AP 하나만 얹어 준다 */
   const TEMP_AP_MIN = 2;
   const TEMP_AP_CARRY = 1;
-  const DECK_COPIES = 3;
-  const PICKS_PER_CLASS = 1;
+  const DECK_COPIES = 1;
+  const MAX_DECK_SIZE = 21;
+  const HAND_LIMIT = 6;
+  const PICKS_PER_CLASS = 2;
   const PICKS_NEUTRAL = 4;
-  const RECRUIT_PICKS_PER_CLASS = 2;
+  const RECRUIT_PICKS_PER_CLASS = 1;
   /* 처음 내려갈 때는 셋. 인양하고 사람을 해금한 뒤에는 넷까지 데려간다. */
   const PARTY_START = 3;
   const PARTY_MAX   = 4;
@@ -2583,6 +2595,18 @@
       if(!base) return;
       for(let i=0;i<DECK_COPIES;i++) deck.push(mkDeckCard(base, deckOrigin));
     });
+  }
+  function addRunDeckCard(base, deckOrigin){
+    if(!S.runDeck || S.runDeck.length>=MAX_DECK_SIZE) return null;
+    const card = mkDeckCard(base, deckOrigin);
+    S.runDeck.push(card);
+    return card;
+  }
+  function addPickedToRunDeck(list, names, deckOrigin){
+    return names.map(name=>{
+      const base = list.find(c=>c.name===name);
+      return base ? addRunDeckCard(base, deckOrigin) : null;
+    }).filter(Boolean);
   }
   function buildRunDeck(selectedClassIds, picks){
     const deck=[];
@@ -2612,7 +2636,7 @@
     }
     return shuffle(offer).map(c=>c.name);
   }
-  /* 여관에서 새로 합류한 사람 몫 — 고르는 화면이 없으니 제 카드 중 둘을 무작위로 쥐어준다 */
+  /* 여관에서 새로 합류한 사람 몫 — 제 카드 한 장을 무작위로 쥐고 합류한다. */
   function randomPicks(list, n){
     return shuffle(list.slice()).slice(0,n).map(c=>c.name);
   }
@@ -2645,8 +2669,8 @@
     if(fallen) S.runDeck = S.runDeck.filter(c=>c.owner!==fallen.cls);
     const picked = randomPicks(CARD_DB[classId], RECRUIT_PICKS_PER_CLASS);
     S.setup.picks[classId] = picked;
-    addPicked(S.runDeck, CARD_DB[classId], picked);
-    S.logMsg = `${CLASS_DEFS[classId].name}이(가) ${picked.join(' · ')}을(를) 들고 합류했다.`;
+    const added = addPickedToRunDeck(CARD_DB[classId], picked, 'recruit');
+    S.logMsg = added.length ? `${CLASS_DEFS[classId].name}이(가) ${picked.join(' · ')}을(를) 들고 합류했다.` : `${CLASS_DEFS[classId].name}은(는) 합류했지만, 덱이 가득 차 카드는 맡기지 못했다.`;
     return hero;
   }
 
@@ -2731,7 +2755,7 @@
     joined.forEach(cls=>{
       const picked = randomPicks(CARD_DB[cls], RECRUIT_PICKS_PER_CLASS);
       S.setup.picks[cls] = picked;
-      addPicked(S.runDeck, CARD_DB[cls], picked);
+      addPickedToRunDeck(CARD_DB[cls], picked, 'recruit');
     });
     return joined;
   }
@@ -2987,7 +3011,7 @@
     return set;
   }
 
-  function handSize(){ return 5 + relicSum('draw'); }
+  function handSize(){ return Math.min(HAND_LIMIT, 5 + relicSum('draw')); }
 
   function startBattle(node){
     const enemies = enemySetFor(node).map(e=>Object.assign({}, e, {hp:e.maxHp, block:0, intent:null, alive:true, react:null}));
@@ -2996,7 +3020,7 @@
       tier: node.tier, node, enemies,
       deck: cloneForBattle(S.runDeck), hand:[], discard:[],
       ap:ap, maxAp:ap, tempAp:0, turn:1, over:false,
-      pendingCardUid:null, pendingDomain:null,
+      pendingCardUid:null, pendingDomain:null, pendingDraw:null,
     };
     S.party.forEach(p=>{ if(p) p.react = null; });
     aliveParty().forEach(p=>{
@@ -3111,23 +3135,46 @@
 
   /* 효과미상은 한 턴의 교란일 뿐, 덱 전체가 영구히 오염되지는 않는다. */
   const UNKNOWN_CARD_MAX_PER_TURN = 3;
+  function drawNextBattleCard(){
+    const b = S.battle;
+    if(b.deck.length===0){
+      if(b.discard.length===0) return null;
+      b.deck = shuffle(b.discard); b.discard=[];
+    }
+    const c = b.deck.pop();
+    c.contaminated = false;
+    const unknownCount = b.hand.filter(card=>card.contaminated).length;
+    if(b.tier==='중층' && unknownCount < UNKNOWN_CARD_MAX_PER_TURN && Math.random() < 0.15) c.contaminated = true;
+    return c;
+  }
   function drawHand(n){
     const b = S.battle;
-    let unknownCount = b.hand.filter(c=>c.contaminated).length;
-    for(let i=0;i<n;i++){
-      if(b.deck.length===0){
-        if(b.discard.length===0) break;
-        b.deck = shuffle(b.discard); b.discard=[];
-      }
-      const c = b.deck.pop();
-      /* 이전 턴에 본 교란은 사라진다. 이 턴에는 추가 드로우까지 합쳐 3장만 허용한다. */
-      c.contaminated = false;
-      if(b.tier==='중층' && unknownCount < UNKNOWN_CARD_MAX_PER_TURN && Math.random() < 0.15){
-        c.contaminated = true;
-        unknownCount += 1;
+    if(!b || n<=0) return;
+    if(b.pendingDraw){ b.pendingDraw.remaining += n; return; }
+    for(let left=n;left>0;left--){
+      const c = drawNextBattleCard();
+      if(!c) break;
+      if(b.hand.length>=HAND_LIMIT){
+        b.pendingDraw = {card:c, remaining:left-1};
+        return;
       }
       b.hand.push(c);
     }
+  }
+  function replaceForPendingDraw(handUid){
+    const b = S.battle;
+    if(!b || !b.pendingDraw) return false;
+    const idx = b.hand.findIndex(c=>c.uid===handUid);
+    if(idx<0) return false;
+    const removed = b.hand[idx];
+    const incoming = b.pendingDraw.card;
+    const remaining = b.pendingDraw.remaining;
+    b.hand.splice(idx,1, incoming);
+    b.discard.push(removed);
+    b.pendingDraw = null;
+    pushLog(`${removed.name}을(를) 버리고 ${incoming.name}을(를) 받았다.`);
+    drawHand(remaining);
+    return true;
   }
 
   /* 로그가 화면 한복판으로 나왔으니 조사도 제대로 붙인다 — 받침 유무로 갈라준다 */
@@ -3335,6 +3382,7 @@
   function canPlayCard(card){
     const b = S.battle;
     if(!b || b.over) return false;
+    if(b.pendingDraw) return false;
     /* 프롤로그에서는 지금 배울 한 장만 켠다. 다른 카드로 우연히 넘기지 못하게 한다. */
     if(S.prologue){
       const step = S.prologue.stage;
@@ -3534,7 +3582,7 @@
 
   function endPlayerTurn(){
     const b = S.battle;
-    if(!b || b.over || b.pendingCardUid) return;
+    if(!b || b.over || b.pendingCardUid || b.pendingDraw) return;
     if(S.prologue && S.prologue.stage!=='braceDone') return;
     b.hand.forEach(c=>{ c.contaminated = false; });
     b.discard.push(...b.hand); b.hand=[];
@@ -3622,6 +3670,7 @@
     S.party.forEach(p=>{ if(p) p.block=0; });
     const actions = aftermathActionsFor(node);
     const dropped = isBossTier(node) ? dropRelic() : null;
+    const cardOffer = (node.type==='battle' || node.type==='elite') && S.runDeck.length<MAX_DECK_SIZE ? cardRewardOffer() : null;
     const surfaced = S.stepInChapter >= chapter().length;
     S.afterAftermath = !surfaced ? 'map' : (isFinalChapter() ? 'result' : 'escape');
     if(surfaced){
@@ -3631,7 +3680,7 @@
       else S.escape = {offer:relicOffer(), taken:null, plates:unlockCandidates().map(d=>d.id), growth:growth};
     }
     if(actions>0){
-      S.aftermath = {actionsLeft:actions, selecting:null, fuseSelected:[], reveal:null, dropped:dropped};
+      S.aftermath = {actionsLeft:actions, selecting:null, fuseSelected:[], reveal:null, dropped:dropped, cardOffer:cardOffer, cardTaken:null};
       S.screen = 'aftermath';
     } else {
       S.screen = S.afterAftermath;
@@ -3688,12 +3737,30 @@
   /* 예전 저장의 upgraded:true는 +1로 읽는다. 이름은 표시용이므로 따로 원래 이름을 남긴다. */
   function upgradeLevel(card){ return Number.isFinite(card.upgradeLevel) ? card.upgradeLevel : (card.upgraded ? 1 : 0); }
   function baseCardName(card){ return card.baseName || String(card.name||'').replace(/\++$/, ''); }
+  /* 전투 덱에는 같은 카드가 세 장씩 들어가지만, 인양 뒤 관리 화면에서는
+     같은 등급의 카드들을 한 줄로 묶어 필요한 정보만 보여 준다. */
+  function cardManageKey(card){ return `${card.owner}|${baseCardName(card)}|${upgradeLevel(card)}`; }
+  function groupDeckCards(cards){
+    const groups = new Map();
+    cards.forEach(card=>{
+      const key = cardManageKey(card);
+      if(!groups.has(key)) groups.set(key, {key:key, defId:card.defId, card:card, defIds:[], name:card.name, owner:card.owner, level:upgradeLevel(card), count:0});
+      const group = groups.get(key);
+      group.defIds.push(card.defId);
+      group.count++;
+    });
+    return Array.from(groups.values());
+  }
   /* 강화는 덱 속 개별 카드 한 장만 대상으로 삼는다.
-     같은 이름의 복제본을 한 줄로 묶으면 무엇이 선택됐는지 모호해지므로 그대로 나열한다. */
+     목록은 같은 종류를 묶되, 실제 강화는 그 묶음 안의 카드 한 장에만 적용한다. */
   function groupedUpgradeOptions(){
-    return starterDeckCards()
-      .filter(c=>upgradeLevel(c)<MAX_UPGRADE_LEVEL)
-      .map(c=>({defId:c.defId, card:c, name:c.name, owner:c.owner, level:upgradeLevel(c), count:1}));
+    return groupDeckCards(S.runDeck.filter(c=>upgradeLevel(c)<MAX_UPGRADE_LEVEL));
+  }
+  function groupedFusionOptions(){
+    return groupDeckCards(S.runDeck.filter(c=>!c.epic));
+  }
+  function fusionMaterialCards(){
+    return S.runDeck.filter(c=>!c.epic);
   }
   function raiseCardLevel(c){
     const level = upgradeLevel(c);
@@ -3749,6 +3816,30 @@
     S.runDeck.push(newCard);
     S.logMsg = epic ? '심연이 합성에 응답했다. 에픽 카드가 모습을 드러냈다.' : '두 카드가 하나로 융합되었다.';
     return newCard;
+  }
+  const CARD_REWARD_OFFER_SIZE = 3;
+  function cardRewardPool(){
+    const activeClasses = new Set(S.party.filter(p=>p && p.alive).map(p=>p.cls));
+    const pool = CARD_DB.neutral.concat(Array.from(activeClasses).flatMap(cls=>CARD_DB[cls]||[]));
+    const owned = new Set(S.runDeck.map(c=>`${c.owner}|${baseCardName(c)}`));
+    const fresh = pool.filter(c=>!owned.has(`${c.owner}|${c.name}`));
+    return fresh.length ? fresh : pool;
+  }
+  function cardRewardOffer(){
+    const offer = shuffle(cardRewardPool().slice()).slice(0, CARD_REWARD_OFFER_SIZE);
+    if(offer.length && Math.random()<EPIC_FUSION_CHANCE) offer[Math.floor(Math.random()*offer.length)] = pickOne(EPIC_CARD_POOL);
+    return shuffle(offer);
+  }
+  function claimCardReward(index){
+    const a = S.aftermath;
+    const card = a && a.cardOffer && a.cardOffer[index];
+    if(!card) return null;
+    const added = addRunDeckCard(card, 'reward');
+    if(!added) return null;
+    a.cardTaken = added;
+    a.cardOffer = null;
+    S.logMsg = `${added.name} 카드가 덱에 추가되었다. (${S.runDeck.length}/${MAX_DECK_SIZE})`;
+    return added;
   }
 
   /* ============ ATMOSPHERE ============ */
@@ -4051,7 +4142,7 @@
       <div class="tier-tag">무엇을 들고 내려갈까</div>
       <div class="af-hint">직업 후보 <b>${CLASS_OFFER_SIZE}장</b> 중 <b>${PICKS_PER_CLASS}장</b>, 공용 후보 <b>${NEUTRAL_OFFER_SIZE}장</b> 중 <b>${PICKS_NEUTRAL}장</b>을 고른다.
         공용 후보에는 가끔 에픽이 섞인다 —
-        고른 카드는 ${DECK_COPIES}장씩 들어가 모두 ${need*DECK_COPIES}장이 된다.</div>
+        고른 카드는 한 장씩 들어가 모두 ${need}장으로 시작합니다. 전투 보상으로 최대 ${MAX_DECK_SIZE}장까지 늘릴 수 있습니다.</div>
       ${sects}
       ${neutral}
       <div class="setup-btn-row">
@@ -4060,7 +4151,7 @@
       </div>`;
   }
 
-  function partyLimit(){ return S.setup.reform ? PARTY_MAX : PARTY_START; }
+  function partyLimit(){ return S.setup.reform || UNLOCKED.length ? PARTY_MAX : PARTY_START; }
 
   function renderClassSelect(){
     const st = S.setup;
@@ -4390,6 +4481,19 @@
       const selecting = b.pendingCardUid===c.uid;
       return cardHtml(c, playable, selecting);
     }).join('');
+    const drawSwapHtml = b.pendingDraw ? `
+      <div class="draw-swap">
+        <div class="draw-swap-title">손패가 가득 찼다</div>
+        <div class="draw-swap-copy">새로 뽑힌 카드를 받으려면 손에 든 카드 한 장을 버려야 합니다.</div>
+        <div class="card owner-${b.pendingDraw.card.owner} ${b.pendingDraw.card.epic?'epic':''} draw-swap-card">
+          <div class="card-cost mono">${b.pendingDraw.card.cost}</div>
+          <div class="card-name">${b.pendingDraw.card.name}</div>
+          <div class="card-desc">${describeCard(b.pendingDraw.card)}</div>
+          <div class="card-owner-tag">${b.pendingDraw.card.epic?'EPIC · ':''}${ownerLabel(b.pendingDraw.card.owner)}</div>
+        </div>
+        <div class="draw-swap-copy">버릴 카드 선택</div>
+        <div class="draw-replace-list">${b.hand.map(c=>`<div class="draw-replace-row" data-action="replace-draw" data-uid="${c.uid}">${c.name} · AP ${c.cost}</div>`).join('')}</div>
+      </div>` : '';
 
     /* 중앙 명판 — 조준 중이면 안내, 아니면 최근 전투 기록 */
     let logHtml;
@@ -4425,9 +4529,10 @@
           </div>
           <div class="hand-row">${handHtml}</div>
           <div class="end-turn-row">
-            <button class="btn ${S.prologue&&S.prologue.stage==='braceDone'?'tutorial-pulse':''}" data-action="end-turn" ${(b.over||b.pendingCardUid||(S.prologue&&S.prologue.stage!=='braceDone'))?'disabled':''}>턴 종료</button>
+            <button class="btn ${S.prologue&&S.prologue.stage==='braceDone'?'tutorial-pulse':''}" data-action="end-turn" ${(b.over||b.pendingCardUid||b.pendingDraw||(S.prologue&&S.prologue.stage!=='braceDone'))?'disabled':''}>턴 종료</button>
           </div>
         </div>
+        ${drawSwapHtml}
       </div>`;
   }
 
@@ -4467,7 +4572,18 @@
     const a = S.aftermath;
     const node = S.pendingNode;
     let body = '';
-    if(a.reveal){
+    if(a.cardOffer && a.cardOffer.length){
+      body = `
+        <div class="tier-tag">전투 보상 · 덱 ${S.runDeck.length}/${MAX_DECK_SIZE}</div>
+        <div class="af-hint">심연이 남긴 카드 3장 중 하나를 덱에 넣습니다.</div>
+        <div class="card-reward-grid">${a.cardOffer.map((card,i)=>`
+          <div class="card owner-${card.owner} ${card.epic?'epic':''} reward-card" data-action="take-card-reward" data-index="${i}">
+            <div class="card-cost mono">${card.cost}</div>
+            <div class="card-name">${card.name}</div>
+            <div class="card-desc">${describeCard(card)}</div>
+            <div class="card-owner-tag">${card.epic?'EPIC · ':''}${ownerLabel(card.owner)}</div>
+          </div>`).join('')}</div>`;
+    } else if(a.reveal){
       const card = a.reveal.card;
       const revealFx = a.reveal.kind==='upgrade' ? 'upgrade' : (card.epic ? 'epic' : 'fusion');
       const sparks = card.epic ? Array.from({length:12},(_,i)=>`<i class="reveal-spark" style="--i:${i}"></i>`).join('') : '';
@@ -4496,9 +4612,9 @@
             const locked = !!selected && !isSelected;
             return `<div class="af-row ${isSelected?'sel':''} ${locked?'locked':''}" ${locked?'':`data-action="select-upgrade" data-defid="${g.defId}"`}>
               <div class="af-row-name">${g.name}</div>
-              <div class="af-row-owner">${ownerLabel(g.owner)} · +${g.level}/+${MAX_UPGRADE_LEVEL}</div>
+              <div class="af-row-owner">${ownerLabel(g.owner)} · 보유 ${g.count}장 · +${g.level}/+${MAX_UPGRADE_LEVEL}</div>
             </div>`;
-          }).join('') : `<div class="af-empty">강화할 수 있는 시작 덱 카드가 없다.</div>`}
+          }).join('') : `<div class="af-empty">강화할 수 있는 덱 카드가 없다.</div>`}
         </div>
         ${selected&&preview ? `<div class="upgrade-preview">
           <div class="upgrade-preview-title">${selected.name} · +${selected.level} → <b>+${selected.level+1}</b></div>
@@ -4508,22 +4624,25 @@
         </div><div class="af-hint">선택한 카드를 다시 누르면 선택을 해제할 수 있습니다.</div><button class="btn primary" data-action="do-upgrade" data-defid="${selected.defId}">이 카드를 강화한다</button>` : `<div class="af-hint">카드를 선택하면 현재 정보와 강화 후 효과를 확인합니다.</div>`}
         <button class="btn" data-action="aftermath-back">뒤로</button>`;
     } else if(a.selecting==='fuse'){
-      const opts = starterDeckCards().filter(c=>!c.epic);
-      const materials = a.fuseSelected.map(id=>opts.find(c=>c.defId===id)).filter(Boolean);
+      const materialCards = fusionMaterialCards();
+      const opts = groupedFusionOptions();
+      const materials = a.fuseSelected.map(id=>materialCards.find(c=>c.defId===id)).filter(Boolean);
       const inspect = c => `<div class="card-inspect ${c.epic?'epic':''}">
         <div class="card-inspect-head"><span>${c.epic?'✦ ':''}${c.name}</span><span class="card-inspect-meta">AP ${c.cost} · ${c.epic?'EPIC':ownerLabel(c.owner)}</span></div>
         <div class="card-inspect-effect">${describeCard(c)}</div>
       </div>`;
       body = `
         <div class="af-list">
-          ${opts.length ? opts.map(c=>`
-            <div class="af-row ${a.fuseSelected.includes(c.defId)?'sel':''}" data-action="toggle-fuse" data-defid="${c.defId}">
-              <div class="af-row-name">${c.name}</div>
-              <div class="af-row-owner">${ownerLabel(c.owner)}</div>
-            </div>`).join('') : `<div class="af-empty">합성할 수 있는 시작 덱 카드가 없다.</div>`}
+          ${opts.length ? opts.map(g=>{
+            const chosen = g.defIds.some(id=>a.fuseSelected.includes(id));
+            return `<div class="af-row ${chosen?'sel':''}" data-action="toggle-fuse" data-defid="${g.defId}">
+              <div class="af-row-name">${g.name}</div>
+              <div class="af-row-owner">${ownerLabel(g.owner)} · 보유 ${g.count}장</div>
+            </div>`;
+          }).join('') : `<div class="af-empty">합성할 수 있는 덱 카드가 없다.</div>`}
         </div>
         ${materials.length ? `<div class="fusion-inspect"><div class="af-hint">선택한 합성 재료</div>${materials.map(inspect).join('')}</div>` : `<div class="af-hint">카드를 선택하면 AP와 효과를 확인할 수 있습니다.</div>`}
-        <div class="af-hint">시작 시 고른 카드만 재료로 선택할 수 있습니다. 결과: 중립 또는 현재 인양대 직업 카드 무작위 · 에픽 출현 5%</div>
+        <div class="af-hint">현재 덱의 카드만 재료로 선택할 수 있습니다. 결과: 중립 또는 현재 인양대 직업 카드 무작위 · 에픽 출현 5%</div>
         ${a.fuseSelected.length===2 ? `<button class="btn primary" data-action="do-fuse">합성하기</button>` : `<div class="af-hint">중립 또는 직업 카드 2장을 선택하세요 (${a.fuseSelected.length}/2)</div>`}
         <button class="btn" data-action="aftermath-back">뒤로</button>`;
     } else {
@@ -4928,6 +5047,9 @@
     }
 
     else if(action==='end-turn'){ endPlayerTurn(); }
+    else if(action==='replace-draw'){
+      if(replaceForPendingDraw(el.dataset.uid)) render();
+    }
 
     else if(action==='rest-pick'){ chooseRest(el.dataset.kind); render(); }
     else if(action==='rest-confirm'){ confirmRest(); }
@@ -4937,6 +5059,9 @@
       S.aftermath.upgradeSelected = null;
       if(el.dataset.kind==='fuse') S.aftermath.fuseSelected=[];
       render();
+    }
+    else if(action==='take-card-reward'){
+      if(claimCardReward(parseInt(el.dataset.index,10))) render();
     }
     else if(action==='aftermath-back'){ S.aftermath.selecting=null; S.aftermath.fuseSelected=[]; S.aftermath.upgradeSelected=null; render(); }
     else if(action==='aftermath-skip'){ proceedAfterAftermath(); }
@@ -4955,8 +5080,11 @@
       const id = el.dataset.defid;
       S.aftermath.fuseSelected = Array.from(new Set(S.aftermath.fuseSelected));
       const arr = S.aftermath.fuseSelected;
-      const pos = arr.indexOf(id);
-      if(pos>=0) arr.splice(pos,1); else if(arr.length<2) arr.push(id);
+      const group = groupedFusionOptions().find(g=>g.defIds.includes(id));
+      if(!group) return;
+      const selectedId = arr.find(defId=>group.defIds.includes(defId));
+      if(selectedId) arr.splice(arr.indexOf(selectedId),1);
+      else if(arr.length<2) arr.push(group.defId);
       render();
     }
     else if(action==='do-fuse'){
