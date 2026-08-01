@@ -2251,7 +2251,7 @@
   const START_EPIC_OFFER_CHANCE = 0.25;
   const START_EPIC_CARD_POOL = [
     {id:'drowned_sentence', name:'익사의 판결', cost:0, type:'epic_attack', dmg:38, owner:'neutral', range:'ranged', epic:true, desc:'적 한 명을 골라 38 피해. 심연이 기억하는 이름으로 판결한다.'},
-    {id:'flooded_bulwark', name:'침수된 방벽', cost:0, type:'block_party', block:18, owner:'neutral', range:'support', epic:true, desc:'생존한 아군 전체 방어 18 획득. 바다가 한 박자 늦게 닿는다.'},
+    {id:'flooded_bulwark', name:'침수된 방벽', cost:0, type:'block_party', block:18, riposte:18, owner:'neutral', range:'support', epic:true, desc:'생존한 아군 전체 방어 18 획득. 공격받으면 공격자에게 18 반격. 바다가 한 박자 늦게 닿는다.'},
     {id:'nameless_hymn', name:'무명자의 찬가', cost:0, type:'calm_party', calm:22, owner:'neutral', range:'support', epic:true, desc:'생존한 아군 전체 심도압박 22 감소. 누구의 목소리인지 알 수 없는 자장가.'},
   ];
   const EPIC_CARD_POOL = [
@@ -2926,9 +2926,13 @@
     return arr;
   }
   /* 강한 카드는 덱에 남아 있어도 초반 손패를 독점하지 않는다.
-     한 순환 안에는 반드시 모두 뽑히되, 섞일 때 일반 1 : 에픽 0.4 : 전설 0.2의 가중치를 쓴다. */
+     섞일 때 일반 1 : 에픽 0.4 : 전설 0.2의 가중치를 쓴다. */
   const BATTLE_DRAW_WEIGHT = {normal:1, epic:0.4, legendary:0.2};
+  /* 에픽·전설은 한 전투에서 합쳐 최대 다섯 장만 손패에 들어온다. 강한 카드만
+     순환하며 일반 카드가 사라지는 일을 막되, 남은 희귀 카드는 다음 전투에서 다시 섞인다. */
+  const RARE_DRAW_MAX_PER_BATTLE = 5;
   function battleDrawWeight(card){ return isLegendaryCard(card) ? BATTLE_DRAW_WEIGHT.legendary : (isEpicCard(card) ? BATTLE_DRAW_WEIGHT.epic : BATTLE_DRAW_WEIGHT.normal); }
+  function isRareBattleCard(card){ return isEpicCard(card) || isLegendaryCard(card); }
   function shuffleBattleDeck(cards){
     const pool = cards.slice();
     const ordered = [];
@@ -3118,7 +3122,7 @@
     S.battle = {
       tier: node.tier, node, enemies,
       deck: cloneForBattle(S.runDeck), hand:[], discard:[],
-      ap:ap, maxAp:ap, tempAp:0, turn:1, over:false,
+      ap:ap, maxAp:ap, tempAp:0, turn:1, over:false, rareDraws:0,
       pendingCardUid:null, pendingDomain:null, pendingDraw:null,
     };
     S.party.forEach(p=>{ if(p) p.react = null; });
@@ -3239,16 +3243,27 @@
   const UNKNOWN_CARD_CHANCE = {'중층':0.075, '심해':0.12, '끝없는 심연':0.18};
   function drawNextBattleCard(){
     const b = S.battle;
-    if(b.deck.length===0){
-      if(b.discard.length===0) return null;
-      b.deck = shuffleBattleDeck(b.discard); b.discard=[];
+    /* 한도에 닿은 희귀 카드는 버린 더미로 잠시 보내고 일반 카드를 계속 찾는다.
+       덱이 희귀 카드만 남은 경우에는 빈 손패를 반환하며, 다음 전투에서 제한이 초기화된다. */
+    let attempts = b.deck.length + b.discard.length;
+    while(attempts-- > 0){
+      if(b.deck.length===0){
+        if(b.discard.length===0) return null;
+        b.deck = shuffleBattleDeck(b.discard); b.discard=[];
+      }
+      const c = b.deck.pop();
+      if(isRareBattleCard(c) && (b.rareDraws||0) >= RARE_DRAW_MAX_PER_BATTLE){
+        b.discard.push(c);
+        continue;
+      }
+      if(isRareBattleCard(c)) b.rareDraws = (b.rareDraws||0) + 1;
+      c.contaminated = false;
+      const unknownCount = b.hand.filter(card=>card.contaminated).length;
+      const unknownChance = UNKNOWN_CARD_CHANCE[b.tier] || 0;
+      if(unknownCount < UNKNOWN_CARD_MAX_PER_TURN && Math.random() < unknownChance) c.contaminated = true;
+      return c;
     }
-    const c = b.deck.pop();
-    c.contaminated = false;
-    const unknownCount = b.hand.filter(card=>card.contaminated).length;
-    const unknownChance = UNKNOWN_CARD_CHANCE[b.tier] || 0;
-    if(unknownCount < UNKNOWN_CARD_MAX_PER_TURN && Math.random() < unknownChance) c.contaminated = true;
-    return c;
+    return null;
   }
   function drawHand(n){
     const b = S.battle;
@@ -3370,6 +3385,7 @@
     if(res.kind==='dodge'){
       queueFx('dodge', hero);
       pushLog(`${ga(hero.name)} 몸을 비틀어 피했다.`);
+      triggerBulwarkRiposte(hero, attacker, opts);
       return res;
     }
     hero.hp = Math.max(0, hero.hp - res.dealt);
@@ -3386,6 +3402,8 @@
     }
     checkCollapse(hero);
 
+    if(triggerBulwarkRiposte(hero, attacker, opts)) return res;
+
     if(hero.alive && opts.riposte!==false && canRiposte(hero, heroRank(hero), attacker, foeRank(attacker))
        && Math.random() < reactOf(hero).riposte){
       markReact(hero, 'riposte');
@@ -3396,6 +3414,17 @@
       damageEnemy(attacker, rip, {riposte:true});
     }
     return res;
+  }
+  /* 침수된 방벽은 일반 반격과 달리 거리·확률을 묻지 않는다. 적이 공격을 선언한
+     순간 벽에 닿아 되튄다. 반격끼리 되받아치는 무한 연쇄는 기존 규칙처럼 막는다. */
+  function triggerBulwarkRiposte(hero, attacker, opts){
+    const rip = hero && hero.bulwarkRiposte || 0;
+    if(!rip || !hero.alive || !attacker || !attacker.alive || opts.riposte===false) return false;
+    markReact(hero, 'riposte');
+    queueFx('riposte', hero);
+    pushLog(`${ga(hero.name)} 침수된 방벽을 되울린다. (${rip} 반격)`);
+    damageEnemy(attacker, rip, {riposte:true});
+    return true;
   }
   /* 심도압박은 항상 0~100의 정수로 유지한다. 유물의 백분율 배율이 소수점을 만들 수 있다. */
   function setDp(hero, value){
@@ -3562,7 +3591,14 @@
         break;
       }
       case 'block': { if(owner&&owner.alive){ owner.block+=Math.round(card.block*relicMul('blockMul', owner)); pushLog(`${owner.name}이 방어 태세를 취한다.`); } break; }
-      case 'block_party': { aliveParty().forEach(p=>p.block+=Math.round(card.block*relicMul('blockMul', p))); pushLog('파티 전체가 대비한다.'); break; }
+      case 'block_party': {
+        aliveParty().forEach(p=>{
+          p.block+=Math.round(card.block*relicMul('blockMul', p));
+          if(card.riposte) p.bulwarkRiposte = Math.max(p.bulwarkRiposte||0, card.riposte);
+        });
+        pushLog(card.riposte ? `파티 전체가 방벽을 세운다. 다음 공격은 ${card.riposte} 반격한다.` : '파티 전체가 대비한다.');
+        break;
+      }
       case 'heal': { if(allyTarget){ allyTarget.hp=Math.min(allyTarget.maxHp, allyTarget.hp+Math.round(card.heal*relicMul('healMul', allyTarget))); queueFx('heal', allyTarget); pushLog(`${allyTarget.name}의 상처를 봉합했다.`); } break; }
       case 'heal_party': { aliveParty().forEach(p=>{ p.hp=Math.min(p.maxHp,p.hp+Math.round(card.heal*relicMul('healMul', p))); queueFx('heal',p); }); pushLog('파티 전체의 상처를 봉합했다.'); break; }
       case 'calm': { if(allyTarget){ setDp(allyTarget, allyTarget.dp-card.calm); queueFx('calm', allyTarget); pushLog(`${allyTarget.name}이 숨을 고른다.`); } break; }
@@ -3644,14 +3680,14 @@
         if(t){
           pushLog(`${ga(foeDisplayName(en))} ${eul(t.name)} 두 번 후려친다.`);
           applyDamageToHero(t, intent.val, {from:en});
-          if(t.alive) applyDamageToHero(t, intent.val, {from:en});
+          if(t.alive && en.alive) applyDamageToHero(t, intent.val, {from:en});
         } else pushLog(`${ga(foeDisplayName(en))} 헛손질한다.`);
 
       } else if(intent.type==='attack_all'){
         const pool = heroesInReach(en);
         if(pool.length){
           pushLog(`${ga(foeDisplayName(en))} 닿는 모두를 집어삼킨다. (전체 ${intent.val})`);
-          pool.forEach(p=>{ if(p.alive) applyDamageToHero(p, intent.val, {from:en}); });
+          pool.forEach(p=>{ if(en.alive && p.alive) applyDamageToHero(p, intent.val, {from:en}); });
         } else pushLog(`${foeDisplayName(en)}의 포효가 빈 물살을 때린다.`);
 
       } else if(intent.type==='whisper_random'){
@@ -3742,6 +3778,8 @@
     b.discard.push(...b.hand); b.hand=[];
 
     executeEnemyTurn();
+    /* 침수된 방벽의 강제 반격은 이 적 턴에만 유지된다. */
+    S.party.forEach(p=>{ if(p) p.bulwarkRiposte = 0; });
     if(b.over){ render(); return; }
 
     if(S.prologue && S.prologue.stage==='braceDone'){
