@@ -2599,9 +2599,9 @@
     if(Array.isArray(data.starterDeckCardIds)) return;
     const picks = (data.setup&&data.setup.picks)||{};
     const chosen = new Set();
-    Object.keys(picks).forEach(owner=>(picks[owner]||[]).forEach(name=>chosen.add(`${owner}|${String(name).replace(/\\++$/, '')}`)));
+    Object.keys(picks).forEach(owner=>(picks[owner]||[]).forEach(name=>chosen.add(`${owner}|${String(name).replace(/\++$/, '')}`)));
     data.starterDeckCardIds = (data.runDeck||[])
-      .filter(c=>chosen.has(`${c.owner}|${String(c.baseName||c.name||'').replace(/\\++$/, '')}`))
+      .filter(c=>chosen.has(`${c.owner}|${String(c.baseName||c.name||'').replace(/\++$/, '')}`))
       .map(c=>c.defId);
   }
   function startNeutralCardPool(){ return CARD_DB.neutral.concat(START_EPIC_CARD_POOL); }
