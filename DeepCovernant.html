@@ -3941,7 +3941,7 @@
         <div class="title-en">No Return</div>
         <h2 style="margin:0;">심연은 모두를 삼켰다</h2>
         <div class="prologue-copy">인양선은 끝내 닿지 않았다. 남은 것은 심연의 꿈에서 건져 올린 전투 기록뿐이다.</div>
-        <div class="prologue-fallen">${S.party.map(heroCardHtml).join('')}</div>
+        <div class="prologue-fallen">${S.party.filter(p=>p).map(heroCardHtml).join('')}</div>
         <div class="prologue-panel"><div class="tier-tag">본편으로</div><p>이제 당신은 이 실패의 기록을 바탕으로 새로운 전문가들을 편성해 다시 내려갑니다. 프롤로그의 죽음은 본편의 해금과 덱에 영향을 주지 않습니다.</p></div>
         <button class="btn primary tutorial-pulse" data-action="prologue-real-run">새로운 탐색을 시작한다</button>
       </div>`;
@@ -4044,7 +4044,7 @@
       body = `
         <div class="tier-tag">대열을 짜세요</div>
         <div class="rank-slots">
-          ${[0,1,2,3].map(i=>{
+          ${Array.from({length:LIM}, (_,i)=>i).map(i=>{
             const cid = st.placements[i];
             const def = cid ? CLASS_DEFS[cid] : null;
             const droppable = st.armed && !cid;
@@ -4331,7 +4331,7 @@
     for(let i=0;i<b.maxAp;i++){ pips += `<div class="pip ${i<b.ap?'filled':''}"></div>`; }
     for(let i=0;i<(b.tempAp||0);i++){ pips += `<div class="pip temp filled"></div>`; }
 
-    const heroesHtml = S.party.map(h=>heroCardHtml(h)).join('');
+    const heroesHtml = S.party.filter(h=>h).map(h=>heroCardHtml(h)).join('');
     const foesHtml = b.enemies.map((en,i)=>foeCardHtml(en,i)).join('');
 
     const handHtml = b.hand.map(c=>{
@@ -4383,7 +4383,7 @@
   function renderRest(){
     const r = S.rest;
     const partyStatus = S.party.map((p,i)=>{
-      if(!p) return `<div class="rest-party-member dead"><div class="rest-party-name">${rankName(i)} · 공석</div><div class="rest-party-meta">기록 없음</div></div>`;
+      if(!p) return '';   /* 아직 열리지 않은 자리 — 칸을 만들지 않는다 */
       const dp = Math.round(Number.isFinite(p.dp) ? p.dp : 0);
       const state = p.alive ? `${rankName(i)} · 생존` : `${rankName(i)} · 전사`;
       const veteran = p.descentWins ? `<br>생환 ${p.descentWins}회 · 적응 HP +${p.descentHp||0} · 회피/흘림 +${Math.round((p.descentReact||0)*1000)/10}%` : '';
@@ -4736,7 +4736,7 @@
     }
     else if(action==='ranks-next'){
       const st=S.setup;
-      if(st.placements.filter(Boolean).length===3){
+      if(st.placements.filter(Boolean).length===partyLimit()){
         st.phase='build-deck';
         /* 후보는 이 편성에 대해 한 번만 뽑는다 — 대열로 돌아갔다 와도 다시 굴리지 않는다.
            다시 굴릴 수 있으면 마음에 드는 패가 나올 때까지 오갈 뿐이라 고르는 값이 사라진다. */
@@ -4796,7 +4796,7 @@
       const st=S.setup;
       const need  = st.selected.length*PICKS_PER_CLASS + PICKS_NEUTRAL;
       const total = st.selected.reduce((a,cid)=>a+((st.picks[cid]||[]).length),0) + ((st.picks.neutral||[]).length);
-      if(st.placements.filter(Boolean).length===3 && total===need){
+      if(st.placements.filter(Boolean).length===partyLimit() && total===need){
         S.party = buildPartyFromPlacements(st.placements);
         S.runDeck = buildRunDeck(st.selected, st.picks);
         S.screen = 'map';
