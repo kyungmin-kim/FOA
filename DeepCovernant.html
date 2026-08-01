@@ -680,11 +680,10 @@
     display:flex; flex-direction:column;
     transition:transform 0.15s;
   }
-  .card.owner-vanguard{ border-top:3px solid var(--steel); }
-  .card.owner-chemist{ border-top:3px solid var(--toxin); }
-  .card.owner-priest{ border-top:3px solid var(--bone); }
-  .card.owner-oracle{ border-top:3px solid var(--indigo); }
-  .card.owner-neutral{ border-top:3px solid var(--brass); }
+  /* 기본 카드 색: 공용은 흰색, 모든 직업 카드는 같은 파란색으로 읽힌다. */
+  .card.owner-neutral{ border-color:#d9d8d1; border-top:3px solid #efeee5; }
+  .card.owner-vanguard,.card.owner-chemist,.card.owner-priest,.card.owner-oracle,
+  .card.owner-hellion,.card.owner-robber,.card.owner-jester{ border-color:#5d98c9; border-top:3px solid #78b6e3; }
   .card:active{ transform:translateY(-4px); }
   .card.unplayable{ opacity:0.52; filter:grayscale(0.6); }
   .card.unplayable .card-name, .card.unplayable .card-cost{ opacity:0.72; }
@@ -713,9 +712,9 @@
   }
   .card-desc.glitch{ color:rgba(141,122,176,0.75); }
   .card-owner-tag{ font-family:'Nanum Myeongjo',serif; font-size:7.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.12em; margin-top:auto;}
-  /* 에픽은 표기만 남기고, 일반 카드의 크기·정렬·AP 봉인 규칙을 그대로 쓴다. */
-  .card.epic{ border-color:#f2ca63; }
-  .card.legendary{ border-color:#b98ae4; }
+  /* 에픽은 보라색 표식만 남기고, 일반 카드의 크기·정렬·AP 봉인 규칙을 그대로 쓴다. */
+  .card.epic{ border-color:#8d7ab0; border-top-color:#8d7ab0; }
+  .card.legendary{ border-color:#e6bd59; border-top-color:#e6bd59; }
 
   .end-turn-row{ display:flex; justify-content:center; padding-top:2px;}
 
@@ -782,21 +781,34 @@
   .upgrade-guide-panel .btn{ display:block; margin:12px auto 0; }
   .fusion-inspect{ width:100%; max-width:300px; display:flex; flex-direction:column; gap:5px; }
   .card-inspect{ border:1px solid rgba(184,147,79,0.68); padding:7px 9px; text-align:left; background:rgba(20,25,26,0.70); box-shadow:inset 0 0 12px rgba(184,147,79,0.08); }
-  .card-inspect.epic{ border-color:#f2ca63; background:rgba(58,38,42,0.68); }
-  .card-inspect.legendary{ border-color:#b98ae4; background:rgba(41,29,59,0.68); }
+  .card-inspect.epic{ border-color:#8d7ab0; background:rgba(38,30,58,0.68); }
+  .card-inspect.legendary{ border-color:#e6bd59; background:rgba(62,47,20,0.68); }
   .card-inspect-head{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; color:var(--bone); font-size:11px; }
   .card-inspect-meta{ color:var(--gaslamp); font-size:9px; white-space:nowrap; }
   .card-inspect-effect{ margin-top:2px; color:var(--muted); font-size:10px; line-height:1.5; }
 
   .reveal-stage{ width:100%; display:flex; flex-direction:column; align-items:center; gap:7px; }
-  .reveal-banner{ font-family:'Nanum Myeongjo',serif; font-size:13px; color:var(--gaslamp); letter-spacing:0.14em; text-shadow:0 0 12px rgba(224,170,76,0.4); animation:revealBannerPulse 1s steps(2,end) infinite; }
+  .reveal-banner{ font-family:'Nanum Myeongjo',serif; font-size:13px; color:var(--gaslamp); letter-spacing:0.14em; text-shadow:0 0 12px rgba(224,170,76,0.4); animation:revealBannerPulse 0.55s steps(2,end) infinite; }
   .reveal-card-wrap{ position:relative; display:flex; justify-content:center; padding:6px 0 4px; }
   .card.reveal-card{ flex:0 0 156px; height:198px; border-color:var(--gaslamp); box-shadow:inset 0 0 0 1px rgba(0,0,0,0.6),inset 0 0 26px rgba(224,170,76,0.14),0 0 24px rgba(224,170,76,0.4); transform:scale(1.05); }
-  .reveal-upgrade .card.reveal-card{ animation:upgradeReveal 720ms steps(7,end) both; }
-  .reveal-fusion .card.reveal-card{ animation:fusionReveal 900ms steps(8,end) both; }
+  .reveal-upgrade .card.reveal-card{ animation:upgradeReveal 380ms steps(5,end) both; }
+  .reveal-fusion .card.reveal-card{ animation:fusionReveal 460ms steps(6,end) both; }
+  /* 보라색 글로우와 파편은 에픽이 실제로 모습을 드러낸 짧은 순간에만 쓴다. */
+  .reveal-epic .reveal-banner{ color:#d8c8ff; text-shadow:0 0 10px #8d7ab0,0 0 24px rgba(141,122,176,0.74); }
+  .reveal-epic .card.reveal-card{ border-color:#a894cf; box-shadow:inset 0 0 0 1px rgba(225,215,255,0.42),inset 0 0 24px rgba(141,122,176,0.34),0 0 26px rgba(141,122,176,0.78); animation:epicReveal 620ms steps(7,end) both; }
+  /* 전설은 에픽보다 한 단계 더 큰 황금 섬광과 긴 파편 궤적을 남긴다. */
+  .reveal-legendary .reveal-banner{ color:#fff1b0; font-size:15px; text-shadow:0 0 8px #e6bd59,0 0 22px #d59127,0 0 42px rgba(230,189,89,0.88); animation-duration:0.32s; }
+  .reveal-legendary .card.reveal-card{ border-color:#fff0a2; box-shadow:inset 0 0 0 1px rgba(255,247,185,0.72),inset 0 0 32px rgba(230,189,89,0.50),0 0 38px rgba(230,189,89,0.94),0 0 70px rgba(213,145,39,0.42); animation:legendaryReveal 880ms steps(9,end) both; }
+  .reveal-sparks{ position:absolute; inset:0; pointer-events:none; overflow:visible; }
+  .reveal-spark{ position:absolute; left:50%; top:50%; width:4px; height:4px; background:#e7dcff; border:1px solid #7c67ad; box-shadow:0 0 7px #9c86d0; transform:translate(-50%,-50%) rotate(calc(var(--i) * 30deg)) translateY(-10px); animation:epicRevealSpark 620ms steps(7,end) both; animation-delay:calc(var(--i) * -34ms); }
+  .reveal-legendary .reveal-spark{ width:5px; height:5px; background:#fff4b8; border-color:#d78d26; box-shadow:0 0 10px #f5cb5b,0 0 20px rgba(245,203,91,0.75); animation:legendaryRevealSpark 880ms steps(9,end) both; animation-delay:calc(var(--i) * -26ms); }
   @keyframes revealBannerPulse{ 0%,100%{ opacity:0.68; transform:translateY(0); } 50%{ opacity:1; transform:translateY(-1px); } }
-  @keyframes upgradeReveal{ 0%{ opacity:0; transform:scale(0.74) rotate(-2deg); filter:brightness(2.4); } 58%{ opacity:1; transform:scale(1.12) rotate(1deg); filter:brightness(1.45); } 100%{ opacity:1; transform:scale(1.05); filter:brightness(1); } }
-  @keyframes fusionReveal{ 0%{ opacity:0; transform:scale(0.42) rotate(-9deg); filter:brightness(2.2); } 52%{ opacity:1; transform:scale(1.15) rotate(3deg); filter:brightness(1.65); } 100%{ opacity:1; transform:scale(1.05); filter:brightness(1); } }
+  @keyframes upgradeReveal{ 0%{ opacity:0; transform:scale(0.52) translateY(18px) rotate(-4deg); filter:brightness(2.7); } 46%{ opacity:1; transform:scale(1.18) translateY(-3px) rotate(1deg); filter:brightness(1.65); } 72%{ transform:scale(0.99) translateY(1px); } 100%{ opacity:1; transform:scale(1.05); filter:brightness(1); } }
+  @keyframes fusionReveal{ 0%{ opacity:0; transform:scale(0.22) rotate(-12deg); filter:brightness(3); } 44%{ opacity:1; transform:scale(1.22) rotate(3deg); filter:brightness(1.9); } 70%{ transform:scale(0.98) rotate(-1deg); } 100%{ opacity:1; transform:scale(1.05); filter:brightness(1); } }
+  @keyframes epicReveal{ 0%{ opacity:0; transform:scale(0.18) rotate(-10deg); filter:brightness(3.6); } 48%{ opacity:1; transform:scale(1.20) rotate(2deg); filter:brightness(1.8); } 74%{ transform:scale(0.99) rotate(0); } 100%{ opacity:1; transform:scale(1.05); filter:brightness(1); } }
+  @keyframes epicRevealSpark{ 0%{ opacity:0; transform:translate(-50%,-50%) rotate(calc(var(--i) * 30deg)) translateY(-8px) scale(0); } 20%{ opacity:1; } 100%{ opacity:0; transform:translate(-50%,-50%) rotate(calc(var(--i) * 30deg)) translateY(-112px) scale(1.35); } }
+  @keyframes legendaryReveal{ 0%{ opacity:0; transform:scale(0.08) rotate(-16deg); filter:brightness(5); } 34%{ opacity:1; transform:scale(1.28) rotate(4deg); filter:brightness(2.6); } 58%{ transform:scale(0.94) rotate(-1deg); filter:brightness(1.5); } 78%{ transform:scale(1.12) rotate(1deg); } 100%{ opacity:1; transform:scale(1.05); filter:brightness(1); } }
+  @keyframes legendaryRevealSpark{ 0%{ opacity:0; transform:translate(-50%,-50%) rotate(calc(var(--i) * 18deg)) translateY(-8px) scale(0); } 16%{ opacity:1; } 100%{ opacity:0; transform:translate(-50%,-50%) rotate(calc(var(--i) * 18deg)) translateY(-154px) scale(1.7); } }
   .card.reveal-card .card-name{ font-size:13px; }
   .card.reveal-card .card-desc{ font-size:10.5px; }
 
@@ -919,19 +931,20 @@
     border:1px solid var(--brass-dim); background:rgba(184,147,79,0.09);
     padding:2px 7px; font-size:9.5px; color:var(--brass); letter-spacing:0.03em;
   }
-  /* 유물 보유 한도(3개)에 맞춰 상단 선반은 언제나 한 줄 3칸으로 고정한다. */
-  .topbar-relics{ max-width:none; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:3px; justify-content:stretch; margin-top:6px; }
+  /* 유물 4칸 + 관측 표식 3칸을 한 줄에 나란히 둔다. */
+.topbar-collection{ display:flex; align-items:stretch; gap:3px; margin-top:6px; min-width:0; }
+.topbar-collection:not(.with-markers) .topbar-relics,
+.topbar-collection:not(.with-relics) .topbar-markers{ flex:1 1 0; }
+  .topbar-relics{ min-width:0; flex:4 1 0; max-width:none; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:3px; justify-content:stretch; margin:0; }
   .topbar-relics .relic-chip{ min-width:0; font-size:8.5px; padding:1px 5px; }
   .topbar-relics .relic-chip span{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   /* 관측 표식은 소모 유물이 아니라 장기 진행 기록이다. 유물 한도와 별도의 작은 선반에 둔다. */
-  .marker-tray{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:3px; margin-top:6px; }
+  .topbar-markers{ min-width:0; flex:3 1 0; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:3px; margin:0; }
   .marker-chip{
-    min-width:0; display:flex; align-items:center; gap:4px; padding:2px 4px;
-    border:1px solid rgba(166,79,79,0.62); background:rgba(48,9,13,0.38); color:#d9b5af;
-    font-size:8px; line-height:1.25;
+    min-width:0; display:flex; align-items:center; justify-content:center; padding:1px;
+    border:1px solid rgba(166,79,79,0.62); background:rgba(48,9,13,0.38);
   }
-  .marker-chip img{ width:15px; height:15px; flex:0 0 15px; object-fit:contain; background:#050607; image-rendering:auto; }
-  .marker-chip span{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .marker-chip img{ width:20px; height:20px; display:block; object-fit:contain; background:#050607; image-rendering:auto; }
 
   .chapter-tag{
     display:flex; align-items:center; gap:8px;
@@ -1365,8 +1378,11 @@
     box-shadow: inset 1px 1px 0 rgba(224,170,76,0.28), inset -1px -1px 0 rgba(0,0,0,0.8), 0 0 0 1px #000;
   }
   .pick-card.sel .pick-name{ color:var(--gaslamp); }
-  .pick-card.epic{ border-color:#f2ca63; }
-  .pick-card.legendary{ border-color:#b98ae4; }
+  .pick-card.owner-neutral{ border-color:#d9d8d1; }
+  .pick-card.owner-vanguard,.pick-card.owner-chemist,.pick-card.owner-priest,.pick-card.owner-oracle,
+  .pick-card.owner-hellion,.pick-card.owner-robber,.pick-card.owner-jester{ border-color:#5d98c9; }
+  .pick-card.epic{ border-color:#8d7ab0; }
+  .pick-card.legendary{ border-color:#e6bd59; }
   /* 칸이 다 찼을 때 못 고르는 것은 물러나 있게 — 막지는 않는다(고른 걸 눌러 빼면 된다) */
   .pick-card.full{ opacity:0.4; }
   .pick-card:active{ transform:translateY(1px); }
@@ -1601,7 +1617,7 @@
   @media (prefers-reduced-motion: reduce){
     .enemy-portrait img,.portrait img.px,
     .p-shard,.p-ring,.p-wisp,.p-slash,.p-bub,.p-mote,
-    .reveal-banner,.card.reveal-card{ animation:none !important; }
+    .reveal-banner,.card.reveal-card,.reveal-spark{ animation:none !important; }
   }
 </style>
 </head>
@@ -2908,8 +2924,28 @@
     for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
     return arr;
   }
+  /* 강한 카드는 덱에 남아 있어도 초반 손패를 독점하지 않는다.
+     한 순환 안에는 반드시 모두 뽑히되, 섞일 때 일반 1 : 에픽 0.4 : 전설 0.2의 가중치를 쓴다. */
+  const BATTLE_DRAW_WEIGHT = {normal:1, epic:0.4, legendary:0.2};
+  function battleDrawWeight(card){ return isLegendaryCard(card) ? BATTLE_DRAW_WEIGHT.legendary : (isEpicCard(card) ? BATTLE_DRAW_WEIGHT.epic : BATTLE_DRAW_WEIGHT.normal); }
+  function shuffleBattleDeck(cards){
+    const pool = cards.slice();
+    const ordered = [];
+    while(pool.length){
+      const total = pool.reduce((sum,card)=>sum+battleDrawWeight(card),0);
+      let roll = Math.random()*total;
+      let idx = pool.length-1;
+      for(let i=0;i<pool.length;i++){
+        roll -= battleDrawWeight(pool[i]);
+        if(roll<=0){ idx=i; break; }
+      }
+      ordered.push(pool.splice(idx,1)[0]);
+    }
+    /* drawNextBattleCard 는 pop()으로 뽑으므로 첫 후보가 배열 끝에 오도록 뒤집는다. */
+    return ordered.reverse();
+  }
   function cloneForBattle(runDeck){
-    return shuffle(runDeck.map(c=>Object.assign({}, c, {uid:nextId(), contaminated:false})));
+    return shuffleBattleDeck(runDeck.map(c=>Object.assign({}, c, {uid:nextId(), contaminated:false})));
   }
 
   /* ============ 적 도감 ============
@@ -3204,7 +3240,7 @@
     const b = S.battle;
     if(b.deck.length===0){
       if(b.discard.length===0) return null;
-      b.deck = shuffle(b.discard); b.discard=[];
+      b.deck = shuffleBattleDeck(b.discard); b.discard=[];
     }
     const c = b.deck.pop();
     c.contaminated = false;
@@ -3996,6 +4032,8 @@
     a.cardTaken = added;
     a.cardOffer = null;
     S.logMsg = `${added.name} 카드가 덱에 추가되었다. (${S.runDeck.length}/${MAX_DECK_SIZE})`;
+    if(isLegendaryCard(added)) a.reveal = {kind:'reward', card:added, legendaryAcquired:true};
+    else if(isEpicCard(added)) a.reveal = {kind:'reward', card:added, epicAcquired:true};
     return added;
   }
 
@@ -4191,8 +4229,10 @@
           <div class="ero-case ${danger}"><div class="ero-fill" style="width:${pct}%"></div></div>
           <div class="ero-num mono ${danger}">${Math.round(S.erosion)}%</div>
         </div>
-        ${ownedMarkers().length ? `<div class="marker-tray topbar-markers">${ownedMarkers().map(marker=>markerChip(marker)).join('')}</div>` : ''}
-        ${S.relics.length ? `<div class="relic-tray topbar-relics">${S.relics.map(r=>relicChip(r,true)).join('')}</div>` : ''}
+${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${S.relics.length?'with-relics':''} ${ownedMarkers().length?'with-markers':''}">
+          ${S.relics.length ? `<div class="relic-tray topbar-relics">${S.relics.map(r=>relicChip(r,true)).join('')}</div>` : ''}
+          ${ownedMarkers().length ? `<div class="topbar-markers">${ownedMarkers().map(marker=>markerChip(marker)).join('')}</div>` : ''}
+        </div>` : ''}
       </div>`;
   }
 
@@ -4247,7 +4287,7 @@
      직군마다 무작위 세 장 중 한 장, 공용은 무작위 여섯 장 중 넷을 고른다. */
   function pickRow(group, base, sel, full){
     return `
-      <div class="pick-card ${cardVisualClass(base)} ${sel?'sel':''} ${(!sel&&full)?'full':''}"
+      <div class="pick-card owner-${base.owner} ${cardVisualClass(base)} ${sel?'sel':''} ${(!sel&&full)?'full':''}"
            data-action="toggle-pick" data-group="${group}" data-name="${base.name}">
         <div class="pick-cost">${base.cost}</div>
         <div class="pick-body">
@@ -4420,7 +4460,7 @@
     return `<div class="relic-chip" title="${r.boon}">${relicPortrait(r,false,compact)}<span>${r.name}</span></div>`;
   }
   function markerChip(marker){
-    return `<div class="marker-chip" title="${marker.name} — ${marker.flavor}"><img src="${marker.asset}" alt="${marker.name}"><span>${marker.name}</span></div>`;
+    return `<div class="marker-chip" title="${marker.name} — ${marker.flavor}"><img src="${marker.asset}" alt="${marker.name}"></div>`;
   }
 
   function renderEscape(){
@@ -4752,8 +4792,12 @@
           </div>`).join('')}</div>`;
     } else if(a.reveal){
       const card = a.reveal.card;
-      /* 에픽도 합성 결과와 같은 연출을 쓴다. 카드별 광원·불꽃은 배치와 가독성을 흐린다. */
-      const revealFx = a.reveal.kind==='upgrade' ? 'upgrade' : 'fusion';
+      /* 등급 광원과 파편은 카드가 새로 손에 들어오는 이 한 순간에만 남긴다. */
+      const epicAcquired = !!a.reveal.epicAcquired;
+      const legendaryAcquired = !!a.reveal.legendaryAcquired;
+      const revealFx = legendaryAcquired ? 'legendary' : (epicAcquired ? 'epic' : (a.reveal.kind==='upgrade' ? 'upgrade' : 'fusion'));
+      const sparkCount = legendaryAcquired ? 20 : (epicAcquired ? 12 : 0);
+      const sparks = sparkCount ? Array.from({length:sparkCount},(_,i)=>`<i class="reveal-spark" style="--i:${i}"></i>`).join('') : '';
       body = `
         <div class="reveal-stage reveal-${revealFx}">
           <div class="reveal-banner">${a.reveal.kind==='upgrade' ? '카드가 강화되었다' : isLegendaryCard(card) ? '전설 카드가 모습을 드러냈다' : isEpicCard(card) ? '심연이 응답했다 — 에픽 카드 획득' : '두 카드가 합성되었다'}</div>
@@ -4764,6 +4808,7 @@
               <div class="card-desc">${describeCard(card)}</div>
               <div class="card-owner-tag">${cardRarityLabel(card) ? cardRarityLabel(card)+' · ' : ''}${ownerLabel(card.owner)}</div>
             </div>
+            <div class="reveal-sparks" aria-hidden="true">${sparks}</div>
           </div>
           <button class="btn primary" data-action="reveal-confirm">계속하기</button>
         </div>`;
@@ -5286,8 +5331,10 @@
       render();
     }
     else if(action==='do-upgrade'){
+      const before = S.runDeck.find(c=>c.defId===el.dataset.defid);
+      const wasEpic = isEpicCard(before);
       const card = applyUpgradeByDefId(el.dataset.defid);
-      if(card){ S.aftermath.selecting=null; S.aftermath.upgradeSelected=null; S.aftermath.reveal={kind:'upgrade', card}; }
+      if(card){ S.aftermath.selecting=null; S.aftermath.upgradeSelected=null; S.aftermath.reveal={kind:'upgrade', card, epicAcquired:!wasEpic && isEpicCard(card)}; }
       render();
     }
     else if(action==='toggle-fuse'){
@@ -5305,11 +5352,12 @@
       if(S.aftermath.fuseSelected.length===2){
         const newCard = applyFusion(S.aftermath.fuseSelected[0], S.aftermath.fuseSelected[1]);
         S.aftermath.fuseSelected=[];
-        if(newCard){ S.aftermath.selecting=null; S.aftermath.reveal={kind:'fuse', card:newCard}; }
+        if(newCard){ S.aftermath.selecting=null; S.aftermath.reveal={kind:'fuse', card:newCard, epicAcquired:isEpicCard(newCard)}; }
         render();
       }
     }
     else if(action==='reveal-confirm'){
+      if(S.aftermath.reveal.kind==='reward'){ S.aftermath.reveal=null; render(); return; }
       S.aftermath.reveal = null;
       S.aftermath.actionsLeft--;
       if(S.aftermath.actionsLeft<=0) proceedAfterAftermath(); else render();
