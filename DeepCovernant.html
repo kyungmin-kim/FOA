@@ -713,21 +713,8 @@
   }
   .card-desc.glitch{ color:rgba(141,122,176,0.75); }
   .card-owner-tag{ font-family:'Nanum Myeongjo',serif; font-size:7.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.12em; margin-top:auto;}
-  /* 합성 중 심연이 응답했을 때만 생기는 카드. 금빛 봉인과 천천히 훑는 반짝임으로
-     손패에서도 평범한 중립 카드와 즉시 구분한다. */
-  .card.epic{ overflow:hidden; border-color:#f2ca63; background:linear-gradient(160deg,rgba(62,38,76,0.94),rgba(11,15,24,0.98)); box-shadow:inset 0 0 0 1px rgba(255,239,167,0.50),inset 0 0 24px rgba(222,166,53,0.24),0 0 13px rgba(238,188,71,0.46); animation:epicBorderGleam 1.7s steps(2,end) infinite; }
-  /* 카드 위를 훑던 광선은 글자의 기준선을 흐려 보이게 해 제거한다. 황금 테두리만 남겨 일반 카드와 같은 축으로 읽힌다. */
-  .card.epic::after{ display:none; }
-  .card.epic > *{ position:relative; z-index:1; }
-  /* 에픽도 일반 카드와 같은 왼쪽 기준선·글자 배치를 쓴다.
-     제목의 흐린 광채는 픽셀 글꼴을 반 칸 떠 보이게 하므로, 빛은 테두리에만 남긴다. */
-  .card.epic .card-name,
-  .card.epic .card-desc,
-  .card.epic .card-owner-tag{ text-align:left; }
-  .card.epic .card-name{ color:#fff0bb; text-shadow:none; }
-  .card.epic .card-owner-tag{ color:#f0cf7d; }
-  @keyframes epicBorderGleam{ 0%,100%{ border-color:#d9a93f; box-shadow:inset 0 0 0 1px rgba(255,231,144,0.34),inset 0 0 18px rgba(222,166,53,0.16),0 0 7px rgba(238,188,71,0.22); } 50%{ border-color:#fff1a7; box-shadow:inset 0 0 0 1px rgba(255,249,209,0.84),inset 0 0 26px rgba(237,188,70,0.32),0 0 18px rgba(255,209,94,0.70); } }
-  @keyframes epicShineSweep{ 0%,22%{ transform:translateX(-64%) rotate(8deg); } 58%,100%{ transform:translateX(64%) rotate(8deg); } }
+  /* 에픽은 표기만 남기고, 일반 카드의 크기·정렬·AP 봉인 규칙을 그대로 쓴다. */
+  .card.epic{ border-color:#f2ca63; }
 
   .end-turn-row{ display:flex; justify-content:center; padding-top:2px;}
 
@@ -792,15 +779,9 @@
   .card.reveal-card{ flex:0 0 156px; height:198px; border-color:var(--gaslamp); box-shadow:inset 0 0 0 1px rgba(0,0,0,0.6),inset 0 0 26px rgba(224,170,76,0.14),0 0 24px rgba(224,170,76,0.4); transform:scale(1.05); }
   .reveal-upgrade .card.reveal-card{ animation:upgradeReveal 720ms steps(7,end) both; }
   .reveal-fusion .card.reveal-card{ animation:fusionReveal 900ms steps(8,end) both; }
-  .reveal-epic .reveal-banner{ color:#fff0aa; font-size:14px; text-shadow:0 0 14px #e5ad39,0 0 30px rgba(229,173,57,0.62); animation-duration:0.64s; }
-  .reveal-epic .card.reveal-card{ animation:epicReveal 1200ms steps(10,end) both, epicBorderGleam 1.4s steps(2,end) infinite 1200ms; }
-  .reveal-sparks{ position:absolute; inset:0; pointer-events:none; overflow:visible; }
-  .reveal-spark{ position:absolute; left:50%; top:50%; width:4px; height:4px; background:#fff4b3; border:1px solid #d99b2f; box-shadow:0 0 8px #f0c65d; transform:translate(-50%,-50%) rotate(calc(var(--i) * 30deg)) translateY(-12px); animation:epicRevealSpark 1150ms steps(9,end) both; animation-delay:calc(var(--i) * -68ms); }
   @keyframes revealBannerPulse{ 0%,100%{ opacity:0.68; transform:translateY(0); } 50%{ opacity:1; transform:translateY(-1px); } }
   @keyframes upgradeReveal{ 0%{ opacity:0; transform:scale(0.74) rotate(-2deg); filter:brightness(2.4); } 58%{ opacity:1; transform:scale(1.12) rotate(1deg); filter:brightness(1.45); } 100%{ opacity:1; transform:scale(1.05); filter:brightness(1); } }
   @keyframes fusionReveal{ 0%{ opacity:0; transform:scale(0.42) rotate(-9deg); filter:brightness(2.2); } 52%{ opacity:1; transform:scale(1.15) rotate(3deg); filter:brightness(1.65); } 100%{ opacity:1; transform:scale(1.05); filter:brightness(1); } }
-  @keyframes epicReveal{ 0%{ opacity:0; transform:scale(0.24) rotate(-14deg); filter:brightness(4); } 38%{ opacity:1; transform:scale(1.22) rotate(5deg); filter:brightness(2.1); } 70%{ transform:scale(1.10) rotate(-2deg); filter:brightness(1.4); } 100%{ transform:scale(1.05); filter:brightness(1); } }
-  @keyframes epicRevealSpark{ 0%{ opacity:0; transform:translate(-50%,-50%) rotate(calc(var(--i) * 30deg)) translateY(-8px) scale(0); } 24%{ opacity:1; } 100%{ opacity:0; transform:translate(-50%,-50%) rotate(calc(var(--i) * 30deg)) translateY(-145px) scale(1.6); } }
   .card.reveal-card .card-name{ font-size:13px; }
   .card.reveal-card .card-desc{ font-size:10.5px; }
 
@@ -1360,9 +1341,7 @@
     box-shadow: inset 1px 1px 0 rgba(224,170,76,0.28), inset -1px -1px 0 rgba(0,0,0,0.8), 0 0 0 1px #000;
   }
   .pick-card.sel .pick-name{ color:var(--gaslamp); }
-  .pick-card.epic{ border-color:#f2ca63; background:linear-gradient(150deg,rgba(65,42,74,0.90),rgba(11,15,24,0.96)); box-shadow:inset 0 0 14px rgba(222,166,53,0.20),0 0 7px rgba(238,188,71,0.28); }
-  .pick-card.epic .pick-name{ color:#fff0bb; text-shadow:0 0 5px rgba(238,188,71,0.52); }
-  .pick-card.epic .pick-cost{ border-color:#f2ca63; background:#8f641e; }
+  .pick-card.epic{ border-color:#f2ca63; }
   /* 칸이 다 찼을 때 못 고르는 것은 물러나 있게 — 막지는 않는다(고른 걸 눌러 빼면 된다) */
   .pick-card.full{ opacity:0.4; }
   .pick-card:active{ transform:translateY(1px); }
@@ -1597,7 +1576,7 @@
   @media (prefers-reduced-motion: reduce){
     .enemy-portrait img,.portrait img.px,
     .p-shard,.p-ring,.p-wisp,.p-slash,.p-bub,.p-mote,
-    .card.epic,.card.epic::after,.reveal-banner,.card.reveal-card,.reveal-spark{ animation:none !important; }
+    .reveal-banner,.card.reveal-card{ animation:none !important; }
   }
 </style>
 </head>
@@ -4626,8 +4605,8 @@
           </div>`).join('')}</div>`;
     } else if(a.reveal){
       const card = a.reveal.card;
-      const revealFx = a.reveal.kind==='upgrade' ? 'upgrade' : (card.epic ? 'epic' : 'fusion');
-      const sparks = card.epic ? Array.from({length:12},(_,i)=>`<i class="reveal-spark" style="--i:${i}"></i>`).join('') : '';
+      /* 에픽도 합성 결과와 같은 연출을 쓴다. 카드별 광원·불꽃은 배치와 가독성을 흐린다. */
+      const revealFx = a.reveal.kind==='upgrade' ? 'upgrade' : 'fusion';
       body = `
         <div class="reveal-stage reveal-${revealFx}">
           <div class="reveal-banner">${a.reveal.kind==='upgrade' ? '카드가 강화되었다' : card.epic ? '심연이 응답했다 — 에픽 카드 획득' : '두 카드가 합성되었다'}</div>
@@ -4638,7 +4617,6 @@
               <div class="card-desc">${describeCard(card)}</div>
               <div class="card-owner-tag">${card.epic?'EPIC · ':''}${ownerLabel(card.owner)}</div>
             </div>
-            <div class="reveal-sparks" aria-hidden="true">${sparks}</div>
           </div>
           <button class="btn primary" data-action="reveal-confirm">계속하기</button>
         </div>`;
