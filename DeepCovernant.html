@@ -926,6 +926,13 @@
 
   /* ---------- RESULT / GAMEOVER ---------- */
   .result-screen{ padding:32px 22px; justify-content:center; align-items:center; text-align:center; gap:14px;}
+  /* 인양·완주·실패 결과는 한눈에 읽혀야 한다. 보조 영문 라벨의 기본 11px보다 두 배 크게 쓴다. */
+  #app .escape-screen > .title-en,
+  #app .result-screen > .title-en,
+  #app .prologue-fall-screen > .title-en{
+    font-size:22px; font-weight:700; line-height:1.2; letter-spacing:1px;
+    text-shadow:1px 1px 0 #000, 0 0 8px rgba(224,170,76,0.35);
+  }
   /* 화면과 원화 비율이 같아도 위치 이동이 보이도록 130%로 확대해 하단에 맞춘다.
      원화의 시작점이 약 30% 위로 올라가 게임오버 문구와 겹치지 않는다. */
   .result-screen.lose{ isolation:isolate; background:linear-gradient(rgba(14,4,7,0.25),rgba(10,3,5,0.42)),url('assets/failed.png') center 100%/auto 130% no-repeat; }
@@ -2067,6 +2074,31 @@
     {id:'star_eating_chart', name:'별을 먹는 해도', cost:0, type:'draw', draw:7, owner:'neutral', range:'support', epic:true, desc:'카드 7장을 드로우한다.'},
   ];
 
+  /* 일반 합성 결과. 에픽이 아닌 결과도 매번 같은 카드가 되지 않도록 20종을 둔다.
+     합성 공격은 특정 직군의 무기가 아니므로 사거리·대열 제약 없이 심연 자체가 적을 겨눈다. */
+  const FUSION_CARD_POOL = [
+    {name:'속죄의 결속',       cost:2, type:'fuse_support', heal:5,  calm:8,  owner:'neutral', range:'support_ally', desc:'아군 한 명 체력 5 회복 + 심도압박 8 감소.'},
+    {name:'심해 봉합사',       cost:1, type:'heal',          heal:10,          owner:'neutral', range:'support_ally', desc:'아군 한 명 체력 10 회복.'},
+    {name:'염수 주사',         cost:0, type:'heal',          heal:5,           owner:'neutral', range:'support_ally', desc:'아군 한 명 체력 5 회복.'},
+    {name:'고요의 앰플',       cost:1, type:'calm',          calm:17,          owner:'neutral', range:'support_ally', desc:'아군 한 명 심도압박 17 감소.'},
+    {name:'기압 조절기',       cost:0, type:'calm',          calm:9,           owner:'neutral', range:'support_ally', desc:'아군 한 명 심도압박 9 감소.'},
+    {name:'잠수사의 묵주',     cost:2, type:'calm_party',    calm:10,          owner:'neutral', range:'support', desc:'생존한 아군 전체 심도압박 10 감소.'},
+    {name:'침전된 성수',       cost:1, type:'calm_party',    calm:6,           owner:'neutral', range:'support', desc:'생존한 아군 전체 심도압박 6 감소.'},
+    {name:'침몰선 외판',       cost:1, type:'block_party',   block:7,          owner:'neutral', range:'support', desc:'생존한 아군 전체 방어 7 획득.'},
+    {name:'납빛 격벽',         cost:2, type:'block_party',   block:13,         owner:'neutral', range:'support', desc:'생존한 아군 전체 방어 13 획득.'},
+    {name:'수압 완충막',       cost:0, type:'block_party',   block:4,          owner:'neutral', range:'support', desc:'생존한 아군 전체 방어 4 획득.'},
+    {name:'구명 밧줄',         cost:0, type:'swap',                            owner:'neutral', range:'support_ally', desc:'아군 한 명을 전열로 이동시킨다.'},
+    {name:'조난 신호',         cost:1, type:'reroll_intent',                  owner:'neutral', range:'ranged', desc:'적 한 명의 예고된 행동을 다시 정한다.'},
+    {name:'유실물 수색',       cost:0, type:'draw',          draw:2,           owner:'neutral', range:'support', desc:'카드 2장을 드로우한다.'},
+    {name:'해도 보정',         cost:1, type:'draw',          draw:3,           owner:'neutral', range:'support', desc:'카드 3장을 드로우한다.'},
+    {name:'온전한 다이빙 벨',  cost:1, type:'fuse_support', heal:7,  calm:10, owner:'neutral', range:'support_ally', desc:'아군 한 명 체력 7 회복 + 심도압박 10 감소.'},
+    {name:'녹슨 하푼',         cost:1, type:'fusion_attack', dmg:10,           owner:'neutral', range:'ranged', desc:'적 한 명을 골라 10 피해.'},
+    {name:'압력탄',            cost:1, type:'fusion_attack', dmg:5,            owner:'neutral', range:'aoe', desc:'모든 적에게 5 피해.'},
+    {name:'심해 작살포',       cost:2, type:'fusion_attack', dmg:18,           owner:'neutral', range:'ranged', desc:'적 한 명을 골라 18 피해.'},
+    {name:'가라앉은 해류',     cost:2, type:'fusion_attack', dmg:9,            owner:'neutral', range:'aoe', desc:'모든 적에게 9 피해.'},
+    {name:'봉합의 의식',       cost:2, type:'heal_party',    heal:6,           owner:'neutral', range:'support', desc:'생존한 아군 전체 체력 6 회복.'},
+  ];
+
   /* ============ MAP DATA (chapters) ============
      세 번의 인양 뒤, 마지막에는 끝없는 심연으로 내려간다 —
      3·5·10 노드를 지나고, 최후의 심연은 보스까지 정확히 7노드다.
@@ -3023,15 +3055,15 @@
     return phaseMsg;
   }
 
-  function isAttackCard(card){ return card.type==='attack' || card.type==='epic_attack' || card.type==='reroll_intent'; }
+  function isAttackCard(card){ return card.type==='attack' || card.type==='fusion_attack' || card.type==='epic_attack' || card.type==='reroll_intent'; }
   function ownerOf(card){ return S.party.find(p=>p && p.id===card.owner) || null; }
 
   /* 이 카드가 지금 실제로 닿을 수 있는 적들 */
   function enemyTargetsFor(card){
     const b = S.battle;
     if(!b) return [];
-    /* 에픽 공격은 특정 병과가 휘두르는 무기가 아니라, 합성으로 부른 심연 그 자체다. */
-    if(card.type==='epic_attack') return b.enemies.filter(e=>e.alive);
+    /* 합성 공격은 특정 병과가 휘두르는 무기가 아니라, 합성으로 부른 심연 그 자체다. */
+    if(card.type==='fusion_attack' || card.type==='epic_attack' || (card.type==='reroll_intent' && card.owner==='neutral')) return b.enemies.filter(e=>e.alive);
     const owner = ownerOf(card);
     if(!owner || !owner.alive) return [];
     if(!canActFrom(owner, heroRank(owner))) return [];
@@ -3041,7 +3073,7 @@
   /* 못 내는 이유를 문장으로 — 카드에 그대로 찍어 보여준다 */
   function cardBlockReason(card){
     if(!isAttackCard(card)) return null;
-    if(card.type==='epic_attack') return null;
+    if(card.type==='fusion_attack' || card.type==='epic_attack' || (card.type==='reroll_intent' && card.owner==='neutral')) return null;
     const owner = ownerOf(card);
     if(!owner || !owner.alive) return '시전자가 없다';
     const oRank = heroRank(owner);
@@ -3113,6 +3145,7 @@
 
     switch(card.type){
       case 'attack':
+      case 'fusion_attack':
       case 'epic_attack': {
         let dmg = Math.round(card.dmg * relicMul('dmgMul', owner));
         if(owner && owner.collapsed) dmg = Math.round(dmg*0.5);
@@ -3130,6 +3163,7 @@
       case 'block': { if(owner&&owner.alive){ owner.block+=Math.round(card.block*relicMul('blockMul', owner)); pushLog(`${owner.name}이 방어 태세를 취한다.`); } break; }
       case 'block_party': { aliveParty().forEach(p=>p.block+=Math.round(card.block*relicMul('blockMul', p))); pushLog('파티 전체가 대비한다.'); break; }
       case 'heal': { if(allyTarget){ allyTarget.hp=Math.min(allyTarget.maxHp, allyTarget.hp+Math.round(card.heal*relicMul('healMul', allyTarget))); queueFx('heal', allyTarget); pushLog(`${allyTarget.name}의 상처를 봉합했다.`); } break; }
+      case 'heal_party': { aliveParty().forEach(p=>{ p.hp=Math.min(p.maxHp,p.hp+Math.round(card.heal*relicMul('healMul', p))); queueFx('heal',p); }); pushLog('파티 전체의 상처를 봉합했다.'); break; }
       case 'calm': { if(allyTarget){ allyTarget.dp=Math.max(0, allyTarget.dp-card.calm); queueFx('calm', allyTarget); pushLog(`${allyTarget.name}이 숨을 고른다.`); } break; }
       case 'calm_party': { aliveParty().forEach(p=>{ p.dp=Math.max(0,p.dp-card.calm); queueFx('calm', p); }); pushLog('파티 전체가 진정된다.'); break; }
       case 'fuse_support': { if(allyTarget){ allyTarget.hp=Math.min(allyTarget.maxHp, allyTarget.hp+Math.round(card.heal*relicMul('healMul', allyTarget))); allyTarget.dp=Math.max(0, allyTarget.dp-card.calm); queueFx('heal', allyTarget); pushLog(`${allyTarget.name}이 정화와 회복을 동시에 받는다.`); } break; }
@@ -3447,7 +3481,7 @@
     S.runDeck.splice(first,1);
     S.runDeck.splice(second,1);
     const epic = Math.random() < EPIC_FUSION_CHANCE;
-    const base = epic ? pickOne(EPIC_CARD_POOL) : {name:'속죄의 결속', cost:2, type:'fuse_support', heal:5, calm:8, owner:'neutral', range:'support_ally', desc:'아군 한 명 체력 5 회복 + 심도압박 8 감소.'};
+    const base = epic ? pickOne(EPIC_CARD_POOL) : pickOne(FUSION_CARD_POOL);
     const newCard = Object.assign({defId:nextId(), upgraded:false, upgradeLevel:0}, base);
     S.runDeck.push(newCard);
     S.logMsg = epic ? '심연이 합성에 응답했다. 에픽 카드가 모습을 드러냈다.' : '두 카드가 하나로 융합되었다.';
@@ -3997,6 +4031,7 @@
   function describeCard(card){
     switch(card.type){
       case 'attack':
+      case 'fusion_attack':
       case 'epic_attack': {
         let s;
         if(card.range==='aoe') s = `모든 적에게 ${card.dmg} 피해.`;
@@ -4009,6 +4044,7 @@
       case 'block': return `자신 방어 ${card.block} 획득.`;
       case 'block_party': return `생존한 아군 전체 방어 ${card.block} 획득.`;
       case 'heal': return `아군 한 명 체력 ${card.heal} 회복.`;
+      case 'heal_party': return `생존한 아군 전체 체력 ${card.heal} 회복.`;
       case 'calm': return `아군 한 명 심도압박 ${card.calm} 감소.`;
       case 'calm_party': return `생존한 아군 전체 심도압박 ${card.calm} 감소.`;
       case 'fuse_support': return `아군 한 명 체력 ${card.heal} 회복 + 심도압박 ${card.calm} 감소.`;
