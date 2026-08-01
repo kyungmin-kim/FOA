@@ -533,6 +533,8 @@
   }
   .log-plate .l{ display:block; }
   .log-plate .l.old{ opacity:0.42; font-size:11.5px; }
+  /* 최근에 실제로 처리된 결과는 마지막 줄에 남기고, 한 단계 더 밝게 읽힌다. */
+  .log-plate .l.latest{ color:#f1ead9; font-weight:700; text-shadow:1px 1px 0 #000,0 0 7px rgba(224,170,76,0.22); }
   .log-plate.targeting{
     color:var(--phosphor); letter-spacing:0.02em;
     border-color:rgba(127,191,174,0.5);
@@ -3110,8 +3112,9 @@
       markReact(hero, 'riposte');
       queueFx('riposte', hero);
       const rip = reactOf(hero).rip;
-      damageEnemy(attacker, rip, {riposte:true});
+      /* 반격 선언 뒤의 회피·흘림 결과가 마지막 줄에 남도록 한다. */
       pushLog(`${ga(hero.name)} 곧바로 받아친다. (반격 ${rip})`);
+      damageEnemy(attacker, rip, {riposte:true});
     }
     return res;
   }
@@ -3141,9 +3144,11 @@
       return null;
     }
     en.hp = Math.max(0, en.hp - res.dealt);
-    let phaseMsg = null;
     if(res.dealt>0) queueFx('impact', en, res.dealt);
-    if(res.kind==='guard'){ queueFx('guard', en); phaseMsg = `${ga(foeDisplayName(en))} 몸을 틀어 흘려낸다. (${res.dealt} 피해)`; }
+    if(res.kind==='guard'){
+      queueFx('guard', en);
+      pushLog(`${ga(foeDisplayName(en))} 몸을 틀어 흘려낸다. (${res.dealt} 피해)`);
+    }
 
     if(en.hp<=0){
       en.alive = false;
@@ -3153,9 +3158,9 @@
       en.atk = Math.round(en.atk*1.2);
       en.block = Math.max(en.block, 6);
       en.intent = pickIntent(en);
-      phaseMsg = en.hiddenName
+      pushLog(en.hiddenName
         ? `${en.name}의 흉부가 열리며 단안이 당신을 향한다. 그것은 심연이 아니라, 심연을 지키던 인간이었다...!`
-        : `${ga(en.name)} 진짜 모습을 드러낸다...!`;
+        : `${ga(en.name)} 진짜 모습을 드러낸다...!`);
     }
 
     const hero = opts.from || null;
@@ -3165,10 +3170,10 @@
       markReact(en, 'riposte');
       queueFx('riposte', en);
       const rip = reactOf(en).rip;
+      pushLog(`${ga(foeDisplayName(en))} 이빨을 드러내며 받아친다. (반격 ${rip})`);
       applyDamageToHero(hero, rip, {stress:false, riposte:false});
-      phaseMsg = phaseMsg || `${ga(foeDisplayName(en))} 이빨을 드러내며 받아친다. (반격 ${rip})`;
     }
-    return phaseMsg;
+    return res;
   }
 
   function isAttackCard(card){ return card.type==='attack' || card.type==='fusion_attack' || card.type==='epic_attack' || card.type==='reroll_intent'; }
@@ -3266,13 +3271,13 @@
         let dmg = Math.round(card.dmg * relicMul('dmgMul', owner));
         if(owner && owner.collapsed) dmg = Math.round(dmg*0.5);
         if(card.range==='aoe'){
-          let phaseMsg = null;
-          reachable.slice().forEach(en=>{ const pm=damageEnemy(en, dmg, {from:owner}); if(pm) phaseMsg=pm; });
-          pushLog(phaseMsg || `${card.name} — 닿는 적 ${reachable.length}체에게 ${dmg} 피해.`);
+          /* 선언은 먼저, 회피·흘림·각성 같은 실제 결과는 처리 직후 뒤에 남긴다. */
+          pushLog(`${card.name} — 닿는 적 ${reachable.length}체에게 ${dmg} 피해.`);
+          reachable.slice().forEach(en=>damageEnemy(en, dmg, {from:owner}));
         } else if(enemyTarget){
-          const phaseMsg = damageEnemy(enemyTarget, dmg, {from:owner});
+          pushLog(`${card.name} — ${foeDisplayName(enemyTarget)}에게 ${dmg} 피해.`);
+          damageEnemy(enemyTarget, dmg, {from:owner});
           if(card.selfBlock && owner && owner.alive) owner.block += card.selfBlock;
-          pushLog(phaseMsg || `${card.name} — ${foeDisplayName(enemyTarget)}에게 ${dmg} 피해.`);
         }
         break;
       }
@@ -3356,15 +3361,15 @@
         const alive = aliveParty();
         if(alive.length){
           const t = alive[Math.floor(Math.random()*alive.length)];
-          addDp(t, intent.val); checkCollapse(t);
           pushLog(`무언가 ${t.name}의 귀에 속삭인다. (심도압박 +${intent.val})`);
+          addDp(t, intent.val); checkCollapse(t);
         }
 
       } else if(intent.type==='whisper_rear'){
         const t = rearTarget();
         if(t){
-          addDp(t, intent.val); checkCollapse(t);
           pushLog(`${ga(foeDisplayName(en))} 후미의 ${t.name}에게 속삭인다. (심도압박 +${intent.val})`);
+          addDp(t, intent.val); checkCollapse(t);
         }
 
       } else if(intent.type==='snipe_lowest'){
@@ -4252,7 +4257,7 @@
       logHtml = '대상을 선택하세요 · 카드를 다시 탭하면 취소';
     } else if(S.logLines && S.logLines.length){
       const n = S.logLines.length;
-      logHtml = S.logLines.map((l,i)=>`<span class="l ${i<n-1?'old':''}">${l}</span>`).join('');
+      logHtml = S.logLines.map((l,i)=>`<span class="l ${i===n-1?'latest':'old'}">${l}</span>`).join('');
     } else {
       logHtml = S.logMsg || '';
     }
