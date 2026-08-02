@@ -4761,14 +4761,16 @@
   };
   const BGM_KEY = 'fathom.bgm.v1';
   /* 음악은 배경이지 무대가 아니다 — 있는 줄 모르고 듣다가 없으면 허전한 정도로만 깐다. */
-  const BGM_VOLUME = 0.045;
+  const BGM_VOLUME = 0.0675;
   const BGM_LOOP_SECONDS = 10;   /* 원본의 정확한 길이 — 인코더가 덧댄 꼬리를 여기서 잘라낸다 */
   const BGM_FADE = 0.7;          /* 트랙을 겹쳐 넘기는 시간(초) */
   let bgmOn = Store.get(BGM_KEY) !== 'off';
-  let bgmCtx = null, bgmMaster = null, bgmStarted = false, bgmTrack = null;
+  let bgmCtx = null, bgmMaster = null, bgmTrack = null;
   const bgmBuffers = {};   /* 트랙별 디코딩 결과 — 한 번 받으면 다시 받지 않는다 */
   const bgmEls = {};       /* file:// 대비 요소 재생 */
   let bgmVoice = null;     /* 지금 울리고 있는 {node, gain} */
+  let bgmPrimed = false;   /* 제스처 안에서 오디오 잠금을 푼 적이 있는가 */
+  let bgmMode = null;      /* 'buffer' | 'element' — 실제로 소리가 나기 시작하면 정해진다 */
 
   function bgmDesiredTrack(){ return (S && S.screen === 'battle') ? 'battle' : 'ambient'; }
   function bgmTrackGain(key){
@@ -4783,6 +4785,9 @@
       el.src = BGM_TRACKS[key].src;
       el.loop = true;
       el.preload = 'auto';
+      el.playsInline = true;
+      el.setAttribute('playsinline','');
+      el.volume = 0;
       document.body.appendChild(el);
       bgmEls[key] = el;
     }
@@ -4793,7 +4798,8 @@
     const el = bgmEl(key);
     el.volume = BGM_VOLUME * bgmTrackGain(key);
     const p = el.play();
-    if(p && p.catch) p.catch(()=>{});
+    if(p && p.then) p.then(()=>{ bgmMode = 'element'; }).catch(()=>{});
+    else bgmMode = 'element';
   }
 
   /* ---- Web Audio ---- */
@@ -4819,6 +4825,8 @@
       }catch(e){}
       bgmVoice = null;
     }
+    /* 요소로 먼저 울리고 있었다면 이제 물러난다 */
+    Object.keys(bgmEls).forEach(k=>bgmEls[k].pause());
     const gain = bgmCtx.createGain();
     gain.gain.setValueAtTime(0, now);
     gain.gain.linearRampToValueAtTime(bgmTrackGain(key), now + BGM_FADE);
@@ -4833,6 +4841,7 @@
     node.connect(gain);
     node.start(now);
     bgmVoice = {node:node, gain:gain};
+    bgmMode = 'buffer';
   }
   function bgmPlay(key){
     if(bgmCtx){
@@ -4847,23 +4856,54 @@
   function bgmSetTrack(key){
     if(!BGM_TRACKS[key] || bgmTrack === key) return;
     bgmTrack = key;
-    if(!bgmOn || !bgmStarted) return;
+    if(!bgmOn || !bgmPrimed) return;
     bgmPlay(key);
   }
-  function bgmUnlock(){
-    if(bgmStarted || !bgmOn) return;
-    bgmStarted = true;
-    if(!bgmTrack) bgmTrack = bgmDesiredTrack();
+
+  /* ---- 잠금 풀기 ----
+     모바일은 데스크톱보다 훨씬 깐깐하다. 두 가지를 반드시 '손가락이 닿은 그 순간'
+     동기적으로 해 두어야 한다. 둘 다 나중에(fetch·decode 가 끝난 뒤) 하면 거절당한다.
+
+       1) AudioContext 를 깨우고 소리 없는 한 칸을 실제로 울린다 — iOS 는 이걸로만 풀린다.
+       2) 요소 재생으로 물러설 때를 대비해 <audio> 를 미리 한 번 눌러 둔다.
+          트랙마다 따로 허락을 받으므로 두 개 다 눌러 둔다(음량 0 으로 조용히). */
+  function bgmPrime(){
     const Ctx = window.AudioContext || window.webkitAudioContext;
-    if(!Ctx){ bgmPlayFallback(bgmTrack); return; }
-    try{
-      bgmCtx = new Ctx();
-      bgmMaster = bgmCtx.createGain();
-      bgmMaster.gain.value = BGM_VOLUME;
-      bgmMaster.connect(bgmCtx.destination);
-    }catch(e){ bgmCtx = null; bgmPlayFallback(bgmTrack); return; }
-    if(bgmCtx.state === 'suspended') bgmCtx.resume().catch(()=>{});
-    bgmPlay(bgmTrack);
+    if(Ctx && !bgmCtx){
+      try{
+        bgmCtx = new Ctx();
+        bgmMaster = bgmCtx.createGain();
+        bgmMaster.gain.value = BGM_VOLUME;
+        bgmMaster.connect(bgmCtx.destination);
+      }catch(e){ bgmCtx = null; bgmMaster = null; }
+    }
+    if(bgmCtx){
+      if(bgmCtx.state === 'suspended') bgmCtx.resume().catch(()=>{});
+      try{
+        const tick = bgmCtx.createBufferSource();
+        tick.buffer = bgmCtx.createBuffer(1, 1, 22050);
+        tick.connect(bgmCtx.destination);
+        tick.start(0);
+      }catch(e){}
+    }
+    if(!bgmPrimed){
+      Object.keys(BGM_TRACKS).forEach(k=>{
+        const el = bgmEl(k);
+        el.volume = 0;
+        const p = el.play();
+        if(p && p.then) p.then(()=>{ if(bgmMode !== 'element') el.pause(); }).catch(()=>{});
+      });
+    }
+    bgmPrimed = true;
+  }
+  /* 한 번 실패하면 끝이 아니라, 소리가 실제로 날 때까지 손이 닿을 때마다 다시 시도한다.
+     첫 탭이 로딩·정책·무음 전환에 걸려 놓치는 일이 모바일에서는 흔하다. */
+  function bgmGesture(){
+    if(!bgmOn) return;
+    bgmPrime();
+    if(!bgmTrack) bgmTrack = bgmDesiredTrack();
+    if(!bgmMode) bgmPlay(bgmTrack);
+    else if(bgmCtx && bgmCtx.state === 'suspended') bgmCtx.resume().catch(()=>{});
   }
   function setBgmOn(on){
     bgmOn = !!on;
@@ -4875,15 +4915,26 @@
         bgmVoice = null;
       }
       Object.keys(bgmEls).forEach(k=>bgmEls[k].pause());
+      bgmMode = null;
       return;
     }
-    if(!bgmStarted){ bgmUnlock(); return; }
+    /* 설정에서 켜는 것도 손가락이 닿은 순간이다 — 그대로 잠금을 푼다 */
+    bgmPrime();
     if(bgmCtx && bgmCtx.state === 'suspended') bgmCtx.resume().catch(()=>{});
     bgmTrack = bgmDesiredTrack();
     bgmPlay(bgmTrack);
   }
-  ['pointerdown','keydown','touchstart'].forEach(evt=>{
-    window.addEventListener(evt, bgmUnlock, {once:true, passive:true});
+  ['pointerdown','touchstart','keydown'].forEach(evt=>{
+    window.addEventListener(evt, bgmGesture, {passive:true});
+  });
+  /* 화면을 껐다 켜거나 앱을 다녀오면 iOS 는 컨텍스트를 재워 둔다 — 돌아올 때 깨운다 */
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState !== 'visible' || !bgmOn) return;
+    if(bgmCtx && bgmCtx.state === 'suspended') bgmCtx.resume().catch(()=>{});
+    if(bgmMode === 'element' && bgmTrack){
+      const el = bgmEls[bgmTrack];
+      if(el && el.paused){ const p = el.play(); if(p && p.catch) p.catch(()=>{}); }
+    }
   });
 
   /* ============ 파티클 ============
@@ -4923,6 +4974,8 @@
   const FX_COLOR = {
     heroHit:'#c4383c', foeHit:'#b87ad8',
     dodge:'#8fd4c4', guard:'#9fc0d8', riposte:'#e0574f',
+    /* 되받아친 값은 내가 낸 것이라 붉은 피해와 갈라 둔다 — 우리 쪽 반격만 푸르게 */
+    riposteHero:'#6fb4ff',
     /* 회복은 초록 — 십자와 티끌이 한 가지 빛으로 읽혀야 무엇이 일어났는지 한눈에 갈린다.
        진정(계열)은 그대로 물빛이라 회복과 헷갈리지 않는다. */
     heal:'#6fdc8c', calm:'#7fbfae', death:'#cfe4dd',
@@ -5010,8 +5063,9 @@
     } else if(ev.kind==='riposte'){
       spawn('p-slash', cx, cy, FX_COLOR.riposte, null, {'--a':'-32deg'}, 460);
       spawn('p-slash', cx, cy, FX_COLOR.riposte, null, {'--a':'26deg'}, 460);
-      /* 되돌려준 양. 맞은 쪽에는 이 값이 붉은 피해 수치로 다시 뜬다 */
-      reactNum(fx, fy, FX_COLOR.riposte, '반격', ev.amount);
+      /* 되돌려준 양. 맞은 쪽에는 이 값이 붉은 피해 수치로 다시 뜬다.
+         우리 쪽 반격은 푸르게 — 같은 화면에 붉은 수치가 함께 뜨므로 주인이 갈려야 한다. */
+      reactNum(fx, fy, mine ? FX_COLOR.riposteHero : FX_COLOR.riposte, '반격', ev.amount);
 
     } else if(ev.kind==='death'){
       for(let i=0;i<12;i++){
@@ -5162,6 +5216,10 @@
   ];
 
   const MENU_ITEMS = [
+    /* view:'toggle' 은 하위 화면 없이 목록에서 바로 뒤집힌다. 소리를 끄는 일은
+       설정 안까지 들어가기엔 급할 때가 많다 — 메뉴를 열자마자 한 번에 닿게 둔다. */
+    {id:'mute', view:'toggle', label:()=> bgmOn ? '음소거' : '소리 켜기',
+      run(){ setBgmOn(!bgmOn); }},
     {id:'settings', label:'설정', view:'settings', title:'설정'},
     {id:'system', label:'게임 가이드', view:'guide', title:'게임 가이드',
       sections:guideSections},
@@ -5178,9 +5236,11 @@
     const item = MENU_ITEMS.find(m=>m.id===menuStep) || null;
     let body;
     if(!item){
-      body = `<div class="menu-list">${MENU_ITEMS.map(m=>
-        `<button class="menu-item" data-action="menu-open-item" data-menu-id="${m.id}">${m.label}</button>`
-      ).join('')}</div>`;
+      /* 이름이 상태에 따라 달라지는 항목(음소거 등)은 함수로 받는다 */
+      body = `<div class="menu-list">${MENU_ITEMS.map(m=>{
+        const label = typeof m.label === 'function' ? m.label() : m.label;
+        return `<button class="menu-item" data-action="menu-open-item" data-menu-id="${m.id}">${label}</button>`;
+      }).join('')}</div>`;
     } else if(item.view==='guide'){
       /* 한 번에 한 장만 펼친다 — 작은 화면에서 통째로 흘리면 어디를 읽는지 놓친다 */
       const sections = item.sections();
@@ -6241,7 +6301,10 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
     else if(action==='menu-noop'){ /* 팝업 내부 클릭이 바깥 배경 클릭(닫기)으로 번지지 않게 막는다 */ }
     else if(action==='menu-open-item'){
       const item = MENU_ITEMS.find(m=>m.id===el.dataset.menuId);
-      if(item) menuStep = item.id;
+      /* 하위 화면 없이 그 자리에서 뒤집히는 항목은 목록에 머무른다 —
+         소리는 껐다 켜며 귀로 확인하는 것이라 메뉴가 닫히면 오히려 번거롭다. */
+      if(item && item.view==='toggle'){ if(item.run) item.run(); }
+      else if(item) menuStep = item.id;
       render();
     }
     else if(action==='menu-back'){ menuStep=null; render(); }
