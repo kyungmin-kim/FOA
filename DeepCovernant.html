@@ -745,7 +745,7 @@
   /* ---------- 중앙 무대: 적과 아군 사이, 상황이 읽히는 자리 ---------- */
   /* 모자랄 때 먼저 양보하는 쪽은 여기다. 기록 한 줄은 눌려도 읽히지만
      적 카드가 눌리면 초상과 예고가 잘린다. */
-  .mid-stage{ flex:0 1 auto; min-height:0; display:flex; align-items:center; justify-content:center; padding:14px 14px; }
+  .mid-stage{ flex:0 1 auto; min-height:0; display:flex; align-items:center; justify-content:center; padding:19px 14px; }
   .log-plate{
     width:100%; max-width:340px; padding:11px 16px; text-align:center;
     font-family:'Nanum Myeongjo',serif; font-size:13.5px; line-height:1.65;
@@ -961,7 +961,9 @@
   .rank-warn{ font-family:'Nanum Myeongjo',serif; font-size:7.5px; letter-spacing:0.06em; color:var(--crack); margin-top:2px; }
   .hero-card.idle .portrait, .foe-card.idle .enemy-portrait{ filter:grayscale(0.65) brightness(0.72); }
 
-  .hand-zone{ flex-shrink:0; padding:6px 8px 10px; }
+  /* 손패는 화면 바닥에 붙어 있다. 위 여백을 덜면 AP 줄이 대열에 붙어 버리므로,
+     반대로 여백을 얹어 5px 내린다. 늘어난 몫은 위쪽 적 구역이 내어 준다. */
+  .hand-zone{ flex-shrink:0; padding:11px 8px 10px; }
   .ap-row{ display:flex; justify-content:center; align-items:center; gap:9px; margin-bottom:8px;}
   .ap-label{ font-family:'Nanum Myeongjo',serif; font-size:9.5px; letter-spacing:0.2em; color:var(--brass); text-transform:uppercase; }
   /* AP = 등잔 기름 방울 */
