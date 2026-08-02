@@ -1,0 +1,650 @@
+
+  @layer pixel {
+  /* ================================================================
+     PIXEL SKIN
+     여기서부터는 앞의 동판화 규칙을 픽셀 규칙으로 덮어쓴다.
+     원칙은 셋뿐이다 — 흐릿한 것을 없애고, 곡선을 계단으로 바꾸고,
+     모든 치수를 정수 픽셀에 맞춘다.
+     ================================================================ */
+
+  /* ---- 글꼴 : 세리프를 비트맵으로 ----
+     앞쪽 규칙들이 저마다 Cinzel·IM Fell·Spectral 을 직접 지정해 두었으므로
+     한 군데만 고쳐서는 안 잡힌다. 전부 걷어낸 뒤 표제와 숫자만 되돌려 준다. */
+  body,#app,#app *{
+    font-family:'Galmuri11','Nanum Myeongjo',serif;
+    letter-spacing:0; font-style:normal;
+  }
+  #app h1,#app h2,#app h3,#app .disp,#app .btn,#app .title-en,#app .title-kr,
+  #app .foe-name,#app .foe-rank,#app .hero-rank,#app .node-card h3,
+  #app .rest-opt .t,#app .relic-opt-head,#app .zone-label,#app .ap-label,
+  #app .menu-item{
+    font-family:'Galmuri14','Galmuri11','Nanum Myeongjo',serif;
+  }
+  #app .mono,#app .hero-num,#app .block-tag,#app .card-cost,#app .ero-num{
+    font-family:'GalmuriMono11','Galmuri11',monospace;
+  }
+  .title-kr{ font-size:24px; letter-spacing:0.06em; text-shadow:2px 2px 0 #000; }
+  /* 비트맵 글꼴에 그림자를 흘리면 획이 뭉갠다 — 그림자도 한 픽셀씩 각지게 */
+  h1,h2,h3,.disp,.foe-name,.hero-name,.btn{ text-shadow:1px 1px 0 rgba(0,0,0,0.9); }
+
+  /* ---- 흐림 제거 ---- */
+  .beam{ filter:none; opacity:0.5; }
+  .mote,.ash{ box-shadow:none; }
+  .title-kr,.title-glyph span{ filter:none; }
+
+  /* ---- 곡선을 계단으로 ---- */
+  .btn,.foe-card,.hero-card,.hpbar,.intent-badge,.block-tag,.reach-chip{ border-radius:0; }
+  .bubble,.mote,.ash{ border-radius:0; }        /* 물거품도 재도 네모난 픽셀 하나 */
+  .ash{ width:2px; height:2px; }
+  .mote{ image-rendering:pixelated; }
+
+  /* ---- 버튼 : 그라디언트 대신 한 픽셀 베벨 ---- */
+  .btn{
+    background:#141a1c;
+    border:1px solid var(--brass-dim);
+    box-shadow: inset 1px 1px 0 rgba(224,170,76,0.16), inset -1px -1px 0 rgba(0,0,0,0.8);
+    padding:12px 24px;
+  }
+  .btn:active{ transform:translateY(1px); box-shadow: inset -1px -1px 0 rgba(224,170,76,0.12), inset 1px 1px 0 rgba(0,0,0,0.8); }
+  .btn.primary{
+    background:#a67c33; color:#120a05;
+    border-color:#e0aa4c;
+    box-shadow: inset 1px 1px 0 #e8c479, inset -1px -1px 0 #5c4826;
+    text-shadow:1px 1px 0 rgba(255,240,205,0.3);
+  }
+  .btn.danger{ background:#2a0f12; color:var(--blood-lit); border-color:#6a2420;
+    box-shadow: inset 1px 1px 0 rgba(196,56,60,0.22), inset -1px -1px 0 rgba(0,0,0,0.8); }
+
+  /* ---- 메뉴 : 다른 버튼과 같은 픽셀 베벨로 맞춘다 ---- */
+  .menu-btn,.menu-close,.menu-item{ border-radius:0; }
+  .menu-btn,.menu-item{
+    background:#141a1c;
+    box-shadow: inset 1px 1px 0 rgba(224,170,76,0.16), inset -1px -1px 0 rgba(0,0,0,0.8);
+  }
+  .menu-btn:active,.menu-item:active{
+    background:#141a1c;
+    box-shadow: inset -1px -1px 0 rgba(224,170,76,0.12), inset 1px 1px 0 rgba(0,0,0,0.8);
+  }
+
+  /* ---- 초상 감실 : 클립패스 대신 각진 액자 ----
+     비스듬히 잘라내면 대각선 가장자리가 흐려져 픽셀이 죽는다.
+     대신 다키스트 던전식 사각 액자로 통일하고, 직군은 테두리 색으로만 가른다. */
+  .portrait{
+    width:42px; height:42px; margin:0 auto 4px;
+    clip-path:none; border-radius:0;
+    background:#05080a; overflow:hidden;
+    border:1px solid var(--brass-dim);
+    box-shadow: inset 0 0 0 1px #000;
+    filter:none;
+  }
+  .portrait-vanguard{ border-color:#4f6675; }
+  .portrait-chemist { border-color:#54684b; }
+  .portrait-priest  { border-color:#7c7666; }
+  .portrait-oracle  { border-color:#544b74; }
+  .portrait-hellion { border-color:#7a2a2c; }
+  .portrait-robber  { border-color:#4a5c45; }
+  .portrait-jester  { border-color:#4e4468; }
+
+  /* 적 감실도 같은 규칙 — 둥근 후광 대신 젖은 석판 한 장 */
+  .enemy-portrait,
+  .enemy-portrait.tier-surface,
+  .enemy-portrait.tier-mid{
+    width:48px; height:48px; border-radius:0;
+    background:#06090c;
+    border:1px solid rgba(141,122,176,0.30);
+    box-shadow: inset 0 0 0 1px #000;
+    animation:none;
+    padding:1px;
+  }
+  .enemy-portrait.tier-mid{ border-color:rgba(156,53,80,0.34); }
+  .foe-card.elite-foe .enemy-portrait{ transform:none; border-color:var(--brass-dim); }
+  .foe-card.boss-foe .enemy-portrait,
+  .foe-card.boss-foe .enemy-portrait.tier-mid{ width:76px; height:76px; }
+  .foe-row.crowded .enemy-portrait{ width:36px; height:36px; }
+  .foe-card.boss-awakened .enemy-portrait{ border-color:var(--blood-lit); }
+
+  /* ---- 체력 게이지 : 매끈한 띠 대신 눈금 ----
+     눈금은 반드시 색 '위에' 얹어야 한다. background-image 만 새로 주면
+     아래 깔려 있던 색 그라디언트를 통째로 갈아치워서 게이지가 투명해진다. */
+  .hpbar{
+    border-radius:0; height:9px;
+    background:#0a0e12;
+    border:1px solid rgba(0,0,0,0.8);
+    box-shadow: inset 1px 1px 0 rgba(0,0,0,0.9), 0 0 0 1px rgba(141,122,176,0.34);
+  }
+  .hero-hpline .hpbar{ height:9px; }
+  .hpbar .fill{
+    transition:width 0.2s steps(8, end);
+    background-color:#7a66a6;
+    background-image:
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.45) 0 1px, transparent 1px 4px),
+      linear-gradient(90deg, #5a4780, #a894cf);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+  }
+  /* 피는 계급을 가리지 않는다 — 아군은 동맥색, 적은 잠식의 보라 */
+  .hero-card .hpbar .fill{
+    background-color:#a8262c;
+    background-image:
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.45) 0 1px, transparent 1px 4px),
+      linear-gradient(90deg, #6b1620, #c4383c);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+  }
+
+  /* ---- 조준 표시 : 확대 대신 점멸 ----
+     픽셀 그림을 1.035배로 늘리면 매 프레임 다른 픽셀이 뭉갠다. */
+  @keyframes targetPulse{ 0%,100%{ transform:none; opacity:1; } 50%{ transform:none; opacity:0.72; } }
+  .foe-card.targetable,.hero-card.targetable{
+    box-shadow: inset 0 0 0 1px #000, inset 0 0 0 2px rgba(127,191,174,0.5);
+    animation:targetPulse 0.9s steps(2,end) infinite;
+  }
+
+  /* ---- 파티클 : 둥근 빛망울 대신 각진 부스러기 ----
+     번짐(box-shadow blur)을 걷어내고 움직임도 계단으로 끊는다.
+     매끄럽게 흐르는 파티클 하나가 화면 전체의 픽셀감을 깬다. */
+  .p-shard,.p-ring,.p-wisp,.p-slash,.p-bub,.p-mote,.p-plus,.p-blood{
+    border-radius:0; box-shadow:none; filter:none;
+    image-rendering:pixelated;
+  }
+  .p-shard{ width:3px; height:6px; animation-timing-function:steps(7,end); }
+  .p-ring{ border-width:2px; animation-timing-function:steps(6,end); }
+  .p-wisp{ height:3px; background:currentColor; animation-timing-function:steps(6,end); }
+  .p-slash{ height:3px; background:currentColor; animation-timing-function:steps(5,end); }
+  .p-bub{ background:rgba(206,228,220,0.5); border:1px solid rgba(236,244,240,0.7);
+          animation-timing-function:steps(9,end); }
+  .p-mote{ animation-timing-function:steps(8,end); }
+  .p-blood{ animation-timing-function:steps(8,end); }
+  /* 치명타 글자도 비트맵으로 세운다 — 확대는 획을 뭉개므로 튀어오르기만 시킨다 */
+  .p-crit{
+    font-family:'GalmuriMono11',monospace;
+    font-size:14px; letter-spacing:0.06em;
+    text-shadow:1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;
+    animation-timing-function:steps(8,end);
+  }
+  @keyframes critPop{
+    from{ transform:translate(-50%,-50%) translateY(6px); opacity:0; }
+    14% { transform:translate(-50%,-50%) translateY(-2px); opacity:1; }
+    64% { transform:translate(-50%,-50%) translateY(-12px); opacity:1; }
+    to  { transform:translate(-50%,-50%) translateY(-26px); opacity:0; }
+  }
+  /* 십자도 비트맵 글꼴로 세우고 계단으로 끊는다 — 번짐은 위에서 이미 걷어냈으므로
+     검은 테를 한 겹 둘러 어두운 카드 위에서도 획이 살아 있게 한다. */
+  .p-plus{
+    font-family:'GalmuriMono11',monospace;
+    font-size:13px; letter-spacing:0;
+    text-shadow:1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;
+    animation-timing-function:steps(7,end);
+  }
+  @keyframes plusRise{
+    from{ transform:translate(-50%,-50%); opacity:0; }
+    20% { transform:translate(-50%,-50%); opacity:1; }
+    to  { transform:translate(calc(-50% + var(--dx,0px)), calc(-50% - var(--dy,24px))); opacity:0; }
+  }
+  /* 수치는 비트맵 글꼴로 세우고, 솟아오르는 것도 계단으로 끊는다.
+     확대·축소는 획을 뭉개므로 픽셀 스킨에서는 오르내리기만 시킨다. */
+  .p-dmg{
+    font-family:'GalmuriMono11',monospace;
+    font-size:15px; letter-spacing:0;
+    text-shadow:1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;
+    animation-timing-function:steps(7,end);
+  }
+  @keyframes dmgFloat{
+    from{ transform:translate(-50%,-50%) translateY(4px); opacity:0; }
+    15% { transform:translate(-50%,-50%) translateY(-4px); opacity:1; }
+    55% { transform:translate(-50%,-50%) translateY(-14px); opacity:1; }
+    to  { transform:translate(-50%,-50%) translateY(-28px); opacity:0; }
+  }
+
+  /* ---- 피격 흔들림 : 정수 픽셀만큼만, 뚝뚝 끊어서 ---- */
+  @keyframes hitShake{
+    0%,100%{ transform:translateX(0); }
+    20%{ transform:translateX(-3px); }
+    40%{ transform:translateX(3px); }
+    60%{ transform:translateX(-2px); }
+    80%{ transform:translateX(2px); }
+  }
+  .hit-shake{ animation:hitShake 240ms steps(1,end); }
+
+  /* ---- 스프라이트 숨쉬기 ----
+     물속에 떠 있는 것들은 가만히 있지 않는다. 한 픽셀씩만 오르내린다. */
+  @keyframes pxFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-2px); } }
+  @keyframes pxFloatSlow{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-1px); } }
+  .enemy-portrait img{ animation:pxFloat 2.4s steps(2,end) infinite; }
+  .foe-card:nth-child(2n) .enemy-portrait img{ animation-duration:2.9s; animation-delay:-0.7s; }
+  .foe-card:nth-child(3n) .enemy-portrait img{ animation-duration:3.4s; animation-delay:-1.4s; }
+  .foe-card.boss-foe .enemy-portrait img{ animation-duration:4.2s; }
+  .foe-card.boss-awakened .enemy-portrait img{ animation-duration:1.4s; }
+  .battle-screen .portrait img.px{ animation:pxFloatSlow 3.6s steps(2,end) infinite; }
+  .foe-card[style*="opacity:0.3"] .enemy-portrait img,
+  .hero-card[style*="opacity:0.35"] .portrait img.px{ animation:none; filter:grayscale(1) brightness(0.5); }
+
+  /* ---- 주사선 + 픽셀 격자 : 화면 전체를 한 장의 낡은 브라운관으로 ---- */
+  #grain{
+    background-image:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.30) 0 1px, transparent 1px 3px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.13) 0 1px, transparent 1px 3px);
+  }
+  #grain::after{
+    box-shadow: inset 0 0 0 2px rgba(0,0,0,0.85), inset 0 0 40px 14px rgba(0,0,0,0.25), inset 0 0 160px 56px rgba(0,0,0,0.22);
+  }
+
+  /* ---- 층 배경 : 매끈한 그라디언트를 디더 띠로 ----
+     물속으로 내려갈수록 색이 한 단씩 뚝뚝 떨어지게 만든다. */
+  #app[data-tier="surface"]{ --column-bg:
+      repeating-linear-gradient(180deg,
+        #16292c 0 26px, #132427 26px 52px, #0f1e21 52px 82px, #0c191c 82px 116px,
+        #0a1517 116px 154px, #081113 154px 196px, #060d0f 196px 100%); }
+  #app[data-tier="mid"]{ --column-bg:
+      repeating-linear-gradient(180deg,
+        #0d1519 0 26px, #0b1317 26px 52px, #0a1114 52px 82px, #080e11 82px 116px,
+        #070c0e 116px 154px, #050a0b 154px 196px, #04080a 196px 100%); }
+  #app[data-tier="abyss"]{ --column-bg:
+      repeating-linear-gradient(180deg,
+        #06080b 0 26px, #050709 26px 52px, #040608 52px 82px, #030405 82px 116px,
+        #020304 116px 154px, #010202 154px 196px, #000000 196px 100%); }
+
+  /* 제목 화면의 회전 궤도 — 원을 네모로 바꾸면 돌 때마다 대각선이 생겨 못 쓴다.
+     돌리지 말고, 겹쳐 새긴 사각 인장으로 세워 둔다. */
+  .title-glyph{
+    width:96px; height:96px; border-radius:0;
+    border:1px solid var(--brass-dim);
+    box-shadow: inset 0 0 0 1px #000, inset 0 0 0 4px rgba(184,147,79,0.10);
+  }
+  .title-glyph::before{
+    inset:8px; border-radius:0; animation:none;
+    border:1px dashed rgba(184,147,79,0.30);
+  }
+  .title-glyph::after{
+    inset:-5px; border-radius:0; animation:none;
+    border:1px solid rgba(184,147,79,0.13);
+    border-top-color:rgba(196,56,60,0.40);
+    border-bottom-color:rgba(127,191,174,0.28);
+  }
+  .rule::after{ transform:translate(-50%,-50%); width:5px; height:5px; }
+
+  /* ---- 타이틀 : 키 아트 위에 문장과 워드마크를 얹는다 ----
+     문장과 워드마크는 검은 바탕째로 구웠다. screen 으로 합성하면 검정이 사라져
+     투명 PNG 없이도 배경 위에 얹힌다 — 알파를 깎으면 어두운 놋쇠 선이 함께 날아간다. */
+  .title-screen{ justify-content:center; padding:24px; gap:9px; position:relative; }
+  .title-art{
+    position:absolute; inset:0;
+    background-size:cover; background-position:50% 20%;
+    opacity:0.55; pointer-events:none; z-index:0;
+    -webkit-mask-image:linear-gradient(180deg, #000 0%, #000 46%, rgba(0,0,0,0.25) 78%, transparent 100%);
+            mask-image:linear-gradient(180deg, #000 0%, #000 46%, rgba(0,0,0,0.25) 78%, transparent 100%);
+  }
+  .title-screen > *:not(.title-art){ position:relative; z-index:1; }
+  .title-wordmark{
+    width:100%; max-width:318px; height:auto; display:block; margin:0 auto 2px;
+    mix-blend-mode:screen;
+  }
+  /* 문장 — 배경이 깨끗한 결과·게임오버 화면에 세운다 */
+  .title-crest{
+    width:104px; height:auto; display:block; margin:0 auto;
+    mix-blend-mode:screen;
+  }
+  .title-crest.lost{ filter:hue-rotate(-28deg) saturate(1.5) brightness(0.95); }
+  .title-screen .title-en,.title-screen .title-sub{ text-shadow:1px 1px 0 #000, 0 0 9px #000; }
+  .title-screen .rule{ margin:2px auto; }
+  .title-screen > .title-version{
+    position:absolute; right:calc(12px + var(--sa-right)); bottom:calc(10px + var(--sa-bottom)); z-index:2;
+    margin:0; color:rgba(214,208,194,0.58); font-size:9px; letter-spacing:0.12em;
+    text-shadow:1px 1px 0 #000;
+  }
+  @media (max-height:680px){
+    .title-wordmark{ max-width:258px; }
+    .title-crest{ width:78px; }
+  }
+
+  /* 해금 알림 — 여관에 들어서면 먼저 눈에 들어와야 한다 */
+  .tavern-unlock.unlocked{
+    border-color:var(--gaslamp);
+    box-shadow: inset 1px 1px 0 rgba(224,170,76,0.20), 0 0 0 1px #000;
+  }
+  .unlock-banner{
+    font-family:'Galmuri9','Nanum Myeongjo',serif;
+    font-size:9px; letter-spacing:1px; color:var(--gaslamp);
+    margin-bottom:6px; text-shadow:1px 1px 0 #000;
+  }
+
+  /* 새로 건진 유물 — 지닌 것들과 갈라 보이게 */
+  .relic-opt.incoming{ border-color:var(--gaslamp); box-shadow: inset 1px 1px 0 rgba(224,170,76,0.22), 0 0 0 1px #000; }
+  .relic-new{
+    font-family:'Galmuri9','Nanum Myeongjo',serif; font-size:9px;
+    color:#120a05; background:#a67c33; border:1px solid #e0aa4c;
+    padding:0 4px; margin-left:4px;
+  }
+
+  /* 임시 AP — 이 턴이 지나면 사라지므로 반쯤 비쳐 보이게 둔다 */
+  .pip.temp{
+    opacity:0.5;
+    border-style:dashed;
+  }
+  .pip.temp.filled{
+    background:#c9964a; border-color:#e8c479;
+    box-shadow: inset 1px 1px 0 rgba(232,196,121,0.5);
+  }
+
+  /* 아직 아무도 서지 않은 자리 */
+  .portrait-vacant{
+    border:1px dashed var(--brass-dim);
+    background:#070b0d;
+  }
+  .tavern-seat.empty .tavern-seat-name{ color:var(--muted); }
+
+  /* 잠긴 직군은 회색이 아니라 그늘에 앉아 있다 */
+  .class-card.locked .portrait{ filter:brightness(0.42) saturate(0.35); }
+
+  /* ---- 보스급이 남기고 간 것 ---- */
+  .relic-card.drop{
+    border-color:var(--gaslamp);
+    box-shadow: inset 1px 1px 0 rgba(224,170,76,0.2), inset -1px -1px 0 rgba(0,0,0,0.8), 0 0 0 1px #000;
+  }
+  .drop-banner{
+    font-family:'Galmuri9','Nanum Myeongjo',serif;
+    font-size:9px; letter-spacing:1px; color:var(--gaslamp);
+    margin-bottom:6px; text-shadow:1px 1px 0 #000;
+  }
+
+  /* ---- 덱 구성 : 무엇을 들고 내려갈지 고르는 자리 ----
+     손패 카드처럼 크게 펼치면 열아홉 장이 화면을 넘긴다. 한 줄짜리 표로 눕힌다. */
+  .deck-sect{ width:100%; max-width:340px; margin:0 auto 10px; }
+  .deck-sect-head{
+    display:flex; align-items:center; gap:6px; margin-bottom:5px;
+    padding-bottom:3px; border-bottom:1px solid rgba(184,147,79,0.22);
+  }
+  .deck-sect-name{ flex:1; color:var(--brass); font-size:11px; letter-spacing:0.02em; }
+  .deck-count{
+    font-family:'GalmuriMono9',monospace; font-size:9px;
+    color:var(--muted); border:1px solid var(--brass-dim); padding:1px 4px;
+  }
+  .deck-count.done{ color:#120a05; background:#a67c33; border-color:#e0aa4c; }
+
+  .pick-card{
+    display:flex; align-items:stretch; gap:7px; margin-bottom:4px;
+    padding:5px 7px 5px 5px; cursor:pointer;
+    background:#0b1114;
+    border:1px solid var(--brass-dim);
+    box-shadow: inset 1px 1px 0 rgba(0,0,0,0.8);
+  }
+  .pick-card .pick-cost{
+    flex-shrink:0; width:18px; display:flex; align-items:center; justify-content:center;
+    font-family:'GalmuriMono11',monospace; font-size:11px;
+    color:#f0e4c8; background:#7e1a22;
+    border:1px solid #c9964a; box-shadow: inset 1px 1px 0 #b8323a;
+  }
+  .pick-body{ flex:1; min-width:0; text-align:left; }
+  .pick-name{ font-size:11px; color:var(--ink); line-height:1.3; }
+  .pick-desc{
+    font-family:'Galmuri9','Nanum Myeongjo',serif;
+    font-size:9px; color:var(--muted); line-height:1.45; margin-top:2px; word-break:keep-all;
+  }
+  /* 고른 것 — 놋쇠로 덧대어 한눈에 갈라 보이게 */
+  .pick-card.sel{
+    background:#1a1408;
+    border-color:var(--gaslamp);
+    box-shadow: inset 1px 1px 0 rgba(224,170,76,0.28), inset -1px -1px 0 rgba(0,0,0,0.8), 0 0 0 1px #000;
+  }
+  .pick-card.sel .pick-name{ color:var(--gaslamp); }
+  .pick-card.owner-neutral{ border-color:var(--card-normal); }
+  .pick-card.owner-vanguard,.pick-card.owner-chemist,.pick-card.owner-priest,.pick-card.owner-oracle,
+  .pick-card.owner-hellion,.pick-card.owner-robber,.pick-card.owner-jester{ border-color:var(--card-class); }
+  .pick-card.epic{ border-color:var(--card-epic); }
+  .pick-card.legendary{ border-color:var(--card-legendary); }
+  /* 칸이 다 찼을 때 못 고르는 것은 물러나 있게 — 막지는 않는다(고른 걸 눌러 빼면 된다) */
+  .pick-card.full{ opacity:0.4; }
+  .pick-card:active{ transform:translateY(1px); }
+
+  /* ---- 등잔 기름 = AP : 방울을 각진 눈금으로 ---- */
+  .pip{
+    width:10px; height:14px; border-radius:0; transform:none;
+    border:1px solid var(--brass-dim); background:#0a0c0d;
+    box-shadow: inset 1px 1px 0 rgba(0,0,0,0.8);
+  }
+  .pip.filled{
+    background:#c9964a; border-color:#e8c479; box-shadow: inset 1px 1px 0 #e8c479, inset -1px -1px 0 #6b5530;
+  }
+
+  /* ---- 밀랍 봉인 = 비용 : 찌그러진 원 대신 각진 인장 ---- */
+  .card-cost{
+    border-radius:0; width:22px; height:22px; top:-7px; left:-7px;
+    background:#b8750d;
+    border:1px solid #f2ce4b;
+    color:#080704;
+    font-weight:900;
+    box-shadow: inset 1px 1px 0 #ffe47a, inset -1px -1px 0 #65400a, 1px 1px 0 rgba(0,0,0,0.9);
+    text-shadow:none;
+  }
+
+  /* ---- 정신 함몰 게이지 : 체력과 같은 케이스를 쓰되 한 칸 얇게 ----
+     압박도 체력도 채움색이 인라인으로 들어오므로, 여기서는 눈금만 그 위에 얹는다.
+     background-image 에 색 그라디언트를 주면 그 색을 덮어 버린다. */
+  .dp-line .hpbar{ height:6px; }
+  .hero-card .dpbar .fill,
+  .hero-card .lifebar .fill{
+    background-image:
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.45) 0 1px, transparent 1px 4px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+  }
+
+  /* ---- 인장 : SVG 자리를 픽셀 그림이 물려받았으니 크기 규칙도 옮긴다 ---- */
+  .relic-glyph{ filter:none; }
+  .relic-chip img.px{ flex-shrink:0; }
+  /* 감실 없이 놓인 인장만 붙든다 — 액자 안의 초상은 제 크기(100%)를 지킨다 */
+  .relic-opt-head > img.px{ flex-shrink:0; }
+  .relic-opt-head > .portrait{ flex-shrink:0; }
+
+  /* 의도 배지 도상도 마찬가지 — 칸이 좁아져도 12px 를 깎지 않는다 */
+  .intent-badge .ic img.px,
+  .foe-row.many .intent-badge .ic img.px,
+  .foe-row.crowded .intent-badge .ic img.px{ width:12px; height:12px; flex-shrink:0; }
+  /* 잔글씨 도상은 12×12 로 찍혀 있다. 9px·10px·11px 로 줄이면 정수배가 아니라서
+     최근접 보간이 12줄 중 한두 줄을 통째로 버리고, 방패 외곽선이 갉아먹힌다.
+     좁은 칸에서도 제 크기(12px)를 지키게 둔다. */
+  .react-tag img.px{ width:12px; height:12px; flex-shrink:0; }
+  .block-tag img.px{ width:12px; height:12px; flex-shrink:0; }
+  .crumb-chip{
+    border-radius:0; width:22px; height:22px;
+    box-shadow: inset 1px 1px 0 rgba(0,0,0,0.85), inset -1px -1px 0 rgba(184,147,79,0.10);
+  }
+
+  /* ================================================================
+     시인성 — 비트맵 글꼴은 제 크기에서만 또렷하다
+     갈무리는 7·9·11·14px 로 그려진 글꼴이다. 8.5px 나 9.5px 로 쓰면
+     획이 픽셀 격자에서 반 칸 어긋나 안티에일리어싱으로 뭉갠다.
+     그래서 잔글씨를 전부 설계 크기에 붙이고, 자간도 정수 픽셀로 끊는다.
+     ================================================================ */
+
+  /* --- 11px 급 : 플레이어가 실제로 읽는 잔글씨 ---
+     예전엔 9px 이었다. 격자에는 맞았지만 손에 쥔 화면에서는 너무 작았다.
+     비트맵 글꼴이라 10px 같은 중간값으로는 못 올리고 한 단(9→11) 통째로 올린다. */
+  #app .reach-chip,#app .rank-warn,#app .foe-rank,#app .hero-rank,
+  #app .class-locked-tag,#app .tavern-new,#app .tavern-seat-sub,
+  #app .af-row-owner,#app .class-tagline,#app .node-type-tag,
+  #app .title-en,#app .ero-label,#app .ap-label,#app .tier-tag,
+  #app .rank-slot-label,#app .card-desc,#app .topbar-relics .relic-chip,
+  #app .foe-row.many .foe-rank,#app .pick-desc,#app .drop-banner{
+    font-family:'Galmuri11','Nanum Myeongjo',serif;
+    font-size:11px; letter-spacing:0; line-height:1.5;
+  }
+  #app .card-desc{ line-height:1.55; }
+  /* 상단 선반은 정보 밀도가 높아 별도로 30% 줄인다. 일반 유물 선택창은 읽기 크기를 유지한다. */
+  #app .topbar-relics .relic-chip{ font-size:var(--relic-font-size,8px); line-height:1.35; gap:3px; padding:1px 4px; }
+  /* 자간을 벌려야 읽히는 것은 대문자·기호로 된 표제뿐이다 */
+  #app .title-en,#app .ero-label,#app .ap-label,#app .tier-tag,
+  #app .zone-label,#app .rank-slot-label{ letter-spacing:1px; }
+
+  /* --- 9px 급 : 읽지 않고 훑고 지나가는 장식 딱지만 (예전 7px) --- */
+  #app .zone-label,#app .card-owner-tag,
+  #app .foe-row.crowded .reach-chip{
+    font-family:'Galmuri9','Nanum Myeongjo',serif;
+    font-size:9px; letter-spacing:1px;
+  }
+
+  /* --- 숫자 : 고정폭도 제 크기로 --- */
+  #app .hero-num,#app .foe-row.many .hero-num,#app .deck-count{
+    font-family:'GalmuriMono11',monospace; font-size:11px; letter-spacing:0;
+  }
+  #app .hero-num{ min-width:32px; }
+
+  /* --- 본문·표제도 한 단씩 --- */
+  body,#app,#app *{ line-height:1.55; }
+  #app .card-name,#app .hero-name,#app .foe-name,#app .pick-name,
+  #app .rank-slot-name,#app .relic-name,#app .tavern-seat-name{ font-size:12px; }
+  #app .class-blurb,#app .relic-desc,#app .relic-boon,#app .af-flavor,
+  #app .escape-note,#app .reach-legend,#app .log-plate,#app .title-sub,
+  #app .node-card p,#app .rest-opt .d,#app .result-list{ font-size:12px; line-height:1.6; }
+  #app h2,#app h3,#app .node-card h3{ font-size:16px; }
+
+  /* --- 대비 : 어두운 판 위에서 회색이 너무 가라앉아 있었다 --- */
+  #app .card-desc,#app .pick-desc,#app .class-blurb,#app .relic-desc,
+  #app .af-flavor,#app .escape-note,#app .reach-legend,#app .hero-num,
+  #app .tavern-seat-sub,#app .af-row-owner,#app .card-owner-tag{ color:#a8a596; }
+  #app .log-plate,#app .node-card p{ color:#c4bfae; }
+
+  /* ---- 이름이 길면 두 줄이 된다 ----
+     한 카드만 두 줄이 되면 그 카드의 체력바만 아래로 밀려 줄이 어그러진다.
+     ('앵무조개 오징어' 처럼 긴 이름이 실제로 있다.)
+     그래서 두 줄 자리를 미리 비워 두고, 짧은 이름은 그 안에서 가운데 선다.
+
+     이름과 계기는 한 덩어리로 읽혀야 하므로 그 사이를 최대한 좁힌다.
+     본문 줄간(1.55)을 그대로 쓰면 두 줄 자리가 37px 이 되어 빈 공간이 남으니,
+     이름만 줄간을 좁혀(1.2) 두 줄 높이를 29px 로 줄이고 여백도 1px 만 남긴다. */
+  #app .foe-name,#app .hero-name{
+    display:flex; align-items:center; justify-content:center;
+    line-height:1.2; min-height:29px; margin:1px 0 1px;
+  }
+  #app .foe-row.crowded .foe-name{ min-height:27px; }
+
+  /* ---- 낮은 화면 : 전투 한 판이 세로로 다 들어가야 한다 ----
+     320×568 같은 기기에서는 적·아군·손패를 합치면 화면을 넘긴다.
+     아군 대열이 flex 로 짜부라져 24px 짜리 띠가 되는 사고가 여기서 났다.
+     짓눌리게 두는 대신, 초상과 카드를 한 단씩 줄여 자리를 만든다.
+     글씨 크기는 건드리지 않는다 — 작은 화면일수록 글씨는 커야 한다. */
+  @media (max-height:680px){
+    .enemy-zone{ padding:6px 8px 4px; }
+    .enemy-portrait,
+    .enemy-portrait.tier-surface,
+    .enemy-portrait.tier-mid{ width:38px; height:38px; }
+    .foe-card.boss-foe .enemy-portrait,
+    .foe-card.boss-foe .enemy-portrait.tier-mid{ width:56px; height:56px; }
+    .foe-row.crowded .enemy-portrait{ width:32px; height:32px; }
+    #app .foe-name,#app .hero-name{ min-height:15px; margin:1px 0 1px; }
+    #app .foe-row.crowded .foe-name{ min-height:15px; }
+
+    .party-zone{ padding:6px 6px; }
+    .portrait{ width:34px; height:34px; margin:0 auto 3px; }
+    .dp-line .hpbar{ height:5px; }
+
+    .mid-stage{ padding:9px 10px; }
+    /* 카드가 커진 만큼 기록판이 설 자리가 줄었다. 글씨는 그대로 두고 여백만 깎아
+       판이 대열 위로 넘치지 않게 한다. */
+    .log-plate{ padding:6px 12px; }
+    .hand-zone{ padding:4px 6px calc(7px + var(--sa-bottom)); }
+    .energy-row,.ap-row{ margin-bottom:2px; }
+    .hand-row{ padding:14px 7px 6px; gap:7px; }
+    /* 142 → 176. +20%(170px) 로는 가장 긴 효과 문구에서 맨 아래 등급 표시가
+       5px 밀려나 카드 밖으로 나갔다. 좁은 카드라 같은 문구가 여섯 줄이 된다. */
+    .card{ flex:0 0 112px; height:176px; padding:7px 6px; }
+    .card-name{ margin-top:7px; min-height:20px; }
+    #app .card-desc{ line-height:1.4; }
+    .btn{ padding:9px 18px; }
+
+    /* 턴 종료가 제 줄을 차지하면 그 한 줄 때문에 버튼이 화면 밖으로 밀린다.
+       AP 줄의 빈 오른쪽에 얹어 한 줄을 통째로 돌려받는다. */
+    .hand-zone{ position:relative; }
+    .ap-row{ justify-content:flex-start; padding-left:4px; }
+    .end-turn-row{ position:absolute; top:2px; right:8px; padding-top:0; z-index:3; }
+    .end-turn-row .btn{ padding:6px 14px; }
+
+    /* 좁은 칸에서 '중열 [중거리]' 가 두 줄로 접히면 그 카드만 아래로 밀린다 */
+    #app .reach-chip{ font-size:9px; padding:0 3px; }
+  }
+
+  /* ---- 좁은 화면 : 글씨를 줄이는 대신 여백을 줄인다 ----
+     손바닥만 한 화면일수록 글씨가 커야 읽힌다. 자리는 패딩에서 뺀다. */
+  @media (max-width:400px){
+    .map-screen{ padding:calc(14px + var(--sa-top)) 10px calc(14px + var(--sa-bottom)); gap:9px; }
+    .rest-screen,.result-screen{ padding:calc(18px + var(--sa-top)) 12px calc(18px + var(--sa-bottom)); }
+    .enemy-zone{ padding:8px 6px 5px; }
+    .foe-row{ gap:4px; }
+    .foe-card{ padding:6px 3px; }
+    /* 보스만은 좁히지 않는다. 층을 쓰기 전에는 base 의 .foe-card.boss-foe 가
+       클래스 하나 더 많다는 이유로 이 규칙을 이겨 왔고, 그 모습이 지금까지의
+       화면이다. 층에서는 특이도가 층을 넘지 못하므로 여기서 다시 못박는다. */
+    .foe-card.boss-foe{ padding:12px 8px; }
+    .party-zone{ padding:8px 5px; gap:4px; }
+    .hero-card{ padding:6px 3px; }
+    .hand-row{ gap:7px; padding:16px 7px 8px; }
+    .deck-sect{ max-width:none; }
+    .pick-card{ padding:5px 5px 5px 4px; gap:6px; }
+    .topbar{ padding:calc(8px + var(--sa-top)) 10px 7px; }
+    .btn{ padding:11px 16px; }
+    #app .title-kr{ font-size:22px; }
+  }
+
+  /* ---- 방어 = 놋쇠로 덧댄 판금 ----
+     초상 위에 겹쳐 놓이는 딱지라 반투명하면 뒤의 그림과 섞여 읽히지 않는다.
+     불투명 판으로 깔고, 검은 테를 한 겹 둘러 무엇 위에 놓이든 떼어 놓는다. */
+  #app .block-tag{
+    display:inline-flex; align-items:center; gap:3px;
+    padding:1px 4px 1px 3px;
+    font-family:'GalmuriMono11',monospace;
+    font-size:11px; letter-spacing:0; line-height:1;
+    color:#f0e4c8;
+    background:#0e1a20;
+    border:1px solid var(--brass);
+    box-shadow: 0 0 0 1px #000, inset 1px 1px 0 rgba(224,170,76,0.22);
+    text-shadow:1px 1px 0 #000;
+  }
+
+  /* ---- 피격 반응 표식 : 같은 이유로 불투명하게 ---- */
+  /* 표식 더미가 카드 안쪽 맨 위에 얹히면 열 표시("전열/중열/후열")를 덮는다.
+     더미째로 테두리 위에 반 칸 올려 걸어 두면 둘 다 읽힌다. */
+  #app .status-stack{ top:-7px; left:2px; }
+  #app .react-tag{
+    gap:3px; padding:1px 4px 1px 3px; line-height:1;
+    font-family:'Galmuri9','Nanum Myeongjo',serif;
+    font-size:9px; letter-spacing:0;
+    background:#05090c;
+    box-shadow: 0 0 0 1px #000;
+    text-shadow:1px 1px 0 #000;
+    animation:reactPop 0.35s steps(3,end);
+  }
+  /* 색이 곧 뜻이다 — 회피/흘림/반격을 글자만이 아니라 색으로도 가른다 */
+  .react-dodge{ color:#a8e6d6; }
+  .react-guard{ color:#bcd8ee; }
+  .react-riposte{ color:#e0605c; }
+
+  /* 의도 배지도 8.5~10.5px 를 오가고 있었다 — 전부 9px 로 붙인다 */
+  #app .intent-badge,
+  #app .foe-row.many .intent-badge,
+  #app .foe-row.crowded .intent-badge{
+    font-family:'Galmuri9','Nanum Myeongjo',serif;
+    font-size:9px; letter-spacing:0; gap:4px; line-height:1.35;
+    padding:3px 6px 3px 5px;
+  }
+  /* 글자를 키운 만큼 좁은 칸에서 넘칠 여지가 생긴다.
+     줄이는 대신 접히게 둔다 — 읽을 수 있어야 배지다. */
+  #app .foe-row.many .intent-badge,
+  #app .foe-row.crowded .intent-badge{
+    flex-wrap:wrap; justify-content:center; max-width:100%;
+    gap:2px 3px; padding:2px 4px;
+  }
+
+  /* 앞의 감축 규칙은 .enemy-portrait 를 세웠지만, 이제 숨쉬는 건 그 안의 스프라이트다 */
+  @media (prefers-reduced-motion: reduce){
+    .enemy-portrait img,.portrait img.px,
+    .p-shard,.p-ring,.p-wisp,.p-slash,.p-bub,.p-mote,
+    .reveal-banner,.card.reveal-card,.reveal-spark{ animation:none !important; }
+  }
+
+  /* ---- 아주 낮은 화면 : 카드를 키우지 않는다 ----
+     568px 짜리 화면은 전투 한 판을 담기에 이미 빠듯하다. 여기서 카드를 키우면
+     화면 자체가 세로로 넘쳐 손패가 잘린다 — 내용이 조금 넘치는 편이 낫다. */
+  @media (max-height:600px){
+    .card{ flex:0 0 112px; height:142px; }
+    /* 기록판 여백도 여기서는 늘리지 않는다 — 늘리면 화면이 통째로 넘친다 */
+    .mid-stage{ padding:4px 10px; }
+  }
+
+  } /* @layer pixel */

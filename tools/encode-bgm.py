@@ -28,7 +28,8 @@ import os, re, subprocess, sys, wave
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-HTML = os.path.join(ROOT, 'FathomOfAbyss.html')
+# 고치는 것은 산출물이 아니라 원본 조각이다. 산출물을 고치면 다음 빌드에 덮인다.
+HTML = os.path.join(ROOT, 'src', 'game', '80-render.js')
 
 # 자리 → 원본 wav. 곡을 갈아 끼우면 이 줄만 고친다.
 SOURCES = {
@@ -68,7 +69,7 @@ def sync_seconds(slot, seconds):
     src = open(HTML, encoding='utf-8').read()
     m = re.search(r'const BGM_TRACKS = \{.*?\n  \};', src, re.S)
     if not m:
-        raise SystemExit('BGM_TRACKS 블록을 찾지 못했다 — HTML 구조가 바뀌었는지 확인할 것')
+        raise SystemExit(f'BGM_TRACKS 블록을 찾지 못했다 — {os.path.relpath(HTML, ROOT)} 를 확인할 것')
     block = m.group(0)
 
     # 정수로 떨어지면 정수로 적는다 (20.0 이 아니라 20)
@@ -149,6 +150,7 @@ def main():
         print('\n원본을 바꿔 구웠다. 다음번에도 그대로 돌게 하려면 이 스크립트의 SOURCES 를 고칠 것:')
         for slot, path in parse_args.overridden.items():
             print(f"    '{slot}': '{path}',")
+    print('\n조각을 고쳤다면 빌드해야 화면에 반영된다:  python3 tools/build.py')
 
 
 if __name__ == '__main__':

@@ -87,6 +87,20 @@ function snap(doc, label, lines){
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+/* 비트맵 글꼴은 다 붙기 전에 재면 글자 폭이 대체 글꼴 기준으로 나온다.
+   fonts.ready 만으로는 부족했다(같은 파일을 두 번 재도 40 줄 넘게 달랐다).
+   글자 폭이 두 번 연속 같아질 때까지 기다린 뒤에 잰다. */
+async function settle(doc, tries){
+  let prev = null;
+  for(let i = 0; i < (tries || 25); i++){
+    const sig = [...doc.querySelectorAll('.card-name,.card-desc,.foe-name,.hero-name,.hero-num,.intent-badge,.mono,.guide-sec-head,.menu-item')]
+      .map(e => e.getBoundingClientRect().width.toFixed(2)).join(',');
+    if(sig !== '' && sig === prev) return;
+    prev = sig;
+    await sleep(80);
+  }
+}
+
 function click(doc, sel){
   const el = doc.querySelector(sel);
   if(!el) return false;
@@ -126,24 +140,24 @@ function click(doc, sel){
   if(doc.fonts && doc.fonts.ready) await doc.fonts.ready;
   await sleep(400);
 
-  snap(doc, '01-title', lines);
+  await settle(doc); snap(doc, '01-title', lines);
 
   /* 프롤로그는 대본이 정해져 있어 매번 같은 화면이 나온다 */
   click(doc, '[data-action="new-run"]');      await sleep(250);
-  snap(doc, '02-prologue', lines);
+  await settle(doc); snap(doc, '02-prologue', lines);
 
   click(doc, '[data-action="prologue-begin"]'); await sleep(250);
-  snap(doc, '03-battle', lines);               /* 전투 — 게이지·카드·스킨이 모두 나온다 */
+  await settle(doc); snap(doc, '03-battle', lines);               /* 전투 — 게이지·카드·스킨이 모두 나온다 */
 
   /* 손패를 눌러 카드 선택 상태(.selecting)와 조준 표시까지 본다 */
   click(doc, '.hand-row .card');               await sleep(250);
-  snap(doc, '04-battle-card-selected', lines);
+  await settle(doc); snap(doc, '04-battle-card-selected', lines);
 
   /* 메뉴 팝업 — 레이어 밖에 있던 UI */
   click(doc, '[data-action="open-menu"]');     await sleep(200);
-  snap(doc, '05-menu', lines);
+  await settle(doc); snap(doc, '05-menu', lines);
   click(doc, '[data-action="menu-open-item"][data-menu-id="system"]'); await sleep(200);
-  snap(doc, '06-guide', lines);
+  await settle(doc); snap(doc, '06-guide', lines);
 
   document.getElementById('out').textContent = lines.join('\n');
   document.title = 'DONE ' + lines.length;

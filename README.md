@@ -2,11 +2,12 @@
 
 > 가라앉은 도시가 잠시 떠오른다. 잠식이 도시를 다 삼키기 전, 내려가 회수하고 돌아와라.
 
-블러드본·다키스트 던전 톤의 **2D 픽셀아트 로그라이크 덱빌더**. 단일 HTML 파일로 동작하며 별도 빌드가 없다.
+블러드본·다키스트 던전 톤의 **2D 픽셀아트 로그라이크 덱빌더**. 나가는 것은 단일 HTML 한 장이고, 소스는 `src/` 에 나뉘어 있다.
 
 | | |
 |---|---|
 | 실행 | [`FathomOfAbyss.html`](FathomOfAbyss.html) — 브라우저로 열기만 하면 된다 |
+| 고치기 | `src/` 의 조각을 고치고 `python3 tools/build.py` |
 | 대상 | 모바일 세로 화면 (최대 480px 컬럼, 320×568까지 대응) |
 | 저장 | 브라우저 `localStorage` |
 | 외부 의존 | **없음** — 글꼴까지 전부 파일 안에 들어 있어 오프라인에서 그대로 돈다 |
@@ -24,6 +25,7 @@
 - [카드](#카드)
 - [적](#적)
 - [유물](#유물)
+- [소스 구조](#소스-구조)
 - [저장](#저장)
 - [에셋](#에셋)
 
@@ -508,6 +510,42 @@
 | 전설 | 심연의 대공 | 전원 | 심도압박 상승량 -55% · 회피 +12% |
 
 최대 체력 계열은 주울 때 한 번만 몸에 새긴다 — 나중에 합류한 사람에게도 소급 적용된다.
+
+---
+
+## 소스 구조
+
+게임 전체가 하나의 IIFE 안에 살기 때문에, 모듈로 쪼개는 대신 **순서대로 자르고 다시 이어 붙인다**.
+클로저 의미가 그대로라 동작이 달라질 여지가 없고, 나가는 것은 여전히 한 장이라 `file://` 로 열어도 웹뷰에 넣어도 돈다.
+
+```
+src/
+  shell/    10-head · 20-between · 30-tail      문서 뼈대
+  styles/   00-fonts 01-layers 10-base 20-pixel 30-art
+  game/     00-prelude 10-class-data 15-storage
+            20-card-data 25-chapter-data 30-relic-data
+            40-state 45-foe-data 50-combat
+            60-map-flow 65-upgrade-fusion 70-atmosphere
+            80-render 90-events
+```
+
+붙는 차례는 **파일 이름의 숫자**가 정한다. 조각을 끼우려면 번호를 사이에 넣으면 된다.
+
+밸런스만 만지려면 `game/` 의 데이터 조각 다섯만 보면 된다 — 직군(`10`), 카드(`20`), 챕터(`25`), 유물(`30`), 적(`45`).
+
+```
+python3 tools/build.py           # src/ → FathomOfAbyss.html
+python3 tools/build.py --check   # 빌드하지 않고 산출물과 같은지만 확인
+```
+
+`--check` 는 조각과 산출물이 어긋났는지 보는 자물쇠다. 산출물을 직접 고치면 여기서 걸린다.
+
+| 도구 | 고치는 곳 |
+|---|---|
+| `tools/build.py` | `src/` → `FathomOfAbyss.html` |
+| `tools/bundle-fonts.py` | `src/styles/00-fonts.css` |
+| `tools/encode-bgm.py` | `src/game/80-render.js` (트랙 길이) |
+| `tools/css-snapshot.html` | 고치지 않음 — 캐스케이드 계측기 |
 
 ---
 

@@ -1,0 +1,58 @@
+
+  @layer art {
+  /* ---- 코스믹 호러 UI 아트 ----
+     생성 원본은 투명 WebP로 다듬어 100px 이하로 보관한다. 화면에서는 작은
+     저해상도 프레임을 늘려 쓰므로, 기존의 픽셀 베벨과 등급별 색 규칙을 유지한다. */
+  /* 메뉴 제목·항목·시스템 안내문까지 기존 게임 UI의 한 가지 비트맵 폰트로 통일한다. */
+  #app .menu-panel,
+  #app .menu-panel *{
+    font-family:'Galmuri14','Galmuri11','Nanum Myeongjo',serif;
+  }
+  .menu-item{ text-align:center; }
+
+  .card{
+    --card-art:url('assets/ui/card-normal.webp');
+    --card-surface:#101719;
+    isolation:isolate;
+    text-align:center;
+    background-color:var(--card-surface);
+    background-image:repeating-linear-gradient(51deg, rgba(224,206,170,0.035) 0 1px, transparent 1px 3px);
+  }
+  /* 등급 프레임은 원본 색상으로 보이고, 글자와 비용 인장은 항상 위에 둔다. */
+  .card::before{
+    content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background-image:var(--card-art);
+    background-size:110% 110%; background-position:center; background-repeat:no-repeat;
+    opacity:1;
+  }
+  .card > *{ position:relative; z-index:1; }
+  .card.normal,.card.owner-neutral{ --card-art:url('assets/ui/card-normal.webp'); --card-surface:#0b0d10; }
+  .card.class,
+  .card.owner-vanguard,.card.owner-chemist,.card.owner-priest,.card.owner-oracle,
+  .card.owner-hellion,.card.owner-robber,.card.owner-jester{ --card-art:url('assets/ui/card-class.webp'); --card-surface:#101a32; }
+  .card.epic{ --card-art:url('assets/ui/card-epic.webp'); --card-surface:#191124; }
+  .card.legendary{ --card-art:url('assets/ui/card-legendary.webp'); --card-surface:#1d160c; }
+
+  /* 일반 카드의 검은 중심에는 뼛빛 문자를 써서 작은 화면에서도 읽힌다. */
+  .card.normal .card-name:not(.glitch), .card.owner-neutral .card-name:not(.glitch){ color:#e7e1d0; text-shadow:1px 1px 0 rgba(0,0,0,0.9); }
+  .card.normal .card-desc:not(.glitch), .card.owner-neutral .card-desc:not(.glitch){ color:#c5bcaa; border-top-color:rgba(231,225,208,0.22); }
+  .card.normal .card-owner-tag, .card.owner-neutral .card-owner-tag{ color:#eee7d6; }
+
+  /* AP 표기는 유지하고, 각 행동점 칸만 압축된 심해 에너지 수정으로 바꾼다. */
+  .pip{
+    width:16px; height:16px; border:0; border-radius:0; transform:none;
+    background:url('assets/ui/ap-crystal.webp') center/contain no-repeat;
+    box-shadow:none;
+    image-rendering:pixelated;
+  }
+  .pip:not(.filled){ filter:grayscale(1) brightness(0.42); opacity:0.5; }
+  .pip.filled{ background:url('assets/ui/ap-crystal.webp') center/contain no-repeat; border:0; box-shadow:none; }
+  /* 임시 AP도 같은 수정으로 그린다. 다만 이 턴에만 빌린 것이라 아직 덜 맺힌 것처럼
+     반쯤 비쳐 보이게 두고, 꺼져 있는 칸(무채색)과 헷갈리지 않도록 빛무리를 남긴다.
+     앞의 사각형 규칙(.pip.temp.filled)보다 뒤에 있어야 이 그림이 이긴다. */
+  .pip.temp,.pip.temp.filled{
+    background:url('assets/ui/ap-crystal.webp') center/contain no-repeat;
+    border:0; box-shadow:none; opacity:0.62;
+    filter:saturate(0.8) drop-shadow(0 0 3px rgba(224,170,76,0.6));
+  }
+  } /* @layer art */

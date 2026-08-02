@@ -17,7 +17,10 @@ import base64, os, re, subprocess, sys, tempfile
 
 HERE  = os.path.dirname(os.path.abspath(__file__))
 ROOT  = os.path.dirname(HERE)
+# 쓰이는 글자는 완성된 화면에서 모아야 빠짐이 없으므로 산출물을 읽고,
+# 쓰기는 폰트 조각에만 한다 — 산출물에 쓰면 다음 빌드에 덮인다.
 HTML  = os.path.join(ROOT, 'FathomOfAbyss.html')
+FONTS = os.path.join(ROOT, 'src', 'styles', '00-fonts.css')
 BASE  = 'https://cdn.jsdelivr.net/gh/quiple/galmuri/dist/'
 FACES = ['Galmuri9', 'Galmuri11', 'Galmuri14', 'GalmuriMono9', 'GalmuriMono11']
 
@@ -35,7 +38,7 @@ def used_chars(src):
     return {c for c in chars if c.isprintable() and ord(c) > 31}
 
 def main():
-    src = open(HTML, encoding='utf-8').read()
+    src = open(HTML, encoding='utf-8').read()      # 글자 수집용(산출물)
     keep = used_chars(src)
     print(f'추려낼 글자 {len(keep)}자')
 
@@ -65,12 +68,13 @@ def main():
     print(f'  합계            {total_raw//1024:>4} KB → {total_sub//1024:>3} KB')
 
     block = MARK_A + '\n' + '\n'.join(faces_css) + '\n' + MARK_B
-    if MARK_A in src:
-        src = re.sub(re.escape(MARK_A) + r'.*?' + re.escape(MARK_B), lambda _: block, src, flags=re.S)
+    frag = open(FONTS, encoding='utf-8').read()
+    if MARK_A in frag:
+        src = re.sub(re.escape(MARK_A) + r'.*?' + re.escape(MARK_B), lambda _: block, frag, flags=re.S)
     else:
         src = src.replace('<style>', '<style>\n' + block, 1)
-    open(HTML, 'w', encoding='utf-8').write(src)
-    print('FathomOfAbyss.html 갱신')
+    open(FONTS, 'w', encoding='utf-8').write(src if src.endswith('\n') else src + '\n')
+    print('src/styles/00-fonts.css 갱신 — 반영하려면 python3 tools/build.py')
 
 if __name__ == '__main__':
     main()

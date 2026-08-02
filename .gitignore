@@ -8,3 +8,7 @@ _webtest.html
 # 원본은 다시 인코딩할 때만 필요하므로 저장소에 올리지 않는다.
 assets/*.wav
 .backup/
+
+# 파이썬 도구가 남기는 캐시
+__pycache__/
+*.pyc
