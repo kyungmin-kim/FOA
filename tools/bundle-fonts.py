@@ -17,7 +17,7 @@ import base64, os, re, subprocess, sys, tempfile
 
 HERE  = os.path.dirname(os.path.abspath(__file__))
 ROOT  = os.path.dirname(HERE)
-HTML  = os.path.join(ROOT, 'DeepCovernant.html')
+HTML  = os.path.join(ROOT, 'FathomOfAbyss.html')
 BASE  = 'https://cdn.jsdelivr.net/gh/quiple/galmuri/dist/'
 FACES = ['Galmuri9', 'Galmuri11', 'Galmuri14', 'GalmuriMono9', 'GalmuriMono11']
 
@@ -70,7 +70,7 @@ def main():
     else:
         src = src.replace('<style>', '<style>\n' + block, 1)
     open(HTML, 'w', encoding='utf-8').write(src)
-    print('DeepCovernant.html 갱신')
+    print('FathomOfAbyss.html 갱신')
 
 if __name__ == '__main__':
     main()

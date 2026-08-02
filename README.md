@@ -6,7 +6,7 @@
 
 | | |
 |---|---|
-| 실행 | [`DeepCovernant.html`](DeepCovernant.html) — 브라우저로 열기만 하면 된다 |
+| 실행 | [`FathomOfAbyss.html`](FathomOfAbyss.html) — 브라우저로 열기만 하면 된다 |
 | 대상 | 모바일 세로 화면 (최대 480px 컬럼, 320×568까지 대응) |
 | 저장 | 브라우저 `localStorage` |
 | 외부 의존 | **없음** — 글꼴까지 전부 파일 안에 들어 있어 오프라인에서 그대로 돈다 |

@@ -100,7 +100,7 @@ function click(doc, sel){
 
   /* 게임 HTML 을 받아 씨앗 고정 스크립트를 맨 앞에 끼우고 iframe 에 직접 쓴다.
      src 로 걸면 게임 스크립트가 먼저 돌아 버려 난수를 갈아 끼울 틈이 없다. */
-  const raw = await (await fetch('../DeepCovernant.html')).text();
+  const raw = await (await fetch('../FathomOfAbyss.html')).text();
   const seeded = raw.replace('<head>', '<head>' + SEED_SHIM);
   if(seeded === raw) throw new Error('<head> 를 찾지 못해 난수를 고정하지 못했다');
   const doc = fr.contentDocument;
