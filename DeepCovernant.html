@@ -168,7 +168,10 @@
   }
 
   @media (prefers-reduced-motion: reduce){
-    .beam,.bubble,.mote,.ash,.enemy-portrait,.ero-fill::after,.ero-case.danger,.title-glyph::before,.title-glyph::after,.foe-card.targetable,.hero-card.targetable{ animation:none !important; }
+    .beam,.bubble,.mote,.ash,.enemy-portrait,.ero-fill::after,.ero-case.danger,.title-glyph::before,.title-glyph::after,.foe-card.targetable,.hero-card.targetable,
+    .hpbar .fill,.hpbar .fill::after,.hand-row .card{ animation:none !important; }
+    /* 훑고 지나가는 빛을 멈추면 남은 한 장이 게이지를 가린다 */
+    .ero-fill::after,.hpbar .fill::after{ display:none !important; }
   }
 
   /* ---------- TITLE ---------- */
@@ -267,20 +270,145 @@
     box-shadow:0 0 12px rgba(178,58,53,0.45), inset 0 -3px 5px rgba(0,0,0,0.45);
     transition:width 0.5s ease;
   }
-  .ero-fill::after{
-    content:''; position:absolute; inset:0;
-    background:linear-gradient(90deg, transparent, rgba(255,226,200,0.16), transparent);
-    width:40px; animation:eroShimmer 3.2s linear infinite;
+  /* ---- 바이탈 사인 ----
+     체력·심도압박·잠식은 모두 살아 있는 값이다. 계기 위를 한 줄기 빛이 왼쪽 끝에서
+     오른쪽 끝까지 훑고 지나가게 두어, 멈춘 그림이 아니라 지금도 재고 있는 눈금으로 읽힌다.
+
+     빛줄기를 폭이 정해진 상자로 만들어 밀면(translateX) 밀어낸 거리만큼밖에 못 가서
+     게이지가 길어지면 중간에 멈춘다. 그래서 배경 그림 한 장을 no-repeat 로 깔고
+     그 자리(background-position)만 옮긴다 — calc(100% + 폭) 이 곧 '오른쪽 끝 너머'라
+     게이지가 아무리 길어져도 끝까지 지나간다. */
+  /* .ero-fill 은 이미 absolute 다 — 여기서 position 을 다시 주면 게이지가 자리를 잃는다 */
+  .ero-fill{ overflow:hidden; }
+  .hpbar .fill{ position:relative; overflow:hidden; }
+  .ero-fill::after,.hpbar .fill::after{
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background-image:linear-gradient(90deg, transparent, rgba(255,240,220,0.42), transparent);
+    background-repeat:no-repeat;
+    background-size:var(--vital-w,34px) 100%;
+    animation:vitalSweep var(--vital-dur,2.6s) linear infinite;
   }
-  @keyframes eroShimmer{ from{transform:translateX(-40px);} to{transform:translateX(160px);} }
+  @keyframes vitalSweep{
+    from{ background-position:calc(0px - var(--vital-w,34px)) 0; }
+    to  { background-position:calc(100% + var(--vital-w,34px)) 0; }
+  }
+  /* 잠식은 심장이 아니라 시계다 — 느리고 흐릿하게 한 번씩 훑는다 */
+  .ero-fill{ --vital-w:40px; --vital-dur:3.2s; }
+  .ero-fill::after{ background-image:linear-gradient(90deg, transparent, rgba(255,226,200,0.20), transparent); }
   /* 70% 를 넘기면 케이스 자체가 맥동한다 */
   .ero-case.danger{ border-color:var(--blood-lit); animation:eroAlarm 1.5s ease-in-out infinite; }
   @keyframes eroAlarm{
     0%,100%{ box-shadow: inset 0 1px 3px rgba(0,0,0,0.9), 0 0 0 rgba(196,56,60,0); }
     50%    { box-shadow: inset 0 1px 3px rgba(0,0,0,0.9), 0 0 12px rgba(196,56,60,0.6); }
   }
-  .ero-num{ font-size:12px; color:var(--muted); min-width:34px; text-align:right; }
-  .ero-num.danger{ color:var(--blood-lit); text-shadow:0 0 8px rgba(196,56,60,0.55); }
+  /* 게이지 안에 얹는 숫자 — 어디까지 찼든 읽혀야 하니 그림자를 두껍게 깐다 */
+  .ero-num{
+    position:absolute; inset:0; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+    font-size:10px; color:#f2ece0; letter-spacing:0.02em; pointer-events:none;
+    text-shadow:0 1px 2px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,0.75);
+  }
+  .ero-num.danger{ color:#ffd9d5; text-shadow:0 1px 2px rgba(0,0,0,0.9), 0 0 6px rgba(196,56,60,0.75); }
+
+  /* ---------- MENU POPUP ---------- */
+  .menu-btn{
+    -webkit-appearance:none; appearance:none;
+    flex:0 0 auto; width:26px; height:26px; padding:0; margin:0; border-radius:2px;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(180deg, rgba(184,147,79,0.14), rgba(184,147,79,0.03));
+    border:1px solid var(--brass-dim); color:var(--brass);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.5), inset 0 1px 0 rgba(224,170,76,0.14);
+    cursor:pointer;
+  }
+  .menu-btn:active{ transform:translateY(1px); background:rgba(184,147,79,0.22); }
+  /* 아이콘을 글꼴에 맡기지 않는다 — 비트맵 글꼴에 ☰ 글리프가 없어 대체 글꼴로 떨어지면
+     획 굵기도 중심도 어긋난다. 세 획을 직접 그리면 어떤 글꼴에서도 같은 자리에 앉는다. */
+  .menu-ico{ position:relative; display:block; width:14px; height:2px; background:currentColor; }
+  .menu-ico::before,.menu-ico::after{
+    content:''; position:absolute; left:0; width:14px; height:2px; background:currentColor;
+  }
+  .menu-ico::before{ top:-5px; }
+  .menu-ico::after { top:5px; }
+  /* 닫기 표시도 같은 이유로 두 획을 겹쳐 그린다 */
+  .menu-close-ico{ position:relative; display:block; width:11px; height:11px; }
+  .menu-close-ico::before,.menu-close-ico::after{
+    content:''; position:absolute; top:50%; left:0; width:11px; height:2px; margin-top:-1px;
+    background:currentColor;
+  }
+  .menu-close-ico::before{ transform:rotate(45deg); }
+  .menu-close-ico::after { transform:rotate(-45deg); }
+  .menu-overlay{
+    position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center;
+    padding:18px; background:rgba(2,5,7,0.78);
+  }
+  .menu-panel{
+    width:100%; max-width:280px; padding:14px; border:1px solid var(--gaslamp);
+    background:#101719; box-shadow:inset 1px 1px 0 rgba(232,196,121,0.24),inset -1px -1px 0 #000,0 0 0 1px #000;
+    text-align:left;
+    max-height:100%; display:flex; flex-direction:column; min-height:0;
+  }
+  /* 가이드는 글이 길어 한 칸 넓게 쓴다 */
+  .menu-panel.wide{ max-width:320px; }
+  .menu-panel-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; flex:0 0 auto; }
+  .menu-panel-head h3{ margin:0; color:var(--bone); font-size:14px; }
+  .menu-close{
+    -webkit-appearance:none; appearance:none;
+    flex:0 0 auto; width:22px; height:22px; padding:0; margin:0; border-radius:2px;
+    display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--brass-dim); background:transparent; color:var(--muted);
+    cursor:pointer;
+  }
+  .menu-close:active{ transform:translateY(1px); }
+  .menu-list{ display:flex; flex-direction:column; gap:6px; }
+  .menu-item{
+    text-align:left; padding:10px 12px; border-radius:2px;
+    border:1px solid var(--brass-dim);
+    background:linear-gradient(180deg, rgba(184,147,79,0.1), rgba(184,147,79,0.02));
+    color:var(--brass); font-family:'Nanum Myeongjo',serif; font-size:12.5px; letter-spacing:0.04em;
+    cursor:pointer;
+  }
+  .menu-item:active{ transform:translateY(1px); background:rgba(184,147,79,0.2); }
+  .menu-placeholder p,.menu-confirm p{ margin:0 0 12px; color:var(--ink); font-size:11.5px; line-height:1.7; word-break:keep-all; }
+  .menu-placeholder .btn{ display:block; margin:0 auto; }
+  .menu-confirm-actions{ display:flex; gap:8px; justify-content:flex-end; }
+
+  /* ---------- 게임 가이드 ---------- */
+  .menu-guide{
+    flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    display:flex; flex-direction:column; gap:4px;
+    border-top:1px solid rgba(184,147,79,0.18); border-bottom:1px solid rgba(184,147,79,0.18);
+    padding:8px 0;
+  }
+  .guide-sec{ border:1px solid rgba(184,147,79,0.28); background:rgba(9,16,18,0.5); }
+  .guide-sec.open{ border-color:var(--brass-dim); background:rgba(20,26,28,0.9); }
+  .guide-sec-head{
+    -webkit-appearance:none; appearance:none;
+    width:100%; padding:8px 10px; margin:0; border:0; background:transparent;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    color:var(--brass); font-size:12px; text-align:left; cursor:pointer;
+  }
+  .guide-sec.open .guide-sec-head{ color:var(--gaslamp); }
+  /* 펼침 표시도 글꼴에 맡기지 않는다 — 닫히면 '+', 열리면 '−' */
+  .guide-sec-mark{ position:relative; flex:0 0 auto; width:9px; height:9px; }
+  .guide-sec-mark::before,.guide-sec-mark::after{
+    content:''; position:absolute; background:currentColor;
+  }
+  .guide-sec-mark::before{ top:4px; left:0; width:9px; height:1px; }
+  .guide-sec-mark::after { top:0; left:4px; width:1px; height:9px; }
+  .guide-sec.open .guide-sec-mark::after{ display:none; }
+  .guide-sec-body{
+    margin:0; padding:0 10px 9px; list-style:none;
+    display:flex; flex-direction:column; gap:5px;
+  }
+  .guide-sec-body li{
+    position:relative; padding-left:9px;
+    color:var(--ink); font-size:11.5px; line-height:1.7; word-break:keep-all;
+  }
+  .guide-sec-body li::before{
+    content:''; position:absolute; left:0; top:7px; width:3px; height:3px; background:var(--brass-dim);
+  }
+  .guide-sec-body b{ color:var(--gaslamp); font-weight:normal; }
+  .menu-guide-back{ flex:0 0 auto; display:block; margin:10px auto 0; padding:8px 18px; font-size:11px; }
 
   /* ---------- MAP / SETUP shared shell ---------- */
   .map-screen{ padding:20px 18px; align-items:center; gap:12px; overflow-y:auto; }
@@ -371,9 +499,9 @@
   .foe-card.boss-awakened{ border-color:var(--blood-lit); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.5), inset 0 0 26px rgba(143,32,40,0.28), 0 0 26px rgba(196,56,60,0.5); }
   .foe-card.boss-awakened .enemy-portrait{ animation-duration:1.5s; }
   .foe-card.boss-awakened .foe-rank{ color:var(--blood-lit); }
-  .foe-name{ font-family:'Nanum Myeongjo',serif; font-size:12px; color:var(--corrode); margin:3px 0 5px; font-weight:600; letter-spacing:0.02em; text-shadow:0 1px 2px rgba(0,0,0,0.8); }
+  .foe-name{ font-family:'Nanum Myeongjo',serif; font-size:12px; color:var(--corrode); margin:3px 0 1px; font-weight:600; letter-spacing:0.02em; text-shadow:0 1px 2px rgba(0,0,0,0.8); }
   /* 3마리 이상이면 칸이 좁아지므로 글자를 줄인다 */
-  .foe-row.many .foe-name{ font-size:10px; margin:2px 0 4px; }
+  .foe-row.many .foe-name{ font-size:10px; margin:2px 0 1px; }
   .foe-row.many .intent-badge{ font-size:8.5px; padding:2px 5px 2px 4px; gap:3px; margin-top:4px; }
   .foe-row.many .foe-rank{ font-size:7.5px; letter-spacing:0.08em; }
   .foe-row.many .hero-num{ font-size:7.5px; min-width:20px; }
@@ -413,7 +541,28 @@
   }
 
   .hpbar{ height:9px; border-radius:1px; background:#0c0910; border:1px solid rgba(0,0,0,0.65); box-shadow: inset 0 1px 2px rgba(0,0,0,0.85), 0 0 0 1px rgba(141,122,176,0.2); overflow:hidden;}
-  .hpbar .fill{ height:100%; background:linear-gradient(90deg,#3f2b56,var(--corrode)); transition:width 0.4s; }
+  /* 빛줄기가 지나가는 순간 눈금 전체가 한 번 밝아진다 — 맥이 뛰는 쪽에 눈이 가도록.
+     그림자가 아니라 밝기로 뛰게 두어야 픽셀 스킨의 베벨을 덮어쓰지 않는다. */
+  .hpbar .fill{
+    height:100%; background:linear-gradient(90deg,#3f2b56,var(--corrode)); transition:width 0.4s;
+    animation:vitalBeat var(--vital-dur,2.6s) ease-in-out infinite;
+  }
+  @keyframes vitalBeat{
+    0%,66%,100%{ filter:brightness(1); }
+    84%        { filter:brightness(1.4); }
+  }
+  /* 심도압박은 체력과 어긋난 박자로 뛴다 — 둘이 한 몸처럼 붙어 보이지 않게 */
+  .dpbar{ --vital-dur:3.1s; --vital-w:26px; }
+  /* 위독할수록 빨라진다. 체력바는 남은 비율에 따라 --vital-dur 를 인라인으로 받아
+     단계 없이 이어서 빨라지므로, 여기 값은 그것을 받지 않는 압박바에만 걸린다. */
+  .hpbar.urgent{ --vital-dur:1.15s; }
+  .hpbar.urgent .fill::after{ background-image:linear-gradient(90deg, transparent, rgba(255,236,214,0.7), transparent); }
+  @keyframes vitalBeatUrgent{
+    0%,52%,100%{ filter:brightness(1); }
+    62%,76%    { filter:brightness(1.55); }
+    69%        { filter:brightness(1); }
+  }
+  .hpbar.urgent .fill{ animation-name:vitalBeatUrgent; }
   .intent-badge{
     display:inline-flex; align-items:center; gap:5px; font-size:10.5px; color:var(--ink);
     background:linear-gradient(180deg, rgba(141,122,176,0.15), rgba(141,122,176,0.04));
@@ -515,26 +664,34 @@
   }
 
   .hero-rank{ font-family:'Nanum Myeongjo',serif; font-size:8.5px; color:var(--brass); letter-spacing:0.18em; margin-bottom:2px;}
-  .hero-name{ font-size:10.5px; font-weight:600; margin-bottom:4px; line-height:1.15; color:var(--ink);}
-  .hero-hpline{ display:flex; align-items:center; gap:4px; margin-bottom:4px; }
+  .hero-name{ font-size:10.5px; font-weight:600; margin-bottom:1px; line-height:1.15; color:var(--ink);}
+  /* 이름·압박·체력은 한 덩어리로 읽히도록 줄 사이를 1px 만 띄운다 */
+  .hero-hpline{ display:flex; align-items:center; gap:4px; margin-bottom:1px; }
   .hero-hpline .hpbar{ flex:1; height:7px; }
   .hero-num{ font-size:8.5px; color:var(--muted); min-width:24px; }
-  .dp-gauge{ position:relative; width:34px; height:34px; margin:2px auto 0; }
-  .dp-ring{ width:100%; height:100%; border-radius:50%; }
-  .dp-num{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    font-size:9.5px; font-family:monospace; color:var(--ink);
-    text-shadow:0 1px 2px rgba(0,0,0,0.9);
+  /* 심도압박 = 체력과 같은 형태의 눈금. 체력 위에 얹어, 몸이 깎이기 전에
+     정신이 먼저 차오르는 것을 같은 눈으로 읽게 한다. 한 칸 얇게 두어 둘을 가른다. */
+  .dp-line{ margin-bottom:1px; }
+  .dp-line .hpbar{ height:5px; }
+  /* 채움색은 압박·체력에 따라 인라인으로 들어온다 — 아래 그라디언트를 지워야 그 색이 보인다 */
+  .hero-card .dpbar .fill,
+  .hero-card .lifebar .fill{ background-image:none; box-shadow:inset 0 1px 0 rgba(255,255,255,0.14); }
+  /* ---- 상태 표식은 한 자리에 모은다 ----
+     방어·무적·피격 반응이 저마다 제 모서리를 잡고 있으면 서로 겹치고, 어디를 봐야
+     상태를 아는지도 매번 달라진다. 아군도 적과 같이 좌측 상단 한 곳에 쌓아 둔다. */
+  .status-stack{
+    position:absolute; top:2px; left:2px; z-index:2;
+    display:flex; flex-direction:column; align-items:flex-start; gap:2px;
+    pointer-events:none;
   }
   /* 방어 = 놋쇠로 덧댄 판금 */
   .block-tag{
-    position:absolute; bottom:3px; left:3px;
     display:inline-flex; align-items:center; gap:2px;
     font-family:monospace; font-size:8.5px; color:#c6d8e4;
     background:rgba(14,24,31,0.85); border:1px solid rgba(125,156,178,0.42); border-radius:1px; padding:0 4px;
     box-shadow: inset 0 0 0 1px rgba(0,0,0,0.5);
   }
-  .invulnerable-tag{ position:absolute; top:3px; left:3px; padding:1px 4px; border:1px solid var(--phosphor); color:var(--phosphor); background:rgba(4,18,18,0.86); font-size:8px; letter-spacing:0.08em; }
+  .invulnerable-tag{ padding:1px 4px; border:1px solid var(--phosphor); color:var(--phosphor); background:rgba(4,18,18,0.86); font-size:8px; letter-spacing:0.08em; }
 
   /* ---------- 중앙 무대: 적과 아군 사이, 상황이 읽히는 자리 ---------- */
   .mid-stage{ flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:8px 14px; }
@@ -660,7 +817,6 @@
   .reach-mid{ color:#c2a75f; }
   .reach-ranged{ color:#8ab2c6; }
   .react-tag{
-    position:absolute; top:2px; left:2px; z-index:2;
     display:inline-flex; align-items:center; gap:2px;
     font-size:8px; padding:1px 4px 1px 2px; border-radius:1px;
     background:rgba(3,6,9,0.92); border:1px solid currentColor;
@@ -680,8 +836,9 @@
   /* AP = 등잔 기름 방울 */
   .pip{ width:12px;height:12px; border:1px solid var(--brass-dim); background:rgba(0,0,0,0.45); border-radius:50% 50% 50% 0; transform:rotate(-45deg); }
   .pip.filled{ background:radial-gradient(circle at 38% 32%, #f3d189, #b0752a); border-color:var(--gaslamp); box-shadow:0 0 9px rgba(224,170,76,0.5); }
-  /* 좌·상단 여백은 밀랍 봉인이 스크롤 컨테이너에 잘리지 않게 하려는 것 */
-  .hand-row{ display:flex; gap:9px; overflow-x:auto; padding:11px 10px 8px; scroll-snap-type:x proximity; }
+  /* 좌·상단 여백은 밀랍 봉인이 스크롤 컨테이너에 잘리지 않게 하려는 것.
+     가로로만 구르는 상자라도 세로는 잘리므로, 집어 든 카드가 떠오를 자리까지 함께 비워 둔다. */
+  .hand-row{ display:flex; gap:9px; overflow-x:auto; padding:16px 10px 8px; scroll-snap-type:x proximity; }
   /* 손패 = 밀랍 봉인된 낡은 양피 카드 */
   .card{
     scroll-snap-align:start;
@@ -703,13 +860,45 @@
   .card.normal{ border-color:var(--card-normal); border-top-color:var(--card-normal-hi); }
   .card.class{ border-color:var(--card-class); border-top-color:var(--card-class-hi); }
   .card:active{ transform:translateY(-4px); }
+
+  /* ---- 손패를 집어 드는 느낌 ----
+     쓸 수 있는 카드만 반응한다 — 못 쓰는 카드가 따라 들리면 쓸 수 있다고 착각한다.
+     픽셀 그림이라 회전·확대는 획을 뭉개므로, 정수 픽셀 이동만으로 들어 올리고
+     든 채로 한 칸씩 흔들리게 둔다(steps 로 끊어야 중간에 반 픽셀이 생기지 않는다). */
+  @keyframes cardSway{
+    0%  { transform:translate( 0px,-6px); }
+    25% { transform:translate(-1px,-7px); }
+    50% { transform:translate( 0px,-8px); }
+    75% { transform:translate( 1px,-7px); }
+  }
+  @keyframes cardNudge{
+    0%  { transform:translate(-2px,-7px); }
+    30% { transform:translate( 2px,-8px); }
+    60% { transform:translate(-1px,-7px); }
+    100%{ transform:translate( 0px,-7px); }
+  }
+  @media (hover:hover){
+    .hand-row .card:not(.unplayable):hover{
+      transform:translateY(-6px); z-index:2;
+      animation:cardSway 1.5s steps(1,end) infinite;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 0 2px rgba(184,147,79,0.16),
+                  inset 0 -24px 26px rgba(0,0,0,0.42), 0 5px 12px rgba(0,0,0,0.6);
+    }
+  }
+  /* 손가락으로 누르는 동안은 한 번 크게 떨고 들린 자리에 머문다 */
+  .hand-row .card:not(.unplayable):active{
+    transform:translateY(-7px); z-index:2;
+    animation:cardNudge 0.2s steps(1,end);
+  }
   .card.unplayable{ opacity:0.52; filter:grayscale(0.6); }
   .card.unplayable .card-name, .card.unplayable .card-cost{ opacity:0.72; }
   .card.contaminated{
     border-color:var(--corrode);
     box-shadow: inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 24px rgba(141,122,176,0.18), 0 0 12px rgba(141,122,176,0.22);
   }
-  .card.selecting{ border-color:var(--phosphor); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 22px rgba(127,191,174,0.14), 0 0 16px rgba(127,191,174,0.5); transform:translateY(-4px); }
+  /* 표적을 고르는 동안에도 카드는 손에 들려 있다 — 계속 떠 있고 흔들린다 */
+  .card.selecting{ border-color:var(--phosphor); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 22px rgba(127,191,174,0.14), 0 0 16px rgba(127,191,174,0.5); transform:translateY(-6px); z-index:2; }
+  .hand-row .card.selecting{ animation:cardSway 1.1s steps(1,end) infinite; }
   /* 비용 = 밀랍 봉인 */
   .card-cost{
     position:absolute; top:-8px; left:-8px; width:23px;height:23px;
@@ -1114,10 +1303,11 @@
   }
   #app h1,#app h2,#app h3,#app .disp,#app .btn,#app .title-en,#app .title-kr,
   #app .foe-name,#app .foe-rank,#app .hero-rank,#app .node-card h3,
-  #app .rest-opt .t,#app .relic-opt-head,#app .zone-label,#app .ap-label{
+  #app .rest-opt .t,#app .relic-opt-head,#app .zone-label,#app .ap-label,
+  #app .menu-item{
     font-family:'Galmuri14','Galmuri11','Nanum Myeongjo',serif !important;
   }
-  #app .mono,#app .hero-num,#app .dp-num,#app .block-tag,#app .card-cost,#app .ero-num{
+  #app .mono,#app .hero-num,#app .block-tag,#app .card-cost,#app .ero-num{
     font-family:'GalmuriMono11','Galmuri11',monospace !important;
   }
   .title-kr{ font-size:24px; letter-spacing:0.06em; text-shadow:2px 2px 0 #000; }
@@ -1151,6 +1341,17 @@
   }
   .btn.danger{ background:#2a0f12; color:var(--blood-lit); border-color:#6a2420;
     box-shadow: inset 1px 1px 0 rgba(196,56,60,0.22), inset -1px -1px 0 rgba(0,0,0,0.8); }
+
+  /* ---- 메뉴 : 다른 버튼과 같은 픽셀 베벨로 맞춘다 ---- */
+  .menu-btn,.menu-close,.menu-item{ border-radius:0; }
+  .menu-btn,.menu-item{
+    background:#141a1c;
+    box-shadow: inset 1px 1px 0 rgba(224,170,76,0.16), inset -1px -1px 0 rgba(0,0,0,0.8);
+  }
+  .menu-btn:active,.menu-item:active{
+    background:#141a1c;
+    box-shadow: inset -1px -1px 0 rgba(224,170,76,0.12), inset 1px 1px 0 rgba(0,0,0,0.8);
+  }
 
   /* ---- 초상 감실 : 클립패스 대신 각진 액자 ----
      비스듬히 잘라내면 대각선 가장자리가 흐려져 픽셀이 죽는다.
@@ -1452,25 +1653,24 @@
   /* ---- 밀랍 봉인 = 비용 : 찌그러진 원 대신 각진 인장 ---- */
   .card-cost{
     border-radius:0; width:22px; height:22px; top:-7px; left:-7px;
-    background:#7e1a22;
-    border:1px solid #c9964a;
-    box-shadow: inset 1px 1px 0 #b8323a, inset -1px -1px 0 #400c11, 1px 1px 0 rgba(0,0,0,0.9);
-    text-shadow:1px 1px 0 rgba(0,0,0,0.7);
+    background:#b8750d;
+    border:1px solid #f2ce4b;
+    color:#080704;
+    font-weight:900;
+    box-shadow: inset 1px 1px 0 #ffe47a, inset -1px -1px 0 #65400a, 1px 1px 0 rgba(0,0,0,0.9);
+    text-shadow:none;
   }
 
-  /* ---- 정신 함몰 게이지 : 원형 눈금을 계단으로 ----
-     conic-gradient 는 매끈한 부채꼴이라 픽셀과 어긋난다. 여덟 칸짜리 각진 눈금으로 대신한다. */
-  .dp-gauge{ width:32px; height:14px; margin:3px auto 0; }
-  .dp-ring{
-    width:100%; height:100%; border-radius:0 !important;
-    border:1px solid rgba(206,198,181,0.18);
-    box-shadow: inset 1px 1px 0 rgba(0,0,0,0.85) !important;
+  /* ---- 정신 함몰 게이지 : 체력과 같은 케이스를 쓰되 한 칸 얇게 ----
+     압박도 체력도 채움색이 인라인으로 들어오므로, 여기서는 눈금만 그 위에 얹는다.
+     background-image 에 색 그라디언트를 주면 그 색을 덮어 버린다. */
+  .dp-line .hpbar{ height:6px; }
+  .hero-card .dpbar .fill,
+  .hero-card .lifebar .fill{
     background-image:
-      linear-gradient(90deg, var(--dp-col) var(--dp-pct), rgba(206,198,181,0.06) var(--dp-pct)),
-      repeating-linear-gradient(90deg, rgba(0,0,0,0.6) 0 1px, transparent 1px 4px) !important;
-    background-blend-mode:normal;
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.45) 0 1px, transparent 1px 4px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
   }
-  .dp-num{ font-size:9px; }
 
   /* ---- 인장 : SVG 자리를 픽셀 그림이 물려받았으니 크기 규칙도 옮긴다 ---- */
   .relic-glyph{ filter:none; }
@@ -1527,7 +1727,7 @@
   }
 
   /* --- 숫자 : 고정폭도 제 크기로 --- */
-  #app .hero-num,#app .dp-num,#app .foe-row.many .hero-num,#app .deck-count{
+  #app .hero-num,#app .foe-row.many .hero-num,#app .deck-count{
     font-family:'GalmuriMono11',monospace !important; font-size:11px; letter-spacing:0;
   }
   #app .hero-num{ min-width:32px; }
@@ -1550,12 +1750,16 @@
   /* ---- 이름이 길면 두 줄이 된다 ----
      한 카드만 두 줄이 되면 그 카드의 체력바만 아래로 밀려 줄이 어그러진다.
      ('앵무조개 오징어' 처럼 긴 이름이 실제로 있다.)
-     그래서 두 줄 자리를 미리 비워 두고, 짧은 이름은 그 안에서 가운데 선다. */
+     그래서 두 줄 자리를 미리 비워 두고, 짧은 이름은 그 안에서 가운데 선다.
+
+     이름과 계기는 한 덩어리로 읽혀야 하므로 그 사이를 최대한 좁힌다.
+     본문 줄간(1.55)을 그대로 쓰면 두 줄 자리가 37px 이 되어 빈 공간이 남으니,
+     이름만 줄간을 좁혀(1.2) 두 줄 높이를 29px 로 줄이고 여백도 1px 만 남긴다. */
   #app .foe-name,#app .hero-name{
     display:flex; align-items:center; justify-content:center;
-    min-height:36px; margin:3px 0 5px;
+    line-height:1.2; min-height:29px; margin:1px 0 1px;
   }
-  #app .foe-row.crowded .foe-name{ min-height:34px; }
+  #app .foe-row.crowded .foe-name{ min-height:27px; }
 
   /* ---- 낮은 화면 : 전투 한 판이 세로로 다 들어가야 한다 ----
      320×568 같은 기기에서는 적·아군·손패를 합치면 화면을 넘긴다.
@@ -1570,18 +1774,17 @@
     .foe-card.boss-foe .enemy-portrait,
     .foe-card.boss-foe .enemy-portrait.tier-mid{ width:56px; height:56px; }
     .foe-row.crowded .enemy-portrait{ width:32px; height:32px; }
-    #app .foe-name,#app .hero-name{ min-height:19px; margin:2px 0 3px; }
-    #app .foe-row.crowded .foe-name{ min-height:19px; }
+    #app .foe-name,#app .hero-name{ min-height:15px; margin:1px 0 1px; }
+    #app .foe-row.crowded .foe-name{ min-height:15px; }
 
     .party-zone{ padding:6px 6px; }
     .portrait{ width:34px; height:34px; margin:0 auto 3px; }
-    .dp-gauge{ width:28px; height:12px; margin:2px auto 0; }
-    #app .dp-num{ font-size:9px; }
+    .dp-line .hpbar{ height:5px; }
 
     .mid-stage{ padding:4px 10px; }
     .hand-zone{ padding:4px 6px calc(7px + var(--sa-bottom)); }
     .energy-row,.ap-row{ margin-bottom:5px; }
-    .hand-row{ padding:9px 7px 6px; gap:7px; }
+    .hand-row{ padding:14px 7px 6px; gap:7px; }
     .card{ flex:0 0 112px; height:142px; padding:7px 6px; }
     .card-name{ margin-top:7px; min-height:20px; }
     #app .card-desc{ line-height:1.4; }
@@ -1608,7 +1811,7 @@
     .foe-card{ padding:6px 3px; }
     .party-zone{ padding:8px 5px; gap:4px; }
     .hero-card{ padding:6px 3px; }
-    .hand-row{ gap:7px; padding:11px 7px 8px; }
+    .hand-row{ gap:7px; padding:16px 7px 8px; }
     .deck-sect{ max-width:none; }
     .pick-card{ padding:5px 5px 5px 4px; gap:6px; }
     .topbar{ padding:calc(8px + var(--sa-top)) 10px 7px; }
@@ -1621,7 +1824,7 @@
      불투명 판으로 깔고, 검은 테를 한 겹 둘러 무엇 위에 놓이든 떼어 놓는다. */
   #app .block-tag{
     display:inline-flex; align-items:center; gap:3px;
-    bottom:2px; left:2px; padding:1px 4px 1px 3px;
+    padding:1px 4px 1px 3px;
     font-family:'GalmuriMono11',monospace !important;
     font-size:11px; letter-spacing:0; line-height:1;
     color:#f0e4c8;
@@ -1632,10 +1835,10 @@
   }
 
   /* ---- 피격 반응 표식 : 같은 이유로 불투명하게 ---- */
-  /* 카드 안쪽 맨 위에 얹으면 열 표시("전열/중열/후열")를 덮는다.
-     테두리 위로 반 칸 올려 걸어 두면 둘 다 읽힌다. */
+  /* 표식 더미가 카드 안쪽 맨 위에 얹히면 열 표시("전열/중열/후열")를 덮는다.
+     더미째로 테두리 위에 반 칸 올려 걸어 두면 둘 다 읽힌다. */
+  #app .status-stack{ top:-7px; left:2px; }
   #app .react-tag{
-    top:-7px; left:2px;
     gap:3px; padding:1px 4px 1px 3px; line-height:1;
     font-family:'Galmuri9','Nanum Myeongjo',serif !important;
     font-size:9px; letter-spacing:0;
@@ -1670,6 +1873,62 @@
     .enemy-portrait img,.portrait img.px,
     .p-shard,.p-ring,.p-wisp,.p-slash,.p-bub,.p-mote,
     .reveal-banner,.card.reveal-card,.reveal-spark{ animation:none !important; }
+  }
+
+  /* ---- 코스믹 호러 UI 아트 ----
+     생성 원본은 투명 WebP로 다듬어 100px 이하로 보관한다. 화면에서는 작은
+     저해상도 프레임을 늘려 쓰므로, 기존의 픽셀 베벨과 등급별 색 규칙을 유지한다. */
+  /* 메뉴 제목·항목·시스템 안내문까지 기존 게임 UI의 한 가지 비트맵 폰트로 통일한다. */
+  #app .menu-panel,
+  #app .menu-panel *{
+    font-family:'Galmuri14','Galmuri11','Nanum Myeongjo',serif !important;
+  }
+  .menu-item{ text-align:center; }
+
+  .card{
+    --card-art:url('assets/ui/card-normal.webp');
+    --card-surface:#101719;
+    isolation:isolate;
+    text-align:center;
+    background-color:var(--card-surface);
+    background-image:repeating-linear-gradient(51deg, rgba(224,206,170,0.035) 0 1px, transparent 1px 3px);
+  }
+  /* 등급 프레임은 원본 색상으로 보이고, 글자와 비용 인장은 항상 위에 둔다. */
+  .card::before{
+    content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background-image:var(--card-art);
+    background-size:110% 110%; background-position:center; background-repeat:no-repeat;
+    opacity:1;
+  }
+  .card > *{ position:relative; z-index:1; }
+  .card.normal,.card.owner-neutral{ --card-art:url('assets/ui/card-normal.webp'); --card-surface:#0b0d10; }
+  .card.class,
+  .card.owner-vanguard,.card.owner-chemist,.card.owner-priest,.card.owner-oracle,
+  .card.owner-hellion,.card.owner-robber,.card.owner-jester{ --card-art:url('assets/ui/card-class.webp'); --card-surface:#101a32; }
+  .card.epic{ --card-art:url('assets/ui/card-epic.webp'); --card-surface:#191124; }
+  .card.legendary{ --card-art:url('assets/ui/card-legendary.webp'); --card-surface:#1d160c; }
+
+  /* 일반 카드의 검은 중심에는 뼛빛 문자를 써서 작은 화면에서도 읽힌다. */
+  .card.normal .card-name:not(.glitch), .card.owner-neutral .card-name:not(.glitch){ color:#e7e1d0; text-shadow:1px 1px 0 rgba(0,0,0,0.9); }
+  .card.normal .card-desc:not(.glitch), .card.owner-neutral .card-desc:not(.glitch){ color:#c5bcaa; border-top-color:rgba(231,225,208,0.22); }
+  .card.normal .card-owner-tag, .card.owner-neutral .card-owner-tag{ color:#eee7d6; }
+
+  /* AP 표기는 유지하고, 각 행동점 칸만 압축된 심해 에너지 수정으로 바꾼다. */
+  .pip{
+    width:16px; height:16px; border:0; border-radius:0; transform:none;
+    background:url('assets/ui/ap-crystal.webp') center/contain no-repeat;
+    box-shadow:none;
+    image-rendering:pixelated;
+  }
+  .pip:not(.filled){ filter:grayscale(1) brightness(0.42); opacity:0.5; }
+  .pip.filled{ background:url('assets/ui/ap-crystal.webp') center/contain no-repeat; border:0; box-shadow:none; }
+  /* 임시 AP도 같은 수정으로 그린다. 다만 이 턴에만 빌린 것이라 아직 덜 맺힌 것처럼
+     반쯤 비쳐 보이게 두고, 꺼져 있는 칸(무채색)과 헷갈리지 않도록 빛무리를 남긴다.
+     앞의 사각형 규칙(.pip.temp.filled)보다 뒤에 있어야 이 그림이 이긴다. */
+  .pip.temp,.pip.temp.filled{
+    background:url('assets/ui/ap-crystal.webp') center/contain no-repeat;
+    border:0; box-shadow:none; opacity:0.62;
+    filter:saturate(0.8) drop-shadow(0 0 3px rgba(224,170,76,0.6));
   }
 </style>
 </head>
@@ -2839,9 +3098,18 @@
      전투에서 나가면 그 노드 입구부터 다시 시작한다. */
   const RUN_KEY = 'fathom.run.v1';
   const UPGRADE_GUIDE_KEY = 'fathom.upgrade-guide.v1';
+  /* 한 번이라도 내려가 본 적이 있는지 — '새로운 탐색' 이 해금을 지워도 이 자국만은 남는다.
+     처음 켠 사람에게만 제목 화면 버튼을 '시작하기' 로 보여주기 위한 표시다. */
+  const PLAYED_KEY = 'fathom.played.v1';
   const SAFE_SCREENS = ['map','rest','aftermath','escape','tavern','relicSwap'];
   function hasSeenUpgradeGuide(){ return Store.get(UPGRADE_GUIDE_KEY)==='1'; }
   function markUpgradeGuideSeen(){ Store.set(UPGRADE_GUIDE_KEY, '1'); }
+  /* 표시가 없던 시절에 이미 놀던 사람은 남아 있는 기록으로 알아본다 */
+  function hasPlayedBefore(){
+    return Store.get(PLAYED_KEY)==='1'
+      || hasSavedRun() || UNLOCKED.length > 0 || OWNED_MARKERS.length > 0 || hasSeenUpgradeGuide();
+  }
+  function markPlayed(){ Store.set(PLAYED_KEY, '1'); }
 
   function foeIconByName(name){
     const all = FOE_SURFACE.concat(FOE_ELITES, FOE_ENDLESS, [FOE_BOSS, FOE_ENDLESS_BOSS]);
@@ -4435,18 +4703,145 @@
     if(app.dataset.tier !== slug) app.dataset.tier = slug;
   }
 
+  /* 압박이 오를수록 물빛에서 놋쇠빛으로, 끝에는 핏빛으로 넘어간다 */
   function dpColor(dp){ if(dp>=100) return '#d9452f'; if(dp>=70) return '#d89a3c'; return '#7fbfae'; }
-  /* 정신 함몰 눈금. 픽셀 스킨이 이 두 값을 받아 각진 게이지를 채운다. */
-  function dpRingStyle(dp){
-    const col = dpColor(dp);
-    /* 눈금이 네 칸 단위라 8칸(12.5%)으로 끊어 채운다 — 어중간한 픽셀이 남지 않게 */
-    const pct = Math.round(Math.max(0, Math.min(100, dp)) / 12.5) * 12.5;
-    return `--dp-col:${col}; --dp-pct:${pct}%; border-color:${col}55;`;
+
+  /* 체력이 줄수록 피가 굳는다 — 색은 선홍에서 검붉게 가라앉고, 맥은 반대로 빨라진다.
+     단계로 끊지 않고 비율에 따라 이어지게 두어야 깎여 나가는 것이 눈에 보인다. */
+  const VITAL_DUR_FULL = 2.6, VITAL_DUR_EMPTY = 0.75;
+  function vitalDuration(ratio){
+    const r = Math.max(0, Math.min(1, Number.isFinite(ratio) ? ratio : 0));
+    return (VITAL_DUR_EMPTY + (VITAL_DUR_FULL - VITAL_DUR_EMPTY) * r).toFixed(2);
+  }
+  function hpFillColor(ratio){
+    const r = Math.max(0, Math.min(1, Number.isFinite(ratio) ? ratio : 0));
+    /* 바닥에서도 검은 판 위에서 읽혀야 하므로 완전히 어둡게 내리지는 않는다 */
+    const lerp = (empty, full)=>Math.round(empty + (full - empty) * r);
+    return `rgb(${lerp(122,196)},${lerp(20,56)},${lerp(24,60)})`;
   }
   function ownerLabel(o){
     if(o==='neutral') return '중립';
     const def = CLASS_DEFS[o];
     return def ? def.name : o;
+  }
+
+  /* 게임 가이드 — 프롤로그 튜토리얼이 한 번씩 짚어 준 규칙을 언제든 다시 펴 볼 수 있게 모았다.
+     수치는 실제 상수에서 읽어 온다. 규칙을 고치면 안내문도 따라 바뀌어야 하기 때문이다.
+     항목 추가는 이 배열에 {t, lines} 를 하나 더 얹으면 된다. */
+  function guideSections(){
+    const eroRates = CHAPTERS.map(c=>`${c.tier} ${c.erosion}%`).join(' · ');
+    return [
+      {t:'AP · 행동력', lines:[
+        `전투는 매 턴 AP <b>${3}</b>개로 시작하고, 카드는 저마다 적힌 만큼 AP를 씁니다.`,
+        `정규 AP를 <b>${TEMP_AP_MIN}개 이상</b> 남기고 턴을 끝내면 다음 턴에 임시 AP <b>+${TEMP_AP_CARRY}</b>를 받습니다.`,
+        '반투명한 임시 AP는 그 턴에만 쓰이며 정규 AP보다 <b>먼저</b> 소모됩니다.',
+      ]},
+      {t:'방어 · 예고', lines:[
+        '적 카드 아래에는 다음에 할 행동이 미리 보입니다. 그것을 보고 막을지 때릴지 고릅니다.',
+        '방어는 <b>턴이 끝나면 사라집니다.</b> 쟁여 둘 수 없으니 맞을 턴에 맞춰 올리세요.',
+      ]},
+      {t:'심도압박', lines:[
+        '심연의 감각에 인식이 동조되는 정도입니다. <b>방어로는 막을 수 없습니다.</b>',
+        '원거리 공격·광기 계열 카드는 위력의 대가로 자신의 압박을 올립니다.',
+        '<b>100</b>에 닿으면 정신이 함몰되어 가하는 피해 <b>-50%</b>, 받는 피해 <b>+50%</b>가 되고 70으로 되돌아갑니다.',
+        '진정 계열 카드와 은신처 휴식(압박 -30)으로만 내릴 수 있습니다.',
+      ]},
+      {t:'잠식', lines:[
+        `0에서 시작해 <b>${EROSION_MAX}%</b>에 닿으면 탐색이 그 자리에서 끝납니다. 되돌리는 수단은 없습니다.`,
+        `전투의 턴이 끝날 때마다 구역별로 오릅니다 — ${eroRates}.`,
+        `은신처에서 숨을 고르면 체력과 압박을 얻는 대신 잠식이 <b>${EROSION_REST}%</b> 오릅니다.`,
+      ]},
+      {t:'대열 · 사거리', lines:[
+        '서 있는 열이 곧 화력입니다. 병과마다 휘두를 수 있는 자기 열과 닿는 상대 열이 정해져 있습니다.',
+        `<b>${REACH.melee.label}</b> — ${REACH.melee.note}`,
+        `<b>${REACH.mid.label}</b> — ${REACH.mid.note}`,
+        `<b>${REACH.ranged.label}</b> — ${REACH.ranged.note}`,
+        '빈 칸은 열로 세지 않으며, 앞이 쓰러지면 뒤가 당겨집니다.',
+      ]},
+      {t:'피격 반응', lines:[
+        '맞을 때마다 회피·흘림·반격을 굴립니다. 앞에 설수록 받아치고, 뒤에 설수록 비껴납니다.',
+        '살아 돌아온 사람은 다음 하강에서 최대 체력과 반응이 조금씩 늘어납니다.',
+      ]},
+      {t:'덱 · 손패', lines:[
+        `손패는 매 턴 <b>${5}</b>장까지 채워집니다(유물로 최대 ${HAND_LIMIT}장). 가득 찬 채로 뽑으면 한 장을 버려야 합니다.`,
+        `덱은 전투 보상으로 자라며 최대 <b>${MAX_DECK_SIZE}</b>장까지 늘릴 수 있습니다.`,
+      ]},
+      {t:'강화 · 합성', lines:[
+        `카드는 <b>+${MERGE_UPGRADE_START_LEVEL}</b>까지 한 장씩 강화할 수 있습니다.`,
+        `<b>+${MERGE_UPGRADE_START_LEVEL} → +${MERGE_UPGRADE_START_LEVEL+1}</b> 부터는 같은 카드·같은 단계 <b>2장</b>을 합쳐야 하며, <b>+${MAX_UPGRADE_LEVEL}</b>가 끝입니다.`,
+      ]},
+      {t:'유물 · 해금', lines:[
+        `유물은 <b>${RELIC_CAP}칸</b>까지 지니며, 한 번 챙기면 그 탐색이 끝날 때까지 벗겨지지 않습니다.`,
+        '여관에서 얻은 동료 해금은 탐색이 끝나도 남습니다. 다만 <b>새로운 탐색</b>은 해금까지 지웁니다.',
+      ]},
+    ];
+  }
+
+  /* 상단 메뉴 팝업 — 항목 추가는 이 배열만 늘리면 된다.
+     view:'placeholder' 는 아직 구현되지 않은 기능의 안내문을,
+     view:'guide' 는 sections() 가 돌려주는 목록을 접이식 문서로,
+     view:'confirm' 은 실행 전 확인이 필요한 항목을 그린다. */
+  const MENU_ITEMS = [
+    {id:'settings', label:'설정', view:'placeholder', title:'설정',
+      desc:'준비 중인 기능입니다.'},
+    {id:'system', label:'게임 가이드', view:'guide', title:'게임 가이드',
+      sections:guideSections},
+    {id:'quit', label:'게임 종료', view:'confirm', title:'게임 종료', confirmLabel:'게임 종료',
+      desc:'제목 화면으로 나갑니다. 지도·휴식 등 안전한 지점까지는 이미 저장되어 있습니다.',
+      run(){ S.screen = 'title'; }},
+  ];
+  let menuOpen = false;
+  let menuStep = null; /* null 이면 목록, 아니면 MENU_ITEMS 의 id */
+  let guideOpen = 0;   /* 가이드에서 펼쳐 둔 장의 번호 */
+
+  function renderMenuOverlay(){
+    if(!menuOpen) return '';
+    const item = MENU_ITEMS.find(m=>m.id===menuStep) || null;
+    let body;
+    if(!item){
+      body = `<div class="menu-list">${MENU_ITEMS.map(m=>
+        `<button class="menu-item" data-action="menu-open-item" data-menu-id="${m.id}">${m.label}</button>`
+      ).join('')}</div>`;
+    } else if(item.view==='guide'){
+      /* 한 번에 한 장만 펼친다 — 작은 화면에서 통째로 흘리면 어디를 읽는지 놓친다 */
+      const sections = item.sections();
+      body = `
+        <div class="menu-guide">
+          ${sections.map((sec,i)=>`
+            <div class="guide-sec ${guideOpen===i?'open':''}">
+              <button class="guide-sec-head" data-action="menu-guide-toggle" data-index="${i}">
+                <span>${sec.t}</span><span class="guide-sec-mark" aria-hidden="true"></span>
+              </button>
+              ${guideOpen===i ? `<ul class="guide-sec-body">${sec.lines.map(l=>`<li>${l}</li>`).join('')}</ul>` : ''}
+            </div>`).join('')}
+        </div>
+        <button class="btn menu-guide-back" data-action="menu-back">뒤로</button>`;
+    } else if(item.view==='confirm'){
+      body = `
+        <div class="menu-confirm">
+          <p>${item.desc}</p>
+          <div class="menu-confirm-actions">
+            <button class="btn" data-action="menu-back">취소</button>
+            <button class="btn danger" data-action="menu-confirm" data-menu-id="${item.id}">${item.confirmLabel||'확인'}</button>
+          </div>
+        </div>`;
+    } else {
+      body = `
+        <div class="menu-placeholder">
+          <p>${item.desc}</p>
+          <button class="btn" data-action="menu-back">뒤로</button>
+        </div>`;
+    }
+    return `
+      <div class="menu-overlay" role="dialog" aria-modal="true" aria-label="${item?item.title:'메뉴'}" data-action="close-menu">
+          <div class="menu-panel ${item&&item.view==='guide'?'wide':''}" data-action="menu-noop">
+            <div class="menu-panel-head">
+            ${item ? `<h3>${item.title}</h3>` : '<span aria-hidden="true"></span>'}
+            <button class="menu-close" data-action="close-menu" aria-label="닫기"><span class="menu-close-ico"></span></button>
+          </div>
+          ${body}
+        </div>
+      </div>`;
   }
 
   function renderTopbar(){
@@ -4456,14 +4851,18 @@
       <div class="topbar">
         <div class="ero-row">
           <div class="ero-label">잠식</div>
-          <div class="ero-case ${danger}"><div class="ero-fill" style="width:${pct}%"></div></div>
-          <div class="ero-num mono ${danger}">${Math.round(S.erosion)}%</div>
+          <div class="ero-case ${danger}">
+            <div class="ero-fill" style="width:${pct}%"></div>
+            <div class="ero-num mono ${danger}">${Math.round(S.erosion)}%</div>
+          </div>
+          <button class="menu-btn" data-action="open-menu" aria-label="메뉴" aria-haspopup="dialog"><span class="menu-ico"></span></button>
         </div>
 ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${S.relics.length?'with-relics':''} ${ownedMarkers().length?'with-markers':''}">
           ${S.relics.length ? `<div class="relic-tray topbar-relics relic-count-${Math.min(4,S.relics.length)}">${S.relics.map(r=>relicChip(r,true)).join('')}</div>` : ''}
           ${ownedMarkers().length ? `<div class="topbar-markers">${ownedMarkers().map(marker=>markerChip(marker)).join('')}</div>` : ''}
         </div>` : ''}
-      </div>`;
+      </div>
+      ${renderMenuOverlay()}`;
   }
 
   function renderTitle(){
@@ -4475,7 +4874,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
           <button class="btn primary" data-action="continue-run">이어서 탐색</button>
           <button class="btn" data-action="new-run">새로운 탐색</button>
         ` : `
-          <button class="btn primary" data-action="new-run">새로운 탐색</button>
+          <button class="btn primary" data-action="new-run">${hasPlayedBefore() ? '새로운 탐색' : '시작하기'}</button>
         `}
         <div class="title-version">v0.1.0-alpha.2</div>
       </div>`;
@@ -4771,7 +5170,8 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
 
   function heroCardHtml(hero){
     if(!hero) return `<div class="hero-card empty">공석</div>`;
-    const hpPct = Math.max(0,(hero.hp/hero.maxHp)*100);
+    const hpRatio = Math.max(0, hero.hp/hero.maxHp);
+    const hpPct = hpRatio*100;
     const shownDp = Math.round(Number.isFinite(hero.dp) ? hero.dp : 0);
     const dead = !hero.alive;
     const rank = heroRank(hero);
@@ -4782,27 +5182,34 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       <div class="hero-card cls-${hero.cls} ${hero.collapsed?'collapsed':''} ${targetable?'targetable':''} ${tutorialPulse?'tutorial-pulse':''} ${idle?'idle':''}"
            style="${dead?'opacity:0.35;':''}"
            data-action="choose-target" data-domain="ally" data-id="${hero.id}">
-        ${reactBadge(hero)}
+        <div class="status-stack">
+          ${reactBadge(hero)}
+          ${(hero.invulnerableTurns||0)>0 ? `<div class="invulnerable-tag">무적</div>` : ''}
+          ${hero.block>0 ? `<div class="block-tag">${IC_BLOCK}${hero.block}</div>` : ''}
+        </div>
         <div class="portrait portrait-${hero.cls}">${CLASS_ICON[hero.cls]}${survivalMarks(hero)}</div>
         <div class="hero-rank">${dead?'전사':rankName(rank)} ${reachChip(hero)}</div>
         <div class="hero-name">${hero.name}</div>
+        <div class="hero-hpline dp-line">
+          <div class="hpbar dpbar ${dead?'':(shownDp>=70?'urgent':'')}">
+            <div class="fill" style="width:${shownDp}%; background-color:${dpColor(shownDp)};"></div>
+          </div>
+          <div class="hero-num mono">${shownDp}</div>
+        </div>
         <div class="hero-hpline">
-          <div class="hpbar"><div class="fill" style="width:${hpPct}%"></div></div>
+          <div class="hpbar lifebar ${dead?'':(hpPct<=30?'urgent':'')}" style="--vital-dur:${vitalDuration(hpRatio)}s;">
+            <div class="fill" style="width:${hpPct}%; background-color:${hpFillColor(hpRatio)};"></div>
+          </div>
           <div class="hero-num mono">${hero.hp}/${hero.maxHp}</div>
         </div>
-        <div class="dp-gauge">
-          <div class="dp-ring" style="${dpRingStyle(shownDp)}"></div>
-          <div class="dp-num">${shownDp}</div>
-        </div>
         ${idle ? `<div class="rank-warn">사거리 밖</div>` : ''}
-        ${(hero.invulnerableTurns||0)>0 ? `<div class="invulnerable-tag">무적</div>` : ''}
-        ${hero.block>0 ? `<div class="block-tag">${IC_BLOCK}${hero.block}</div>` : ''}
       </div>`;
   }
 
   function foeCardHtml(en, i){
     const b = S.battle;
-    const hpPct = Math.max(0,(en.hp/en.maxHp)*100);
+    const hpRatio = Math.max(0, en.hp/en.maxHp);
+    const hpPct = hpRatio*100;
     const tSlug = tierSlug(b.tier);
     const rank = foeRank(en);
     const isBoss = en.kind==='boss';
@@ -4820,12 +5227,19 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       <div class="foe-card ${targetable?'targetable':''} ${tutorialPulse?'tutorial-pulse':''} ${isElite?'elite-foe':''} ${isBoss?'boss-foe':''} ${isAwakened?'boss-awakened':''} ${idle?'idle':''}"
            style="${dead?'opacity:0.3;':''}"
            data-action="choose-target" data-domain="enemy" data-idx="${i}">
-        ${reactBadge(en)}
+        <div class="status-stack">
+          ${reactBadge(en)}
+          ${en.block>0 ? `<div class="block-tag">${IC_BLOCK}${en.block}</div>` : ''}
+        </div>
         <div class="foe-rank">${dead?'소멸':(isAwakened?'각성':rankName(rank))} ${reachChip(en)}</div>
         <div class="enemy-portrait tier-${tSlug}">${en.icon || ICON_WATCHER}</div>
         <div class="foe-name">${foeDisplayName(en)}</div>
-        <div class="hero-hpline"><div class="hpbar"><div class="fill" style="width:${hpPct}%"></div></div><div class="hero-num mono">${en.hp}/${en.maxHp}</div></div>
-        ${en.block>0 ? `<div class="block-tag" style="position:static; display:inline-flex; margin-top:2px;">${IC_BLOCK}${en.block}</div>` : ''}
+        <div class="hero-hpline">
+          <div class="hpbar ${dead?'':(hpPct<=30?'urgent':'')}" style="--vital-dur:${vitalDuration(hpRatio)}s;">
+            <div class="fill" style="width:${hpPct}%"></div>
+          </div>
+          <div class="hero-num mono">${en.hp}/${en.maxHp}</div>
+        </div>
         ${en.alive && en.intent ? `<div class="intent-badge"><span class="ic">${en.intent.ic}</span>${en.intent.label}${en.intent.val?` · ${en.intent.val}`:''}</div>` : (dead?`<div class="foe-dead">소멸</div>`:'')}
       </div>`;
   }
@@ -5426,12 +5840,34 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       return;
     }
 
-    if(action==='new-run'){
+    if(action==='open-menu'){ menuOpen=true; menuStep=null; render(); }
+    else if(action==='close-menu'){ menuOpen=false; menuStep=null; render(); }
+    else if(action==='menu-noop'){ /* 팝업 내부 클릭이 바깥 배경 클릭(닫기)으로 번지지 않게 막는다 */ }
+    else if(action==='menu-open-item'){
+      const item = MENU_ITEMS.find(m=>m.id===el.dataset.menuId);
+      if(item) menuStep = item.id;
+      render();
+    }
+    else if(action==='menu-back'){ menuStep=null; render(); }
+    else if(action==='menu-guide-toggle'){
+      const i = parseInt(el.dataset.index,10);
+      guideOpen = (guideOpen===i) ? -1 : i;   /* 펼친 장을 다시 누르면 접는다 */
+      render();
+    }
+    else if(action==='menu-confirm'){
+      const item = MENU_ITEMS.find(m=>m.id===el.dataset.menuId);
+      if(item && item.run) item.run();
+      menuOpen=false; menuStep=null;
+      render();
+    }
+    else if(action==='new-run'){
       wipeAllSaves();
+      markPlayed();
       startPrologue();
       render();
     }
     else if(action==='continue-run'){
+      markPlayed();
       if(loadRun()) render();
       else { newRun(); S.screen='classSelect'; render(); }
     }
