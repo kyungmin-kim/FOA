@@ -3,3 +3,7 @@ _t.html
 _verify_*.html
 _nativetest.html
 _webtest.html
+
+# 음원 원본(무압축). 게임이 쓰는 것은 같은 이름의 .m4a 이고,
+# 원본은 다시 인코딩할 때만 필요하므로 저장소에 올리지 않는다.
+assets/*.wav

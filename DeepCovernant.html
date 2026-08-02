@@ -410,6 +410,25 @@
   .guide-sec-body b{ color:var(--gaslamp); font-weight:normal; }
   .menu-guide-back{ flex:0 0 auto; display:block; margin:10px auto 0; padding:8px 18px; font-size:11px; }
 
+  /* ---------- 설정 ---------- */
+  .menu-settings{ display:flex; flex-direction:column; gap:8px; }
+  .setting-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:8px 10px; border:1px solid rgba(184,147,79,0.28); background:rgba(9,16,18,0.5);
+  }
+  .setting-label{ color:var(--bone); font-size:12px; }
+  .setting-hint{ margin-top:2px; color:var(--muted); font-size:10.5px; line-height:1.5; word-break:keep-all; }
+  .setting-switch{
+    -webkit-appearance:none; appearance:none;
+    flex:0 0 auto; min-width:44px; padding:5px 9px; margin:0; border-radius:0;
+    border:1px solid var(--brass-dim); background:#141a1c; color:var(--muted);
+    font-size:11px; text-align:center; cursor:pointer;
+    box-shadow: inset 1px 1px 0 rgba(224,170,76,0.16), inset -1px -1px 0 rgba(0,0,0,0.8);
+  }
+  .setting-switch.on{ border-color:var(--gaslamp); color:#150c07; background:#a67c33;
+    box-shadow: inset 1px 1px 0 #e8c479, inset -1px -1px 0 #5c4826; }
+  .setting-switch:active{ transform:translateY(1px); }
+
   /* ---------- MAP / SETUP shared shell ---------- */
   .map-screen{ padding:20px 18px; align-items:center; gap:12px; overflow-y:auto; }
   .path-trail{ display:flex; gap:6px; margin-bottom:2px; }
@@ -792,6 +811,54 @@
     to  { transform:translate(calc(-50% + var(--dx,0px)), calc(-50% - var(--dy,34px))) scale(0.3); opacity:0; }
   }
 
+  /* 회복 십자 — 카드 둘레를 따라 돋아 올라온다.
+     상처가 아무는 것은 몸 한 곳이 아니라 그 사람 전체에 일어나는 일이라,
+     초상 위가 아니라 카드를 두르는 자리에 뿌린다. */
+  .p-plus{
+    font-family:monospace; font-weight:700; font-size:14px; line-height:1;
+    color:currentColor; z-index:1;
+    text-shadow:0 0 7px currentColor, 0 1px 0 rgba(0,0,0,0.85);
+    animation:plusRise var(--d,860ms) ease-out var(--dl,0ms) both;
+  }
+  @keyframes plusRise{
+    from{ transform:translate(-50%,-50%) scale(0.35); opacity:0; }
+    28% { transform:translate(-50%,-50%) scale(1.15); opacity:1; }
+    to  { transform:translate(calc(-50% + var(--dx,0px)), calc(-50% - var(--dy,24px))) scale(0.85); opacity:0; }
+  }
+
+  /* 피해 수치 — 맞은 초상 위로 솟았다가 가라앉는다.
+     파편·고리와 섞이면 읽히지 않으므로 한 겹 위에 두고 검은 테를 둘러 띄운다. */
+  .p-dmg{
+    font-family:monospace; font-weight:700; font-size:16px; line-height:1;
+    color:currentColor; white-space:nowrap; z-index:1;
+    text-shadow:0 1px 0 #000, 0 -1px 0 #000, 1px 0 0 #000, -1px 0 0 #000, 0 0 7px rgba(0,0,0,0.85);
+    animation:dmgFloat var(--d,900ms) cubic-bezier(.16,.72,.32,1) forwards;
+  }
+  @keyframes dmgFloat{
+    from{ transform:translate(-50%,-50%) translateY(4px) scale(0.7); opacity:0; }
+    22% { transform:translate(-50%,-50%) translateY(-6px) scale(1.15); opacity:1; }
+    46% { transform:translate(-50%,-50%) translateY(-13px) scale(1); opacity:1; }
+    to  { transform:translate(-50%,-50%) translateY(-30px) scale(0.95); opacity:0; }
+  }
+
+  /* 손에서 뽑혀 나가는 카드 — 사라지기 직전의 모습을 그대로 뜬 잔상.
+     한 번 눌렀다가 위로 빠져나간다. 카드는 비트맵 글자를 품고 있어 확대·회전은
+     획을 뭉개므로, 정수 픽셀로만 밀어 올리고 끝에서 흩어지게 둔다.
+     #fx 안에 얹히므로 카드 규칙(.card)의 position 을 눌러야 한다. */
+  #fx .card-fly{
+    position:absolute; margin:0; z-index:6; pointer-events:none;
+    transform-origin:50% 50%;
+    animation:cardFly 95ms ease-out forwards;
+  }
+  /* 뽑혀 나가기보다 그 자리에서 부풀며 흩어진다 — 10px 만 떠오르고 120% 까지
+     커지며 투명해진다. 커지는 동안에는 픽셀이 어차피 갈리므로 계단으로 끊지 않고
+     매끄럽게 잇는다(steps 로 끊으면 확대가 뚝뚝 튀어 보인다). */
+  @keyframes cardFly{
+    from{ transform:translateY(0)     scale(1);    opacity:1; }
+    60% { transform:translateY(-6px)  scale(1.12); opacity:0.5; }
+    to  { transform:translateY(-10px) scale(1.2);  opacity:0; }
+  }
+
   /* 피격 흔들림 — 카드 자체를 짧게 턴다 */
   .hit-shake{ animation:hitShake 240ms cubic-bezier(.36,.07,.19,.97); }
   @keyframes hitShake{
@@ -803,7 +870,14 @@
   }
 
   @media (prefers-reduced-motion: reduce){
-    #fx{ display:none; }
+    /* 장식은 걷어내되 피해 수치는 정보라 남긴다 — 뜬 자리에 머물다 사라지기만 한다 */
+    #fx > :not(.p-dmg){ display:none; }
+    .p-dmg{ animation:dmgHold 900ms steps(1,end) forwards !important; }
+    @keyframes dmgHold{
+      from{ transform:translate(-50%,-50%); opacity:1; }
+      72% { transform:translate(-50%,-50%); opacity:1; }
+      to  { transform:translate(-50%,-50%); opacity:0; }
+    }
     .hit-shake{ animation:none !important; }
   }
 
@@ -863,32 +937,18 @@
 
   /* ---- 손패를 집어 드는 느낌 ----
      쓸 수 있는 카드만 반응한다 — 못 쓰는 카드가 따라 들리면 쓸 수 있다고 착각한다.
-     픽셀 그림이라 회전·확대는 획을 뭉개므로, 정수 픽셀 이동만으로 들어 올리고
-     든 채로 한 칸씩 흔들리게 둔다(steps 로 끊어야 중간에 반 픽셀이 생기지 않는다). */
-  @keyframes cardSway{
-    0%  { transform:translate( 0px,-6px); }
-    25% { transform:translate(-1px,-7px); }
-    50% { transform:translate( 0px,-8px); }
-    75% { transform:translate( 1px,-7px); }
-  }
-  @keyframes cardNudge{
-    0%  { transform:translate(-2px,-7px); }
-    30% { transform:translate( 2px,-8px); }
-    60% { transform:translate(-1px,-7px); }
-    100%{ transform:translate( 0px,-7px); }
-  }
+     흔들지 않고 들어 올리기만 한다. 손패는 늘 눈이 머무는 자리라, 계속 움직이면
+     읽어야 할 카드 글씨가 먼저 지친다. */
   @media (hover:hover){
     .hand-row .card:not(.unplayable):hover{
       transform:translateY(-6px); z-index:2;
-      animation:cardSway 1.5s steps(1,end) infinite;
       box-shadow: inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 0 2px rgba(184,147,79,0.16),
                   inset 0 -24px 26px rgba(0,0,0,0.42), 0 5px 12px rgba(0,0,0,0.6);
     }
   }
-  /* 손가락으로 누르는 동안은 한 번 크게 떨고 들린 자리에 머문다 */
+  /* 누르는 동안은 한 칸 더 들린 자리에 머문다 */
   .hand-row .card:not(.unplayable):active{
     transform:translateY(-7px); z-index:2;
-    animation:cardNudge 0.2s steps(1,end);
   }
   .card.unplayable{ opacity:0.52; filter:grayscale(0.6); }
   .card.unplayable .card-name, .card.unplayable .card-cost{ opacity:0.72; }
@@ -896,9 +956,8 @@
     border-color:var(--corrode);
     box-shadow: inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 24px rgba(141,122,176,0.18), 0 0 12px rgba(141,122,176,0.22);
   }
-  /* 표적을 고르는 동안에도 카드는 손에 들려 있다 — 계속 떠 있고 흔들린다 */
+  /* 표적을 고르는 동안에도 카드는 손에 들려 있다 — 떠 있는 자리와 인광 테두리로만 알린다 */
   .card.selecting{ border-color:var(--phosphor); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 22px rgba(127,191,174,0.14), 0 0 16px rgba(127,191,174,0.5); transform:translateY(-6px); z-index:2; }
-  .hand-row .card.selecting{ animation:cardSway 1.1s steps(1,end) infinite; }
   /* 비용 = 밀랍 봉인 */
   .card-cost{
     position:absolute; top:-8px; left:-8px; width:23px;height:23px;
@@ -1428,7 +1487,7 @@
   /* ---- 파티클 : 둥근 빛망울 대신 각진 부스러기 ----
      번짐(box-shadow blur)을 걷어내고 움직임도 계단으로 끊는다.
      매끄럽게 흐르는 파티클 하나가 화면 전체의 픽셀감을 깬다. */
-  .p-shard,.p-ring,.p-wisp,.p-slash,.p-bub,.p-mote{
+  .p-shard,.p-ring,.p-wisp,.p-slash,.p-bub,.p-mote,.p-plus{
     border-radius:0 !important; box-shadow:none !important; filter:none !important;
     image-rendering:pixelated;
   }
@@ -1439,6 +1498,33 @@
   .p-bub{ background:rgba(206,228,220,0.5); border:1px solid rgba(236,244,240,0.7);
           animation-timing-function:steps(9,end); }
   .p-mote{ animation-timing-function:steps(8,end); }
+  /* 십자도 비트맵 글꼴로 세우고 계단으로 끊는다 — 번짐은 위에서 이미 걷어냈으므로
+     검은 테를 한 겹 둘러 어두운 카드 위에서도 획이 살아 있게 한다. */
+  .p-plus{
+    font-family:'GalmuriMono11',monospace !important;
+    font-size:13px; letter-spacing:0;
+    text-shadow:1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;
+    animation-timing-function:steps(7,end);
+  }
+  @keyframes plusRise{
+    from{ transform:translate(-50%,-50%); opacity:0; }
+    20% { transform:translate(-50%,-50%); opacity:1; }
+    to  { transform:translate(calc(-50% + var(--dx,0px)), calc(-50% - var(--dy,24px))); opacity:0; }
+  }
+  /* 수치는 비트맵 글꼴로 세우고, 솟아오르는 것도 계단으로 끊는다.
+     확대·축소는 획을 뭉개므로 픽셀 스킨에서는 오르내리기만 시킨다. */
+  .p-dmg{
+    font-family:'GalmuriMono11',monospace !important;
+    font-size:15px; letter-spacing:0;
+    text-shadow:1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;
+    animation-timing-function:steps(7,end);
+  }
+  @keyframes dmgFloat{
+    from{ transform:translate(-50%,-50%) translateY(4px); opacity:0; }
+    15% { transform:translate(-50%,-50%) translateY(-4px); opacity:1; }
+    55% { transform:translate(-50%,-50%) translateY(-14px); opacity:1; }
+    to  { transform:translate(-50%,-50%) translateY(-28px); opacity:0; }
+  }
 
   /* ---- 피격 흔들림 : 정수 픽셀만큼만, 뚝뚝 끊어서 ---- */
   @keyframes hitShake{
@@ -2568,7 +2654,7 @@
   const EPIC_CARD_POOL = [
     {id:'abyssal_verdict', name:'심해왕의 단죄', cost:0, type:'abyssal_verdict', owner:'neutral', range:'ranged', epic:true, unupgradable:true, desc:'보스를 제외한 지정 적을 즉시 섬멸.'},
     {id:'thousand_maws_tide', name:'천 개의 입의 조류', cost:1, type:'thousand_maws_tide', owner:'neutral', range:'ranged', epic:true, unupgradable:true, desc:'선택한 적 양옆의 일반 적을 즉시 섬멸. 엘리트·보스 제외.'},
-    {id:'sunken_ark', name:'침몰한 성궤', cost:0, type:'sunken_ark', owner:'neutral', range:'support', epic:true, unupgradable:true, desc:'한 턴 동안 생존한 아군 전체 무적.'},
+    {id:'sunken_ark', name:'침몰한 성궤', cost:0, type:'sunken_ark', turns:2, owner:'neutral', range:'support', epic:true, unupgradable:true, desc:'2턴 동안 생존한 아군 전체 무적.'},
     {id:'saints_last_prayer', name:'성자의 마지막 기도', cost:0, type:'saints_last_prayer', healRatio:0.5, regenTotal:30, regenTurns:3, owner:'neutral', range:'support', epic:true, desc:'생존한 아군 전체 체력 50% 회복. 3턴 동안 추가로 총 30 회복.'},
     {id:'star_eating_chart', name:'별을 먹는 해도', cost:3, type:'epic_attack', dmg:50, owner:'neutral', range:'ranged', epic:true, desc:'아무 열의 적 한 명을 골라 50 피해.'},
   ].concat(START_EPIC_CARD_POOL);
@@ -3285,11 +3371,44 @@
   /* 강한 카드는 덱에 남아 있어도 초반 손패를 독점하지 않는다.
      섞일 때 일반 1 : 에픽 0.4 : 전설 0.2의 가중치를 쓴다. */
   const BATTLE_DRAW_WEIGHT = {normal:1, epic:0.4, legendary:0.2};
-  /* 에픽·전설은 한 전투에서 합쳐 최대 다섯 장만 손패에 들어온다. 강한 카드만
-     순환하며 일반 카드가 사라지는 일을 막되, 남은 희귀 카드는 다음 전투에서 다시 섞인다. */
-  const RARE_DRAW_MAX_PER_BATTLE = 5;
+  /* 희귀 카드는 '전부 몇 장'이 아니라 '한 장이 몇 번'으로 센다.
+     같은 에픽 하나가 한 전투 내내 되돌아오며 손패를 독점하는 것을 막되,
+     서로 다른 에픽을 모아 온 덱은 모은 만큼 다양하게 쓸 수 있다.
+     세는 단위는 카드의 정체(id·원래 이름)라 같은 카드를 여러 장 가져도 한도는 하나다.
+     한도에 닿은 카드는 버린 더미로 돌아가고, 다음 전투에서 다시 0부터 센다. */
+  const RARE_DRAW_MAX_PER_BATTLE = {epic:4, legendary:4};
   function battleDrawWeight(card){ return isLegendaryCard(card) ? BATTLE_DRAW_WEIGHT.legendary : (isEpicCard(card) ? BATTLE_DRAW_WEIGHT.epic : BATTLE_DRAW_WEIGHT.normal); }
   function isRareBattleCard(card){ return isEpicCard(card) || isLegendaryCard(card); }
+  /* +5 강화로 에픽이 된 카드는 풀의 id 가 없다 — 그때는 강화 전 이름으로 센다. */
+  function rareDrawKey(card){ return card.id || card.baseName || card.name; }
+  function rareDrawLimit(card){
+    return isLegendaryCard(card) ? RARE_DRAW_MAX_PER_BATTLE.legendary : RARE_DRAW_MAX_PER_BATTLE.epic;
+  }
+  function rareDrawCounts(b){
+    /* 예전 저장은 이 값이 숫자(전체 합계)였다 — 장부 모양이 다르면 새로 편다. */
+    if(!b.rareDraws || typeof b.rareDraws !== 'object') b.rareDraws = {};
+    return b.rareDraws;
+  }
+  /* 한 번 써 버린 에픽은 같은 전투에서 점점 돌아오기 어려워진다.
+     뽑은 횟수가 아니라 '쓴 횟수'로 꺾는다 — 손에 들고만 있던 것은 값을 치르지 않았으므로.
+     아직 안 쓴 카드는 그대로, 한 번 썼으면 50%, 두 번이면 10%, 세 번부터는 0.1%.
+     굴림에 진 카드는 버린 더미로 돌아가고, 다음 전투에서 장부가 비워진다. */
+  const RARE_REDRAW_CHANCE = [1, 0.5, 0.1, 0.001];
+  function rareRedrawChance(uses){
+    if(uses <= 0) return 1;
+    return RARE_REDRAW_CHANCE[Math.min(uses, RARE_REDRAW_CHANCE.length - 1)];
+  }
+  function rareUseCounts(b){
+    if(!b.rareUses || typeof b.rareUses !== 'object') b.rareUses = {};
+    return b.rareUses;
+  }
+  function noteRareCardUsed(card){
+    const b = S.battle;
+    if(!b || !isRareBattleCard(card)) return;
+    const uses = rareUseCounts(b);
+    const key = rareDrawKey(card);
+    uses[key] = (uses[key] || 0) + 1;
+  }
   function shuffleBattleDeck(cards){
     const pool = cards.slice();
     const ordered = [];
@@ -3479,7 +3598,7 @@
     S.battle = {
       tier: node.tier, node, enemies,
       deck: cloneForBattle(S.runDeck), hand:[], discard:[],
-      ap:ap, maxAp:ap, tempAp:0, turn:1, over:false, rareDraws:0,
+      ap:ap, maxAp:ap, tempAp:0, turn:1, over:false, rareDraws:{}, rareUses:{},
       pendingCardUid:null, pendingDomain:null, pendingDraw:null,
     };
     S.party.forEach(p=>{ if(p) p.react = null; });
@@ -3609,11 +3728,21 @@
         b.deck = shuffleBattleDeck(b.discard); b.discard=[];
       }
       const c = b.deck.pop();
-      if(isRareBattleCard(c) && (b.rareDraws||0) >= RARE_DRAW_MAX_PER_BATTLE){
-        b.discard.push(c);
-        continue;
+      if(isRareBattleCard(c)){
+        const counts = rareDrawCounts(b);
+        const key = rareDrawKey(c);
+        if((counts[key]||0) >= rareDrawLimit(c)){
+          b.discard.push(c);
+          continue;
+        }
+        /* 이미 써 본 카드는 쓴 횟수만큼 꺾인 확률을 통과해야 손에 들어온다 */
+        const uses = rareUseCounts(b)[key] || 0;
+        if(uses > 0 && Math.random() >= rareRedrawChance(uses)){
+          b.discard.push(c);
+          continue;
+        }
+        counts[key] = (counts[key]||0) + 1;
       }
-      if(isRareBattleCard(c)) b.rareDraws = (b.rareDraws||0) + 1;
       c.contaminated = false;
       const unknownCount = b.hand.filter(card=>card.contaminated).length;
       const unknownChance = UNKNOWN_CARD_CHANCE[b.tier] || 0;
@@ -3681,23 +3810,39 @@
      반격은 자기 열에서 상대 열까지 손이 닿을 때만 나간다.
      반격에 대한 재반격은 없다 (무한 연쇄 방지). */
   function markReact(unit, kind){
-    unit.react = {kind:kind, turn:S.battle ? S.battle.turn : 0};
+    unit.react = {kind:kind};
+  }
+  /* 표식은 '방금 무슨 일이 있었는지'를 보여주므로, 턴 번호가 아니라 행동 단위로 지운다.
+     적 턴에 아군이 피하거나 받아친 것은 그 판정이 끝난 뒤 턴 번호가 올라간 다음에야
+     그려진다 — 턴을 대조해 지우면 아군 표식만 영영 뜨지 않았다.
+     그래서 다음 행동(카드 사용·턴 종료)이 시작될 때 한 번에 걷는다. */
+  function clearReacts(){
+    const b = S.battle;
+    if(!b) return;
+    S.party.forEach(p=>{ if(p) p.react = null; });
+    (b.enemies||[]).forEach(en=>{ if(en) en.react = null; });
   }
   function canRiposte(defender, defRank, attacker, atkRank){
     if(!attacker || !attacker.alive) return false;
     return canActFrom(defender, defRank) && canHitRank(defender, atkRank);
   }
   /* 회피/흘림 판정 + 방어도 소모. 실제 체력 차감은 호출부에서 한다. */
+  /* 결과에는 실제로 깎인 피해(dealt)뿐 아니라 '무엇을 면했는지'도 함께 담는다.
+     회피로 통째로 피한 양(avoided), 흘림으로 깎아낸 양(reduced) — 화면에 그 수치를
+     띄워 줘야 왜 체력이 예상만큼 줄지 않았는지가 읽힌다. */
   function resolveIncoming(defender, amount){
     const rc = reactOf(defender);
     if(Math.random() < rc.dodge){
       markReact(defender, 'dodge');
-      return {dealt:0, kind:'dodge'};
+      return {dealt:0, kind:'dodge', avoided:amount, reduced:0};
     }
     let dmg = amount;
     let kind = 'hit';
+    let reduced = 0;
     if(Math.random() < rc.guard){
-      dmg = Math.max(1, Math.round(dmg*0.5));
+      const halved = Math.max(1, Math.round(dmg*0.5));
+      reduced = dmg - halved;
+      dmg = halved;
       markReact(defender, 'guard');
       kind = 'guard';
     }
@@ -3706,7 +3851,7 @@
       defender.block -= absorbed;
       dmg -= absorbed;
     }
-    return {dealt:dmg, kind:kind};
+    return {dealt:dmg, kind:kind, avoided:0, reduced:reduced};
   }
 
   /* 전사한 전문가는 자신이 다루던 기술도 함께 잃는다.
@@ -3745,7 +3890,7 @@
     const res = resolveIncoming(hero, amount);
 
     if(res.kind==='dodge'){
-      queueFx('dodge', hero);
+      queueFx('dodge', hero, res.avoided);
       pushLog(`${ga(hero.name)} 몸을 비틀어 피했다.`);
       triggerBulwarkRiposte(hero, attacker, opts);
       return res;
@@ -3756,7 +3901,7 @@
       queueFx('impact', hero, res.dealt);
       if(stress) addDp(hero, 4);
     }
-    if(res.kind==='guard'){ queueFx('guard', hero); pushLog(`${ga(hero.name)} 흘려 막았다. (${res.dealt} 피해)`); }
+    if(res.kind==='guard'){ queueFx('guard', hero, res.reduced); pushLog(`${ga(hero.name)} 흘려 막았다. (${res.dealt} 피해)`); }
     if(hero.hp<=0 && hero.alive){
       hero.alive = false;
       purgeDeadClassCards(hero);
@@ -3768,9 +3913,9 @@
 
     if(hero.alive && opts.riposte!==false && canRiposte(hero, heroRank(hero), attacker, foeRank(attacker))
        && Math.random() < reactOf(hero).riposte){
-      markReact(hero, 'riposte');
-      queueFx('riposte', hero);
       const rip = reactOf(hero).rip;
+      markReact(hero, 'riposte');
+      queueFx('riposte', hero, rip);
       /* 반격 선언 뒤의 회피·흘림 결과가 마지막 줄에 남도록 한다. */
       pushLog(`${ga(hero.name)} 곧바로 받아친다. (반격 ${rip})`);
       damageEnemy(attacker, rip, {riposte:true});
@@ -3783,7 +3928,7 @@
     const rip = hero && hero.bulwarkRiposte || 0;
     if(!rip || !hero.alive || !attacker || !attacker.alive || opts.riposte===false) return false;
     markReact(hero, 'riposte');
-    queueFx('riposte', hero);
+    queueFx('riposte', hero, rip);
     pushLog(`${ga(hero.name)} 침수된 방벽을 되울린다. (${rip} 반격)`);
     damageEnemy(attacker, rip, {riposte:true});
     return true;
@@ -3809,14 +3954,14 @@
     flash('white');
     const res = resolveIncoming(en, dmg);
     if(res.kind==='dodge'){
-      queueFx('dodge', en);
+      queueFx('dodge', en, res.avoided);
       pushLog(`${ga(foeDisplayName(en))} 미끄러지듯 피한다.`);
       return null;
     }
     en.hp = Math.max(0, en.hp - res.dealt);
     if(res.dealt>0) queueFx('impact', en, res.dealt);
     if(res.kind==='guard'){
-      queueFx('guard', en);
+      queueFx('guard', en, res.reduced);
       pushLog(`${ga(foeDisplayName(en))} 몸을 틀어 흘려낸다. (${res.dealt} 피해)`);
     }
 
@@ -3837,9 +3982,9 @@
     if(en.alive && !opts.riposte && hero && hero.alive
        && canRiposte(en, foeRank(en), hero, heroRank(hero))
        && Math.random() < reactOf(en).riposte){
-      markReact(en, 'riposte');
-      queueFx('riposte', en);
       const rip = reactOf(en).rip;
+      markReact(en, 'riposte');
+      queueFx('riposte', en, rip);
       pushLog(`${ga(foeDisplayName(en))} 이빨을 드러내며 받아친다. (반격 ${rip})`);
       applyDamageToHero(hero, rip, {stress:false, riposte:false});
     }
@@ -3921,6 +4066,8 @@
     const card = b.hand[idx];
     if(!canPlayCard(card)) return;
 
+    flyOutCard(cardUidVal);   /* 손패가 아직 그대로일 때 떠 둔다 */
+    clearReacts();   /* 지난 행동의 표식을 걷고, 이 카드가 만든 것만 남긴다 */
     cancelTargeting();
     clearLog();
     /* 임시 AP 는 이 턴이 지나면 사라진다 — 먼저 쓴다 */
@@ -3931,6 +4078,7 @@
     b.hand.splice(idx,1);
     b.discard.push(card);
     card.contaminated = false;
+    noteRareCardUsed(card);   /* 다음부터 이 카드가 돌아올 확률이 꺾인다 */
 
     const owner = ownerOf(card);
     const reachable = enemyTargetsFor(card);
@@ -4022,8 +4170,9 @@
         break;
       }
       case 'sunken_ark': {
-        aliveParty().forEach(p=>{ p.invulnerableTurns = Math.max(p.invulnerableTurns||0, 1); queueFx('guard', p); });
-        pushLog(`${card.name} — 이번 적 턴 동안 파티 전체가 무적이 된다.`);
+        const arkTurns = card.turns || 1;
+        aliveParty().forEach(p=>{ p.invulnerableTurns = Math.max(p.invulnerableTurns||0, arkTurns); queueFx('guard', p); });
+        pushLog(`${card.name} — 다가오는 적 턴 ${arkTurns}회 동안 파티 전체가 무적이 된다.`);
         break;
       }
       case 'thousand_maws_tide': {
@@ -4229,6 +4378,7 @@
     const b = S.battle;
     if(!b || b.over || b.pendingCardUid || b.pendingDraw) return;
     if(S.prologue && S.prologue.stage!=='braceDone') return;
+    clearReacts();   /* 적 턴에 생길 표식만 남도록 먼저 걷는다 */
     b.hand.forEach(c=>{ c.contaminated = false; });
     b.discard.push(...b.hand); b.hand=[];
 
@@ -4594,6 +4744,148 @@
   const fxEl = document.getElementById('fx');
   const flashEl = document.getElementById('flash');
 
+  /* ============ 배경음 ============
+     10초짜리 고리 두 개 — 탐색 중에는 심연의 소음이, 전투에서는 교전의 박동이 돈다.
+
+     되도록 Web Audio 로 튼다. 디코딩한 파형을 그대로 물려 돌리므로 이음매가 없고,
+     트랙을 바꿀 때 두 소리를 겹쳐 넘길 수 있다. 다만 file:// 로 열면 fetch 가 막히는
+     브라우저가 있어, 그때는 트랙마다 <audio loop> 하나씩으로 물러선다
+     (이쪽은 되감을 때 아주 짧게 끊기고 겹쳐 넘기지도 못하지만 소리는 계속 난다).
+
+     브라우저는 사용자가 한 번 건드리기 전에는 소리를 내주지 않으므로 첫 입력에 깨운다. */
+  /* gain 은 트랙마다 따로 둔다 — 전투 곡은 소리가 촘촘해서 같은 값으로 깔면
+     기본음보다 크게 들리고, 무엇보다 전투 중에는 타격음과 화면이 먼저 읽혀야 한다. */
+  const BGM_TRACKS = {
+    ambient: {src:'assets/bgm-cosmic-horror.m4a', gain:1},
+    battle:  {src:'assets/bgm-battle.m4a',        gain:0.5},
+  };
+  const BGM_KEY = 'fathom.bgm.v1';
+  /* 음악은 배경이지 무대가 아니다 — 있는 줄 모르고 듣다가 없으면 허전한 정도로만 깐다. */
+  const BGM_VOLUME = 0.045;
+  const BGM_LOOP_SECONDS = 10;   /* 원본의 정확한 길이 — 인코더가 덧댄 꼬리를 여기서 잘라낸다 */
+  const BGM_FADE = 0.7;          /* 트랙을 겹쳐 넘기는 시간(초) */
+  let bgmOn = Store.get(BGM_KEY) !== 'off';
+  let bgmCtx = null, bgmMaster = null, bgmStarted = false, bgmTrack = null;
+  const bgmBuffers = {};   /* 트랙별 디코딩 결과 — 한 번 받으면 다시 받지 않는다 */
+  const bgmEls = {};       /* file:// 대비 요소 재생 */
+  let bgmVoice = null;     /* 지금 울리고 있는 {node, gain} */
+
+  function bgmDesiredTrack(){ return (S && S.screen === 'battle') ? 'battle' : 'ambient'; }
+  function bgmTrackGain(key){
+    const t = BGM_TRACKS[key];
+    return t && Number.isFinite(t.gain) ? t.gain : 1;
+  }
+
+  /* ---- 물러섰을 때: 트랙마다 요소 하나 ---- */
+  function bgmEl(key){
+    if(!bgmEls[key]){
+      const el = document.createElement('audio');
+      el.src = BGM_TRACKS[key].src;
+      el.loop = true;
+      el.preload = 'auto';
+      document.body.appendChild(el);
+      bgmEls[key] = el;
+    }
+    return bgmEls[key];
+  }
+  function bgmPlayFallback(key){
+    Object.keys(bgmEls).forEach(k=>{ if(k !== key) bgmEls[k].pause(); });
+    const el = bgmEl(key);
+    el.volume = BGM_VOLUME * bgmTrackGain(key);
+    const p = el.play();
+    if(p && p.catch) p.catch(()=>{});
+  }
+
+  /* ---- Web Audio ---- */
+  function bgmLoad(key){
+    if(bgmBuffers[key]) return Promise.resolve(bgmBuffers[key]);
+    return fetch(BGM_TRACKS[key].src)
+      .then(r=>{ if(!r.ok) throw new Error('bgm'); return r.arrayBuffer(); })
+      .then(buf=>bgmCtx.decodeAudioData(buf))
+      .then(decoded=>{ bgmBuffers[key] = decoded; return decoded; });
+  }
+  function bgmPlayBuffer(key){
+    const buf = bgmBuffers[key];
+    if(!bgmCtx || !buf) return;
+    const now = bgmCtx.currentTime;
+    /* 울리던 것은 끊지 않고 걷어 낸다 — 전투에 드는 순간 소리가 뚝 끊기면 화면보다 먼저 놀란다 */
+    if(bgmVoice){
+      const old = bgmVoice;
+      try{
+        old.gain.gain.cancelScheduledValues(now);
+        old.gain.gain.setValueAtTime(old.gain.gain.value, now);
+        old.gain.gain.linearRampToValueAtTime(0, now + BGM_FADE);
+        old.node.stop(now + BGM_FADE + 0.05);
+      }catch(e){}
+      bgmVoice = null;
+    }
+    const gain = bgmCtx.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(bgmTrackGain(key), now + BGM_FADE);
+    gain.connect(bgmMaster);
+    const node = bgmCtx.createBufferSource();
+    node.buffer = buf;
+    node.loop = true;
+    node.loopStart = 0;
+    /* 디코딩된 버퍼는 인코더가 덧댄 만큼 원본보다 길 수 있다. 원래 길이에서 끊어야
+       한 바퀴가 정확히 맞물린다. 짧게 나오면(있는 그대로) 버퍼 끝까지 쓴다. */
+    node.loopEnd = Math.min(BGM_LOOP_SECONDS, buf.duration);
+    node.connect(gain);
+    node.start(now);
+    bgmVoice = {node:node, gain:gain};
+  }
+  function bgmPlay(key){
+    if(bgmCtx){
+      bgmLoad(key)
+        .then(()=>{ if(bgmOn && bgmTrack === key) bgmPlayBuffer(key); })
+        .catch(()=>{ if(bgmOn && bgmTrack === key) bgmPlayFallback(key); });
+    } else {
+      bgmPlayFallback(key);
+    }
+  }
+  /* 화면이 바뀔 때마다 불린다 — 같은 트랙이면 아무 일도 하지 않는다 */
+  function bgmSetTrack(key){
+    if(!BGM_TRACKS[key] || bgmTrack === key) return;
+    bgmTrack = key;
+    if(!bgmOn || !bgmStarted) return;
+    bgmPlay(key);
+  }
+  function bgmUnlock(){
+    if(bgmStarted || !bgmOn) return;
+    bgmStarted = true;
+    if(!bgmTrack) bgmTrack = bgmDesiredTrack();
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if(!Ctx){ bgmPlayFallback(bgmTrack); return; }
+    try{
+      bgmCtx = new Ctx();
+      bgmMaster = bgmCtx.createGain();
+      bgmMaster.gain.value = BGM_VOLUME;
+      bgmMaster.connect(bgmCtx.destination);
+    }catch(e){ bgmCtx = null; bgmPlayFallback(bgmTrack); return; }
+    if(bgmCtx.state === 'suspended') bgmCtx.resume().catch(()=>{});
+    bgmPlay(bgmTrack);
+  }
+  function setBgmOn(on){
+    bgmOn = !!on;
+    Store.set(BGM_KEY, bgmOn ? 'on' : 'off');
+    if(!bgmOn){
+      if(bgmVoice){
+        try{ bgmVoice.node.stop(); }catch(e){}
+        try{ bgmVoice.gain.disconnect(); }catch(e){}
+        bgmVoice = null;
+      }
+      Object.keys(bgmEls).forEach(k=>bgmEls[k].pause());
+      return;
+    }
+    if(!bgmStarted){ bgmUnlock(); return; }
+    if(bgmCtx && bgmCtx.state === 'suspended') bgmCtx.resume().catch(()=>{});
+    bgmTrack = bgmDesiredTrack();
+    bgmPlay(bgmTrack);
+  }
+  ['pointerdown','keydown','touchstart'].forEach(evt=>{
+    window.addEventListener(evt, bgmUnlock, {once:true, passive:true});
+  });
+
   /* ============ 파티클 ============
      피해 판정은 render() 앞에서 끝나지만 그때의 DOM 은 곧 버려진다.
      그래서 이벤트만 큐에 쌓아두고, 다시 그린 뒤 카드 위치를 찾아 뿌린다. */
@@ -4605,14 +4897,42 @@
     fxQueue.push({kind:kind, side:side, key:key, amount:amount||0});
   }
 
+  /* 낸 카드는 곧 손패에서 지워지고 전투판이 통째로 다시 그려진다.
+     지워지기 직전의 카드를 그 모습 그대로 떠서, 다시 그려지지 않는 #fx 레이어에
+     같은 자리로 얹어 둔다 — 손에서 한 장이 뽑혀 나가는 것처럼 보이게 하는 잔상이다.
+     반드시 손패가 아직 남아 있는 동안(상태를 건드리기 전에) 불러야 한다. */
+  function flyOutCard(uid){
+    if(!fxEl || !contentEl || S.screen!=='battle') return;
+    const el = contentEl.querySelector('.card[data-uid="'+uid+'"]');
+    if(!el) return;
+    const ar = app.getBoundingClientRect();
+    const r  = el.getBoundingClientRect();
+    const ghost = el.cloneNode(true);
+    ghost.classList.add('card-fly');
+    ghost.classList.remove('selecting','tutorial-pulse');
+    ghost.removeAttribute('data-action');   /* 잔상이 클릭을 가로채지 않게 */
+    ghost.removeAttribute('data-uid');
+    ghost.style.left   = (r.left - ar.left) + 'px';
+    ghost.style.top    = (r.top  - ar.top)  + 'px';
+    ghost.style.width  = r.width  + 'px';
+    ghost.style.height = r.height + 'px';
+    fxEl.appendChild(ghost);
+    setTimeout(()=>{ if(ghost.parentNode) ghost.parentNode.removeChild(ghost); }, 130);
+  }
+
   const FX_COLOR = {
     heroHit:'#c4383c', foeHit:'#b87ad8',
     dodge:'#8fd4c4', guard:'#9fc0d8', riposte:'#e0574f',
-    heal:'#e0aa4c', calm:'#7fbfae', death:'#cfe4dd',
+    /* 회복은 초록 — 십자와 티끌이 한 가지 빛으로 읽혀야 무엇이 일어났는지 한눈에 갈린다.
+       진정(계열)은 그대로 물빛이라 회복과 헷갈리지 않는다. */
+    heal:'#6fdc8c', calm:'#7fbfae', death:'#cfe4dd',
+    /* 수치는 파편보다 밝아야 초상 위에서 읽힌다.
+       내가 맞으면 핏빛, 내가 때리면 뼛빛 — 색만으로 누구의 피해인지 갈린다. */
+    dmgHero:'#ff7a70', dmgFoe:'#f7ecd6',
   };
   function clearFxLayer(){ while(fxEl.firstChild) fxEl.removeChild(fxEl.firstChild); }
   const FX_MAX = 180;   /* 타이머가 밀려도 레이어가 무한히 불어나지 않게 */
-  function spawn(cls, x, y, color, size, vars, life){
+  function spawn(cls, x, y, color, size, vars, life, text){
     while(fxEl.childElementCount >= FX_MAX) fxEl.removeChild(fxEl.firstChild);
     const p = document.createElement('div');
     p.className = 'p ' + cls;
@@ -4621,6 +4941,8 @@
     if(color) p.style.color = color;
     if(size){ p.style.width = size[0]+'px'; p.style.height = size[1]+'px'; }
     if(vars) for(const k in vars) p.style.setProperty(k, vars[k]);
+    /* 적 이름 등 바깥에서 온 문자열은 넣지 않지만, 그래도 textContent 로만 붙인다 */
+    if(text != null) p.textContent = text;
     fxEl.appendChild(p);
     setTimeout(()=>{ if(p.parentNode) p.parentNode.removeChild(p); }, life||1100);
   }
@@ -4633,12 +4955,28 @@
             {'--a':a+'deg', '--r':rnd(spread*0.55, spread)+'px', '--d':rnd(380,620)+'ms'}, 700);
     }
   }
-  function playFx(ev, el){
+  /* 회피·흘림·반격도 피해와 같은 글꼴·같은 초상 위에 수치를 띄운다.
+     다만 붉은 피해 수치와 같은 자리에서 출발하면 겹쳐 읽히지 않으므로 한 줄 위에 얹는다.
+     막아낸 것이 없으면(1 피해를 흘리는 등) 배지만 남기고 수치는 띄우지 않는다. */
+  function reactNum(x, y, color, label, amount){
+    const n = Math.round(amount || 0);
+    if(n <= 0) return;
+    spawn('p-dmg', x, y - 18, color, null,
+          {'--d':'900ms', 'font-size':'13px'}, 1100, label + ' ' + n);
+  }
+
+  function playFx(ev, el, stack){
     const ar = app.getBoundingClientRect();
     const r  = el.getBoundingClientRect();
     const cx = r.left - ar.left + r.width/2;
     const cy = r.top  - ar.top  + r.height/2;
     const mine = ev.side==='hero';
+    /* 수치는 카드 한가운데가 아니라 맞은 얼굴 위에 뜬다 — 누가 맞았는지가 먼저 읽혀야 한다.
+       초상은 아군·적이 서로 다른 클래스를 쓰고, 못 찾으면 카드 기준으로 물러선다. */
+    const face = el.querySelector('.portrait, .enemy-portrait');
+    const fr = face ? face.getBoundingClientRect() : r;
+    const fx = fr.left - ar.left + fr.width/2;
+    const fy = fr.top  - ar.top  + fr.height/2;
 
     if(ev.kind==='impact'){
       const col = mine ? FX_COLOR.heroHit : FX_COLOR.foeHit;
@@ -4646,6 +4984,13 @@
       const n = Math.max(6, Math.min(14, 5 + Math.round(ev.amount*0.8)));
       burst(cx, cy, col, n, 30 + Math.min(26, ev.amount*2.2));
       spawn('p-ring', cx, cy, col, [30,30], {'--d':'380ms'}, 500);
+      /* 큰 피해일수록 크게, 오래 남는다 */
+      const big = ev.amount >= 12;
+      const s = stack || 0;
+      spawn('p-dmg', fx + (s%2 ? 13 : -13)*Math.ceil(s/2), fy - s*7,
+            mine ? FX_COLOR.dmgHero : FX_COLOR.dmgFoe, null,
+            {'--d': (big?1050:880)+'ms', 'font-size': (big?19:15)+'px'},
+            big?1200:1000, '-'+ev.amount);
       el.classList.add('hit-shake');
 
     } else if(ev.kind==='dodge'){
@@ -4653,14 +4998,20 @@
         spawn('p-wisp', cx + rnd(-8,8), cy + rnd(-12,12), FX_COLOR.dodge, null,
               {'--dx':rnd(20,36)+'px', '--d':rnd(420,600)+'ms'}, 700);
       }
+      /* 통째로 피한 양을 그대로 띄운다 — 체력이 왜 그대로인지가 여기서 읽힌다 */
+      reactNum(fx, fy, FX_COLOR.dodge, '회피', ev.amount);
 
     } else if(ev.kind==='guard'){
       spawn('p-ring', cx, cy, FX_COLOR.guard, [40,40], {'--d':'520ms'}, 650);
       burst(cx, cy, FX_COLOR.guard, 5, 20);
+      /* 흘림은 깎아낸 양을 띄운다. 실제로 들어간 피해는 붉은 수치로 따로 뜬다 */
+      reactNum(fx, fy, FX_COLOR.guard, '흘림', ev.amount);
 
     } else if(ev.kind==='riposte'){
       spawn('p-slash', cx, cy, FX_COLOR.riposte, null, {'--a':'-32deg'}, 460);
       spawn('p-slash', cx, cy, FX_COLOR.riposte, null, {'--a':'26deg'}, 460);
+      /* 되돌려준 양. 맞은 쪽에는 이 값이 붉은 피해 수치로 다시 뜬다 */
+      reactNum(fx, fy, FX_COLOR.riposte, '반격', ev.amount);
 
     } else if(ev.kind==='death'){
       for(let i=0;i<12;i++){
@@ -4677,18 +5028,41 @@
         spawn('p-mote', cx + rnd(-18,18), cy + rnd(-4,16), col, [s,s],
               {'--dx':rnd(-10,10)+'px', '--dy':rnd(26,48)+'px', '--d':rnd(560,900)+'ms'}, 1000);
       }
+      /* 회복은 카드 둘레를 따라 십자를 돋운다 — 타원으로 돌려야 세로로 긴 카드에서도
+         모서리에 몰리지 않고 테두리를 고르게 두른다. 하나씩 시차를 두어 차례로 돋는다. */
+      if(ev.kind==='heal'){
+        const PLUS_N = 7;
+        for(let i=0;i<PLUS_N;i++){
+          const a = (Math.PI*2/PLUS_N)*i + rnd(-0.22, 0.22);
+          const rx = r.width/2  + rnd(1,7);
+          const ry = r.height/2 + rnd(1,7);
+          spawn('p-plus', cx + Math.cos(a)*rx, cy + Math.sin(a)*ry, col, null,
+                {'--dx':rnd(-6,6)+'px', '--dy':rnd(18,30)+'px',
+                 '--d':rnd(720,980)+'ms', '--dl':Math.round(i*55)+'ms'},
+                1400, '+');
+        }
+      }
     }
   }
   function flushFx(){
     if(!fxQueue.length) return;
     const q = fxQueue; fxQueue = [];
     if(!S.battle || S.screen!=='battle'){ clearFxLayer(); return; }
+    /* 광역기나 반격으로 한 번에 여러 대를 맞으면 수치가 같은 자리에 겹쳐 한 줄로 뭉친다.
+       같은 대상의 몇 번째 피해인지 세어, 뜨는 자리를 조금씩 어긋나게 한다. */
+    const hitSeen = {};
     q.forEach(ev=>{
       const sel = ev.side==='hero'
         ? '.hero-card[data-id="'+ev.key+'"]'
         : '.foe-card[data-idx="'+ev.key+'"]';
       const el = contentEl.querySelector(sel);
-      if(el) playFx(ev, el);
+      if(!el) return;
+      let stack = 0;
+      if(ev.kind==='impact'){
+        const id = ev.side+':'+ev.key;
+        stack = hitSeen[id] = (hitSeen[id]||0) + 1;
+      }
+      playFx(ev, el, stack - 1);
     });
   }
   function flash(type){
@@ -4781,9 +5155,14 @@
      view:'placeholder' 는 아직 구현되지 않은 기능의 안내문을,
      view:'guide' 는 sections() 가 돌려주는 목록을 접이식 문서로,
      view:'confirm' 은 실행 전 확인이 필요한 항목을 그린다. */
+  /* 설정 항목도 배열 하나로 늘린다 — 읽고 쓰는 두 함수만 주면 줄이 하나 더 생긴다. */
+  const SETTING_TOGGLES = [
+    {id:'bgm', label:'배경음', hint:'심연의 소음이 끊기지 않고 흐른다.',
+      get:()=>bgmOn, set:v=>setBgmOn(v)},
+  ];
+
   const MENU_ITEMS = [
-    {id:'settings', label:'설정', view:'placeholder', title:'설정',
-      desc:'준비 중인 기능입니다.'},
+    {id:'settings', label:'설정', view:'settings', title:'설정'},
     {id:'system', label:'게임 가이드', view:'guide', title:'게임 가이드',
       sections:guideSections},
     {id:'quit', label:'게임 종료', view:'confirm', title:'게임 종료', confirmLabel:'게임 종료',
@@ -4814,6 +5193,23 @@
               </button>
               ${guideOpen===i ? `<ul class="guide-sec-body">${sec.lines.map(l=>`<li>${l}</li>`).join('')}</ul>` : ''}
             </div>`).join('')}
+        </div>
+        <button class="btn menu-guide-back" data-action="menu-back">뒤로</button>`;
+    } else if(item.view==='settings'){
+      body = `
+        <div class="menu-settings">
+          ${SETTING_TOGGLES.map(t=>{
+            const on = !!t.get();
+            return `
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">${t.label}</div>
+                ${t.hint ? `<div class="setting-hint">${t.hint}</div>` : ''}
+              </div>
+              <button class="setting-switch ${on?'on':''}" role="switch" aria-checked="${on}"
+                      data-action="menu-toggle-setting" data-setting-id="${t.id}">${on?'켬':'끔'}</button>
+            </div>`;
+          }).join('')}
         </div>
         <button class="btn menu-guide-back" data-action="menu-back">뒤로</button>`;
     } else if(item.view==='confirm'){
@@ -4850,12 +5246,12 @@
     return `
       <div class="topbar">
         <div class="ero-row">
+          <button class="menu-btn" data-action="open-menu" aria-label="메뉴" aria-haspopup="dialog"><span class="menu-ico"></span></button>
           <div class="ero-label">잠식</div>
           <div class="ero-case ${danger}">
             <div class="ero-fill" style="width:${pct}%"></div>
             <div class="ero-num mono ${danger}">${Math.round(S.erosion)}%</div>
           </div>
-          <button class="menu-btn" data-action="open-menu" aria-label="메뉴" aria-haspopup="dialog"><span class="menu-ico"></span></button>
         </div>
 ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${S.relics.length?'with-relics':''} ${ownedMarkers().length?'with-markers':''}">
           ${S.relics.length ? `<div class="relic-tray topbar-relics relic-count-${Math.min(4,S.relics.length)}">${S.relics.map(r=>relicChip(r,true)).join('')}</div>` : ''}
@@ -5151,7 +5547,6 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
   }
   function reactBadge(unit){
     if(!unit || !unit.react || !S.battle) return '';
-    if(unit.react.turn !== S.battle.turn) return '';
     const k = unit.react.kind;
     const ic = k==='dodge' ? IC_DODGE : k==='guard' ? IC_GUARDED : IC_RIPOSTE;
     const label = k==='dodge' ? '회피' : k==='guard' ? '흘림' : '반격';
@@ -5184,7 +5579,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
            data-action="choose-target" data-domain="ally" data-id="${hero.id}">
         <div class="status-stack">
           ${reactBadge(hero)}
-          ${(hero.invulnerableTurns||0)>0 ? `<div class="invulnerable-tag">무적</div>` : ''}
+          ${(hero.invulnerableTurns||0)>0 ? `<div class="invulnerable-tag">무적 ${hero.invulnerableTurns}</div>` : ''}
           ${hero.block>0 ? `<div class="block-tag">${IC_BLOCK}${hero.block}</div>` : ''}
         </div>
         <div class="portrait portrait-${hero.cls}">${CLASS_ICON[hero.cls]}${survivalMarks(hero)}</div>
@@ -5262,7 +5657,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       case 'drowned_sentence': return `적 한 명에게 ${card.dmg} 피해. 양옆 적에게 ${Math.round(card.dmg*card.splashRatio)} 피해(본 피해의 1/5).`;
       case 'abyssal_verdict': return '보스를 제외한 지정 적을 즉시 섬멸. 강화 불가.';
       case 'thousand_maws_tide': return '선택한 적 양옆의 일반 적을 즉시 섬멸. 엘리트·보스 제외 · 강화 불가.';
-      case 'sunken_ark': return '한 턴 동안 생존한 아군 전체 무적. 강화 불가.';
+      case 'sunken_ark': return `${card.turns||1}턴 동안 생존한 아군 전체 무적. 강화 불가.`;
       case 'nameless_hymn': return '아군 전체 심도압박을 0으로 만들고, 지운 총합의 1/3만큼 모든 적에게 피해.';
       case 'saints_last_prayer': return `생존한 아군 전체 체력 ${Math.round(card.healRatio*100)}% 회복. ${card.regenTurns}턴 동안 추가로 총 ${card.regenTotal} 회복.`;
       case 'block': return `자신 방어 ${card.block} 획득.`;
@@ -5785,6 +6180,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       if(next) next.scrollTop = keepTop;
     }
     lastScreenKey = key;
+    bgmSetTrack(bgmDesiredTrack());   /* 전투에 들고 나는 순간 음악도 함께 넘어간다 */
     saveRun();
   }
 
@@ -5849,6 +6245,11 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       render();
     }
     else if(action==='menu-back'){ menuStep=null; render(); }
+    else if(action==='menu-toggle-setting'){
+      const t = SETTING_TOGGLES.find(x=>x.id===el.dataset.settingId);
+      if(t) t.set(!t.get());
+      render();
+    }
     else if(action==='menu-guide-toggle'){
       const i = parseInt(el.dataset.index,10);
       guideOpen = (guideOpen===i) ? -1 : i;   /* 펼친 장을 다시 누르면 접는다 */
