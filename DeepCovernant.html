@@ -281,16 +281,23 @@
   /* .ero-fill 은 이미 absolute 다 — 여기서 position 을 다시 주면 게이지가 자리를 잃는다 */
   .ero-fill{ overflow:hidden; }
   .hpbar .fill{ position:relative; overflow:hidden; }
+  /* 빛줄기는 배경을 옮기지 않고 층 자체를 민다.
+     background-position 은 합성이 안 되는 속성이라 프레임마다 그 칸을 다시 칠한다 —
+     게이지가 열세 개쯤 도는 전투 화면에서는 그것만으로 휴대폰이 숨을 못 쉰다.
+     대신 층을 통째로 translateX 로 밀면 GPU 가 옮겨 주고 다시 칠하지 않는다.
+     transform 의 % 는 '제 너비'가 기준이므로, -100%→100% 면 게이지 길이와 무관하게
+     왼쪽 바깥에서 오른쪽 바깥까지 정확히 한 번 지나간다. */
   .ero-fill::after,.hpbar .fill::after{
-    content:''; position:absolute; inset:0; pointer-events:none;
+    content:''; position:absolute; inset:0; pointer-events:none; will-change:transform;
     background-image:linear-gradient(90deg, transparent, rgba(255,240,220,0.42), transparent);
     background-repeat:no-repeat;
     background-size:var(--vital-w,34px) 100%;
+    background-position:left center;
     animation:vitalSweep var(--vital-dur,2.6s) linear infinite;
   }
   @keyframes vitalSweep{
-    from{ background-position:calc(0px - var(--vital-w,34px)) 0; }
-    to  { background-position:calc(100% + var(--vital-w,34px)) 0; }
+    from{ transform:translateX(-100%); }
+    to  { transform:translateX(100%); }
   }
   /* 잠식은 심장이 아니라 시계다 — 느리고 흐릿하게 한 번씩 훑는다 */
   .ero-fill{ --vital-w:40px; --vital-dur:3.2s; }
@@ -4860,6 +4867,7 @@
   let bgmVoice = null;     /* 지금 울리고 있는 {node, gain} */
   let bgmPrimed = false;   /* 제스처 안에서 오디오 잠금을 푼 적이 있는가 */
   let bgmMode = null;      /* 'buffer' | 'element' — 실제로 소리가 나기 시작하면 정해진다 */
+  let bgmBufferFailed = false;  /* Web Audio 로 받아 오지 못했다 — 요소로 물러서야 한다 */
 
   function bgmDesiredTrack(){ return (S && S.screen === 'battle') ? 'battle' : 'ambient'; }
   function bgmTrackGain(key){
@@ -4878,7 +4886,7 @@
       const el = document.createElement('audio');
       el.src = BGM_TRACKS[key].src;
       el.loop = true;
-      el.preload = 'auto';
+      el.preload = 'none';
       el.playsInline = true;
       el.setAttribute('playsinline','');
       el.volume = 0;
@@ -4916,6 +4924,12 @@
         old.gain.gain.setValueAtTime(old.gain.gain.value, now);
         old.gain.gain.linearRampToValueAtTime(0, now + BGM_FADE);
         old.node.stop(now + BGM_FADE + 0.05);
+        /* 다 넘어간 뒤에는 그래프에서도 떼어 낸다. 참조만 버리고 두면 소리 없는
+           마디가 그래프에 계속 남아 매 렌더 퀀텀마다 처리된다 — 지도와 전투를
+           오갈 때마다 하나씩 쌓여, 나중에는 그 자체가 끊김이 된다. */
+        old.node.onended = function(){
+          try{ old.node.disconnect(); old.gain.disconnect(); }catch(e){}
+        };
       }catch(e){}
       bgmVoice = null;
     }
@@ -4941,7 +4955,10 @@
     if(bgmCtx){
       bgmLoad(key)
         .then(()=>{ if(bgmOn && bgmTrack === key) bgmPlayBuffer(key); })
-        .catch(()=>{ if(bgmOn && bgmTrack === key) bgmPlayFallback(key); });
+        .catch(()=>{
+          bgmBufferFailed = true;   /* 다음 손길에서 제스처 안에 요소로 넘어간다 */
+          if(bgmOn && bgmTrack === key) bgmPlayFallback(key);
+        });
     } else {
       bgmPlayFallback(key);
     }
@@ -4955,12 +4972,15 @@
   }
 
   /* ---- 잠금 풀기 ----
-     모바일은 데스크톱보다 훨씬 깐깐하다. 두 가지를 반드시 '손가락이 닿은 그 순간'
-     동기적으로 해 두어야 한다. 둘 다 나중에(fetch·decode 가 끝난 뒤) 하면 거절당한다.
+     모바일은 데스크톱보다 훨씬 깐깐하다. 소리를 처음 내는 일은 반드시 '손가락이
+     닿은 그 순간' 동기적으로 해 두어야 하고, 나중에(fetch·decode 가 끝난 뒤) 하면
+     거절당한다. AudioContext 를 깨우고 소리 없는 한 칸을 실제로 울리면 풀린다.
 
-       1) AudioContext 를 깨우고 소리 없는 한 칸을 실제로 울린다 — iOS 는 이걸로만 풀린다.
-       2) 요소 재생으로 물러설 때를 대비해 <audio> 를 미리 한 번 눌러 둔다.
-          트랙마다 따로 허락을 받으므로 두 개 다 눌러 둔다(음량 0 으로 조용히). */
+     <audio> 요소는 Web Audio 가 없을 때만 미리 눌러 둔다. 예전에는 물러설 자리를
+     만든다며 두 트랙을 다 눌러 뒀는데, 그러면 같은 파일을 미디어 파이프라인이
+     한 번, Web Audio 가 또 한 번 내려받아 디코딩한다 — 휴대폰에서는 이 중복이
+     그대로 첫 끊김과 메모리 압박이 된다. 버퍼 재생이 실패한 뒤에는 다음 손길에서
+     동기적으로 요소를 트므로(bgmGesture) 물러설 길은 그대로 남는다. */
   function bgmPrime(){
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if(Ctx && !bgmCtx){
@@ -4979,8 +4999,8 @@
         tick.connect(bgmCtx.destination);
         tick.start(0);
       }catch(e){}
-    }
-    if(!bgmPrimed){
+    } else if(!bgmPrimed){
+      /* Web Audio 가 아예 없는 곳 — 이때만 요소에 허락을 받아 둔다 */
       Object.keys(BGM_TRACKS).forEach(k=>{
         const el = bgmEl(k);
         el.volume = 0;
@@ -4991,11 +5011,13 @@
     bgmPrimed = true;
   }
   /* 한 번 실패하면 끝이 아니라, 소리가 실제로 날 때까지 손이 닿을 때마다 다시 시도한다.
-     첫 탭이 로딩·정책·무음 전환에 걸려 놓치는 일이 모바일에서는 흔하다. */
+     첫 탭이 로딩·정책·무음 전환에 걸려 놓치는 일이 모바일에서는 흔하다.
+     버퍼 재생이 이미 한 번 엎어졌다면 여기서(제스처 안에서) 곧바로 요소로 넘어간다. */
   function bgmGesture(){
     if(!bgmOn) return;
     bgmPrime();
     if(!bgmTrack) bgmTrack = bgmDesiredTrack();
+    if(bgmBufferFailed && bgmMode !== 'element'){ bgmPlayFallback(bgmTrack); return; }
     if(!bgmMode) bgmPlay(bgmTrack);
     else if(bgmCtx && bgmCtx.state === 'suspended') bgmCtx.resume().catch(()=>{});
   }
