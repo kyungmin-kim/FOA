@@ -963,8 +963,10 @@
 
   /* 손패는 화면 바닥에 붙어 있다. 위 여백을 덜면 AP 줄이 대열에 붙어 버리므로,
      반대로 여백을 얹어 5px 내린다. 늘어난 몫은 위쪽 적 구역이 내어 준다. */
-  .hand-zone{ flex-shrink:0; padding:11px 8px 10px; }
-  .ap-row{ display:flex; justify-content:center; align-items:center; gap:9px; margin-bottom:8px;}
+  .hand-zone{ flex-shrink:0; padding:11px 8px 5px; }
+  /* AP 는 pip 크기가 곧 가독성이라 16px 를 지킨다. 줄이 차지하는 세로는
+     아래 여백과 글줄 높이에서만 덜어낸다 — 25px 에서 18px 로. */
+  .ap-row{ display:flex; justify-content:center; align-items:center; gap:9px; margin-bottom:2px; line-height:1; }
   .ap-label{ font-family:'Nanum Myeongjo',serif; font-size:9.5px; letter-spacing:0.2em; color:var(--brass); text-transform:uppercase; }
   /* AP = 등잔 기름 방울 */
   .pip{ width:12px;height:12px; border:1px solid var(--brass-dim); background:rgba(0,0,0,0.45); border-radius:50% 50% 50% 0; transform:rotate(-45deg); }
@@ -1392,7 +1394,7 @@
   #app{ padding-left:var(--sa-left); padding-right:var(--sa-right); }
 
   .topbar{ padding-top:calc(10px + var(--sa-top)); }
-  .hand-zone{ padding-bottom:calc(10px + var(--sa-bottom)); }
+  .hand-zone{ padding-bottom:calc(5px + var(--sa-bottom)); }
   /* 전투가 아닌 화면들은 제 스크롤 컨테이너 안에서 비켜 준다 */
   .map-screen,.rest-screen,.result-screen,.tavern-screen,.escape-screen{
     padding-top:calc(20px + var(--sa-top));
@@ -1948,7 +1950,7 @@
        판이 대열 위로 넘치지 않게 한다. */
     .log-plate{ padding:6px 12px; }
     .hand-zone{ padding:4px 6px calc(7px + var(--sa-bottom)); }
-    .energy-row,.ap-row{ margin-bottom:5px; }
+    .energy-row,.ap-row{ margin-bottom:2px; }
     .hand-row{ padding:14px 7px 6px; gap:7px; }
     /* 142 → 176. +20%(170px) 로는 가장 긴 효과 문구에서 맨 아래 등급 표시가
        5px 밀려나 카드 밖으로 나갔다. 좁은 카드라 같은 문구가 여섯 줄이 된다. */
