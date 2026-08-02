@@ -859,6 +859,31 @@
     to  { transform:translateY(-10px) scale(1.2);  opacity:0; }
   }
 
+  /* ---- 크리티컬 ----
+     깊게 들어간 한 방. 파편과 달리 위로 튀었다가 아래로 떨어진다 — 튄 피는 가라앉는다. */
+  .p-blood{
+    border-radius:50%; background:currentColor;
+    animation:bloodFly var(--d,640ms) cubic-bezier(.2,.5,.5,1) forwards;
+  }
+  @keyframes bloodFly{
+    from{ transform:translate(-50%,-50%) scale(1);   opacity:1; }
+    35% { transform:translate(calc(-50% + var(--dx,0px) * 0.6), calc(-50% - var(--rise,12px))) scale(0.9); opacity:1; }
+    to  { transform:translate(calc(-50% + var(--dx,0px)), calc(-50% + var(--dy,28px))) scale(0.45); opacity:0; }
+  }
+  .p-crit{
+    font-family:monospace; font-weight:700; font-size:15px; letter-spacing:0.1em;
+    color:currentColor; white-space:nowrap; z-index:2;
+    text-shadow:0 1px 0 #000, 0 -1px 0 #000, 1px 0 0 #000, -1px 0 0 #000, 0 0 10px rgba(255,74,54,0.85);
+    animation:critPop var(--d,900ms) cubic-bezier(.16,.72,.32,1) forwards;
+  }
+  @keyframes critPop{
+    from{ transform:translate(-50%,-50%) scale(0.45); opacity:0; }
+    16% { transform:translate(-50%,-50%) scale(1.3);  opacity:1; }
+    32% { transform:translate(-50%,-50%) scale(1);    opacity:1; }
+    68% { transform:translate(-50%,-50%) translateY(-12px) scale(1); opacity:1; }
+    to  { transform:translate(-50%,-50%) translateY(-26px) scale(0.95); opacity:0; }
+  }
+
   /* 피격 흔들림 — 카드 자체를 짧게 턴다 */
   .hit-shake{ animation:hitShake 240ms cubic-bezier(.36,.07,.19,.97); }
   @keyframes hitShake{
@@ -870,9 +895,9 @@
   }
 
   @media (prefers-reduced-motion: reduce){
-    /* 장식은 걷어내되 피해 수치는 정보라 남긴다 — 뜬 자리에 머물다 사라지기만 한다 */
-    #fx > :not(.p-dmg){ display:none; }
-    .p-dmg{ animation:dmgHold 900ms steps(1,end) forwards !important; }
+    /* 장식은 걷어내되 피해 수치와 치명타 표시는 정보라 남긴다 — 뜬 자리에 머물다 사라진다 */
+    #fx > :not(.p-dmg):not(.p-crit){ display:none; }
+    .p-dmg,.p-crit{ animation:dmgHold 900ms steps(1,end) forwards !important; }
     @keyframes dmgHold{
       from{ transform:translate(-50%,-50%); opacity:1; }
       72% { transform:translate(-50%,-50%); opacity:1; }
@@ -1487,7 +1512,7 @@
   /* ---- 파티클 : 둥근 빛망울 대신 각진 부스러기 ----
      번짐(box-shadow blur)을 걷어내고 움직임도 계단으로 끊는다.
      매끄럽게 흐르는 파티클 하나가 화면 전체의 픽셀감을 깬다. */
-  .p-shard,.p-ring,.p-wisp,.p-slash,.p-bub,.p-mote,.p-plus{
+  .p-shard,.p-ring,.p-wisp,.p-slash,.p-bub,.p-mote,.p-plus,.p-blood{
     border-radius:0 !important; box-shadow:none !important; filter:none !important;
     image-rendering:pixelated;
   }
@@ -1498,6 +1523,20 @@
   .p-bub{ background:rgba(206,228,220,0.5); border:1px solid rgba(236,244,240,0.7);
           animation-timing-function:steps(9,end); }
   .p-mote{ animation-timing-function:steps(8,end); }
+  .p-blood{ animation-timing-function:steps(8,end); }
+  /* 치명타 글자도 비트맵으로 세운다 — 확대는 획을 뭉개므로 튀어오르기만 시킨다 */
+  .p-crit{
+    font-family:'GalmuriMono11',monospace !important;
+    font-size:14px; letter-spacing:0.06em;
+    text-shadow:1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;
+    animation-timing-function:steps(8,end);
+  }
+  @keyframes critPop{
+    from{ transform:translate(-50%,-50%) translateY(6px); opacity:0; }
+    14% { transform:translate(-50%,-50%) translateY(-2px); opacity:1; }
+    64% { transform:translate(-50%,-50%) translateY(-12px); opacity:1; }
+    to  { transform:translate(-50%,-50%) translateY(-26px); opacity:0; }
+  }
   /* 십자도 비트맵 글꼴로 세우고 계단으로 끊는다 — 번짐은 위에서 이미 걷어냈으므로
      검은 테를 한 겹 둘러 어두운 카드 위에서도 획이 살아 있게 한다. */
   .p-plus{
@@ -2637,7 +2676,7 @@
       {name:'선체 잔해', cost:1, type:'block_party', block:4, owner:'neutral', range:'support', desc:'생존한 아군 전체 방어 4 획득.'},
       {name:'구명줄', cost:2, type:'heal', heal:14, owner:'neutral', range:'support_ally', desc:'아군 한 명 체력 14 회복.'},
       {name:'묵주 세기', cost:2, type:'calm_party', calm:7, owner:'neutral', range:'support', desc:'생존한 아군 전체 심도압박 7 감소.'},
-      {name:'비상 탈출', cost:3, type:'emergency_escape', owner:'neutral', range:'support', desc:'현재 구역에서 탈출을 시도한다. 부상·심도압박·수심에 따라 실패할 수 있다.'},
+      {name:'비상 탈출', cost:3, type:'emergency_escape', owner:'neutral', range:'support', desc:'이 전투에서 빠져나와 지도로 돌아간다. 부상·심도압박·수심에 따라 실패할 수 있다.'},
     ],
   };
 
@@ -3717,6 +3756,9 @@
   /* 중층의 기존 15% 빈도는 절반으로 낮춘다. 하지만 심해와 끝없는 심연에서는
      심연의 관측이 강해지므로 다시 가파르게 늘어난다. */
   const UNKNOWN_CARD_CHANCE = {'중층':0.075, '심해':0.12, '끝없는 심연':0.18};
+  /* 되돌릴 수 없는 카드는 가리지 않는다. 비상 탈출은 무엇인지 모른 채 눌렀다가
+     대원과 유물을 잃는 카드라, 교란의 재미가 아니라 사고가 된다. */
+  function canBeContaminated(card){ return !!card && card.type !== 'emergency_escape'; }
   function drawNextBattleCard(){
     const b = S.battle;
     /* 한도에 닿은 희귀 카드는 버린 더미로 잠시 보내고 일반 카드를 계속 찾는다.
@@ -3746,7 +3788,7 @@
       c.contaminated = false;
       const unknownCount = b.hand.filter(card=>card.contaminated).length;
       const unknownChance = UNKNOWN_CARD_CHANCE[b.tier] || 0;
-      if(unknownCount < UNKNOWN_CARD_MAX_PER_TURN && Math.random() < unknownChance) c.contaminated = true;
+      if(canBeContaminated(c) && unknownCount < UNKNOWN_CARD_MAX_PER_TURN && Math.random() < unknownChance) c.contaminated = true;
       return c;
     }
     return null;
@@ -3826,6 +3868,20 @@
     if(!attacker || !attacker.alive) return false;
     return canActFrom(defender, defRank) && canHitRank(defender, atkRank);
   }
+  /* ============ 크리티컬 ============
+     아주 드물게 한 방이 깊게 들어간다. 아군도 적도 같은 문을 지나므로 확률은 같다.
+     배율은 1.5~3.0 을 굴리되 최종 피해는 원래의 두 배를 넘지 않는다 — 굴림의 폭은
+     넓게 두고 천장만 낮춰, 터졌을 때 늘 아프되 한 방에 판이 뒤집히지는 않게 한다.
+     회피한 공격은 애초에 닿지 않았으므로 굴리지 않는다. */
+  const CRIT_CHANCE   = 0.008;   /* 1% 이하 */
+  const CRIT_MULT_MIN = 1.5;
+  const CRIT_MULT_MAX = 3.0;
+  const CRIT_MULT_CAP = 2.0;
+  function rollCritMultiplier(){
+    if(Math.random() >= CRIT_CHANCE) return 1;
+    return Math.min(CRIT_MULT_MIN + Math.random()*(CRIT_MULT_MAX-CRIT_MULT_MIN), CRIT_MULT_CAP);
+  }
+
   /* 회피/흘림 판정 + 방어도 소모. 실제 체력 차감은 호출부에서 한다. */
   /* 결과에는 실제로 깎인 피해(dealt)뿐 아니라 '무엇을 면했는지'도 함께 담는다.
      회피로 통째로 피한 양(avoided), 흘림으로 깎아낸 양(reduced) — 화면에 그 수치를
@@ -3834,11 +3890,15 @@
     const rc = reactOf(defender);
     if(Math.random() < rc.dodge){
       markReact(defender, 'dodge');
-      return {dealt:0, kind:'dodge', avoided:amount, reduced:0};
+      return {dealt:0, kind:'dodge', avoided:amount, reduced:0, crit:false};
     }
     let dmg = amount;
     let kind = 'hit';
     let reduced = 0;
+    /* 크리티컬은 흘림·방어보다 먼저 부풀린다 — 깊게 들어간 한 방을 그 뒤에 막아 내는 순서다 */
+    const critMult = rollCritMultiplier();
+    const crit = critMult > 1;
+    if(crit) dmg = Math.max(1, Math.round(dmg * critMult));
     if(Math.random() < rc.guard){
       const halved = Math.max(1, Math.round(dmg*0.5));
       reduced = dmg - halved;
@@ -3851,7 +3911,7 @@
       defender.block -= absorbed;
       dmg -= absorbed;
     }
-    return {dealt:dmg, kind:kind, avoided:0, reduced:reduced};
+    return {dealt:dmg, kind:kind, avoided:0, reduced:reduced, crit:crit};
   }
 
   /* 전사한 전문가는 자신이 다루던 기술도 함께 잃는다.
@@ -3898,7 +3958,8 @@
     hero.hp = Math.max(0, hero.hp - res.dealt);
     if(res.dealt>0){
       flash('red');
-      queueFx('impact', hero, res.dealt);
+      queueFx('impact', hero, res.dealt, res.crit);
+      if(res.crit) pushLog(`급소를 찔렸다 — ${hero.name}이(가) 치명타로 ${res.dealt} 피해.`);
       if(stress) addDp(hero, 4);
     }
     if(res.kind==='guard'){ queueFx('guard', hero, res.reduced); pushLog(`${ga(hero.name)} 흘려 막았다. (${res.dealt} 피해)`); }
@@ -3959,7 +4020,10 @@
       return null;
     }
     en.hp = Math.max(0, en.hp - res.dealt);
-    if(res.dealt>0) queueFx('impact', en, res.dealt);
+    if(res.dealt>0){
+      queueFx('impact', en, res.dealt, res.crit);
+      if(res.crit) pushLog(`급소를 꿰뚫었다 — ${foeDisplayName(en)}에게 치명타로 ${res.dealt} 피해.`);
+    }
     if(res.kind==='guard'){
       queueFx('guard', en, res.reduced);
       pushLog(`${ga(foeDisplayName(en))} 몸을 틀어 흘려낸다. (${res.dealt} 피해)`);
@@ -4350,10 +4414,29 @@
     const leftBehind = S.party.filter(p=>p && evacuees.indexOf(p)<0);
     const keptRelic = S.relics.length===1 ? S.relics[0] : null;
     S.emergencyExit = {tier:b.tier, chance:chance, evacuees:evacuees, leftBehind:leftBehind, keptRelic:keptRelic};
-    clearRun();
+    /* 탐색 기록은 지우지 않는다 — 인양줄로 빠져나오는 것은 이 전투 하나뿐이다 */
     S.screen = 'emergencyExit';
     render();
     return true;
+  }
+  /* 비상 탈출은 탐색을 끝내지 않는다. 이 전투에서만 빠져나와 지도의 그 자리로
+     돌아가고, 하던 탐색을 그대로 이어간다. 대신 값은 그 자리에서 치른다 —
+     인양줄을 붙잡지 못한 사람은 두고 오고, 유물도 하나만 건져 올린다.
+     두고 온 자리는 여관에서 새 사람을 앉히는 빈자리가 된다. */
+  function finishEmergencyEscape(){
+    const ex = S.emergencyExit;
+    if(!ex) return;
+    (ex.leftBehind || []).forEach(p=>{
+      if(!p || !p.alive) return;
+      p.alive = false;
+      p.block = 0;
+      purgeDeadClassCards(p);
+    });
+    S.emergencyExit = null;
+    S.battle = null;
+    /* 노드는 끝내지 않았다 — 지도로 돌아가면 그 갈림길 앞에 다시 선다 */
+    S.pendingNode = null;
+    S.screen = 'map';
   }
 
   function resolvePartyTurnEffects(){
@@ -4755,14 +4838,20 @@
      브라우저는 사용자가 한 번 건드리기 전에는 소리를 내주지 않으므로 첫 입력에 깨운다. */
   /* gain 은 트랙마다 따로 둔다 — 전투 곡은 소리가 촘촘해서 같은 값으로 깔면
      기본음보다 크게 들리고, 무엇보다 전투 중에는 타격음과 화면이 먼저 읽혀야 한다. */
+  /* 파일 이름은 곡이 아니라 '자리'를 가리킨다 — bgm-<쓰임>.m4a.
+     곡이 바뀌어도 자리 이름은 그대로라, 새 음원을 같은 이름으로 덮어 굽기만 하면 된다.
+
+     싣는 것은 언제나 인코딩된 m4a 다. 무압축 원본(assets/*.wav)은 저장소에서 빠지므로
+     그 경로를 가리키면 내려받은 쪽에서는 소리가 통째로 사라진다.
+     seconds 는 원본의 정확한 길이 — 인코더가 덧댄 꼬리를 여기서 잘라 낸다.
+     트랙마다 길이가 다르므로 한 값으로 묶어 두면 긴 곡이 중간에서 되감긴다. */
   const BGM_TRACKS = {
-    ambient: {src:'assets/bgm-cosmic-horror.m4a', gain:1},
-    battle:  {src:'assets/bgm-battle.m4a',        gain:0.5},
+    ambient: {src:'assets/bgm-ambient.m4a', gain:1,   seconds:20},
+    battle:  {src:'assets/bgm-battle.m4a',  gain:0.5, seconds:10},
   };
   const BGM_KEY = 'fathom.bgm.v1';
   /* 음악은 배경이지 무대가 아니다 — 있는 줄 모르고 듣다가 없으면 허전한 정도로만 깐다. */
   const BGM_VOLUME = 0.0675;
-  const BGM_LOOP_SECONDS = 10;   /* 원본의 정확한 길이 — 인코더가 덧댄 꼬리를 여기서 잘라낸다 */
   const BGM_FADE = 0.7;          /* 트랙을 겹쳐 넘기는 시간(초) */
   let bgmOn = Store.get(BGM_KEY) !== 'off';
   let bgmCtx = null, bgmMaster = null, bgmTrack = null;
@@ -4776,6 +4865,11 @@
   function bgmTrackGain(key){
     const t = BGM_TRACKS[key];
     return t && Number.isFinite(t.gain) ? t.gain : 1;
+  }
+  /* 값이 없으면 0 을 돌려주고, 부르는 쪽이 버퍼 길이를 그대로 쓰게 둔다 */
+  function bgmTrackSeconds(key){
+    const t = BGM_TRACKS[key];
+    return t && Number.isFinite(t.seconds) ? t.seconds : 0;
   }
 
   /* ---- 물러섰을 때: 트랙마다 요소 하나 ---- */
@@ -4837,7 +4931,7 @@
     node.loopStart = 0;
     /* 디코딩된 버퍼는 인코더가 덧댄 만큼 원본보다 길 수 있다. 원래 길이에서 끊어야
        한 바퀴가 정확히 맞물린다. 짧게 나오면(있는 그대로) 버퍼 끝까지 쓴다. */
-    node.loopEnd = Math.min(BGM_LOOP_SECONDS, buf.duration);
+    node.loopEnd = Math.min(bgmTrackSeconds(key) || buf.duration, buf.duration);
     node.connect(gain);
     node.start(now);
     bgmVoice = {node:node, gain:gain};
@@ -4941,11 +5035,11 @@
      피해 판정은 render() 앞에서 끝나지만 그때의 DOM 은 곧 버려진다.
      그래서 이벤트만 큐에 쌓아두고, 다시 그린 뒤 카드 위치를 찾아 뿌린다. */
   let fxQueue = [];
-  function queueFx(kind, unit, amount){
+  function queueFx(kind, unit, amount, crit){
     if(!S.battle) return;
     const side = S.party.indexOf(unit) >= 0 ? 'hero' : 'foe';
     const key  = side==='hero' ? unit.id : S.battle.enemies.indexOf(unit);
-    fxQueue.push({kind:kind, side:side, key:key, amount:amount||0});
+    fxQueue.push({kind:kind, side:side, key:key, amount:amount||0, crit:!!crit});
   }
 
   /* 낸 카드는 곧 손패에서 지워지고 전투판이 통째로 다시 그려진다.
@@ -4976,6 +5070,8 @@
     dodge:'#8fd4c4', guard:'#9fc0d8', riposte:'#e0574f',
     /* 되받아친 값은 내가 낸 것이라 붉은 피해와 갈라 둔다 — 우리 쪽 반격만 푸르게 */
     riposteHero:'#6fb4ff',
+    /* 치명타 — 표시는 어느 쪽이든 같은 경보색이고, 튀는 것만 각자의 피를 따른다 */
+    crit:'#ff5a3c', bloodHero:'#b42a2e', bloodFoe:'#8f66c4',
     /* 회복은 초록 — 십자와 티끌이 한 가지 빛으로 읽혀야 무엇이 일어났는지 한눈에 갈린다.
        진정(계열)은 그대로 물빛이라 회복과 헷갈리지 않는다. */
     heal:'#6fdc8c', calm:'#7fbfae', death:'#cfe4dd',
@@ -5017,6 +5113,15 @@
     spawn('p-dmg', x, y - 18, color, null,
           {'--d':'900ms', 'font-size':'13px'}, 1100, label + ' ' + n);
   }
+  /* 튄 피 — 위로 솟았다가 아래로 떨어진다. 파편이 곧게 뻗는 것과 달리 호를 그린다. */
+  function bloodBurst(x, y, color){
+    for(let i=0;i<14;i++){
+      const s = rnd(2,4.5);
+      spawn('p-blood', x + rnd(-6,6), y + rnd(-6,6), color, [s,s],
+            {'--dx':rnd(-34,34)+'px', '--dy':rnd(26,52)+'px',
+             '--rise':rnd(8,22)+'px', '--d':rnd(480,780)+'ms'}, 900);
+    }
+  }
 
   function playFx(ev, el, stack){
     const ar = app.getBoundingClientRect();
@@ -5037,13 +5142,20 @@
       const n = Math.max(6, Math.min(14, 5 + Math.round(ev.amount*0.8)));
       burst(cx, cy, col, n, 30 + Math.min(26, ev.amount*2.2));
       spawn('p-ring', cx, cy, col, [30,30], {'--d':'380ms'}, 500);
-      /* 큰 피해일수록 크게, 오래 남는다 */
+      /* 큰 피해일수록 크게, 오래 남는다. 치명타는 거기서 한 번 더 키운다. */
       const big = ev.amount >= 12;
       const s = stack || 0;
+      const size = Math.round((big?19:15) * (ev.crit ? 1.25 : 1));
       spawn('p-dmg', fx + (s%2 ? 13 : -13)*Math.ceil(s/2), fy - s*7,
             mine ? FX_COLOR.dmgHero : FX_COLOR.dmgFoe, null,
-            {'--d': (big?1050:880)+'ms', 'font-size': (big?19:15)+'px'},
+            {'--d': (big?1050:880)+'ms', 'font-size': size+'px'},
             big?1200:1000, '-'+ev.amount);
+      if(ev.crit){
+        /* 피는 초상 언저리에서 튀고, 표시는 그 위로 솟는다 */
+        bloodBurst(fx, fy, mine ? FX_COLOR.bloodHero : FX_COLOR.bloodFoe);
+        spawn('p-crit', fx, fy - 34, FX_COLOR.crit, null, {'--d':'950ms'}, 1150, 'CRITICAL!');
+        flash('red');
+      }
       el.classList.add('hit-shake');
 
     } else if(ev.kind==='dodge'){
@@ -5189,6 +5301,11 @@
       {t:'피격 반응', lines:[
         '맞을 때마다 회피·흘림·반격을 굴립니다. 앞에 설수록 받아치고, 뒤에 설수록 비껴납니다.',
         '살아 돌아온 사람은 다음 하강에서 최대 체력과 반응이 조금씩 늘어납니다.',
+      ]},
+      {t:'치명타', lines:[
+        `약 <b>${(CRIT_CHANCE*100).toFixed(1)}%</b> 확률로 한 방이 깊게 들어갑니다. <b>아군과 적 모두</b> 같은 확률로 굴립니다.`,
+        `피해가 <b>${CRIT_MULT_MIN}~${CRIT_MULT_MAX}배</b>로 부풀되, 최종 피해는 원래의 <b>${CRIT_MULT_CAP}배</b>를 넘지 않습니다.`,
+        '회피한 공격은 애초에 닿지 않았으므로 치명타가 나지 않습니다. 흘림과 방어로는 부풀어 오른 뒤의 피해를 막습니다.',
       ]},
       {t:'덱 · 손패', lines:[
         `손패는 매 턴 <b>${5}</b>장까지 채워집니다(유물로 최대 ${HAND_LIMIT}장). 가득 찬 채로 뽑으면 한 장을 버려야 합니다.`,
@@ -5734,7 +5851,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       case 'fuse_support': return `아군 한 명 체력 ${card.heal} 회복 + 심도압박 ${card.calm} 감소.`;
       case 'double_ap': return '현재 턴에 사용할 수 있는 남은 AP를 두 배로 만든다.';
       case 'legendary_sanctuary': return `생존한 아군 전체 체력 ${card.heal} 회복 + 심도압박 ${card.calm} 감소 + 방어 ${card.block} 획득.`;
-      case 'emergency_escape': return '현재 구역에서 비상 탈출을 시도한다.';
+      case 'emergency_escape': return '이 전투에서 빠져나와 지도로 돌아간다. 압박 50 이상인 대원과 유물 대부분을 잃는다.';
       case 'draw': return `카드 ${card.draw}장을 드로우한다.`;
       case 'foresight': return `카드 ${card.draw}장 드로우. 자신 심도압박 ${card.calm} 감소.`;
       case 'reroll_intent': return `적 한 명의 예고된 행동을 다시 정한다.`;
@@ -6188,10 +6305,11 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
     contentEl.innerHTML = `
       <div class="screen result-screen">
         <div class="title-en">Emergency Extract</div>
-        <h2 style="margin:0;">인양줄이 수면을 향한다</h2>
-        <div class="result-list">${ex.tier}에서 비상 탈출에 성공했다. (성공 확률 ${Math.round(ex.chance*100)}%)<br><br>
+        <h2 style="margin:0;">인양줄을 붙잡았다</h2>
+        <div class="result-list">${ex.tier}에서 비상 탈출에 성공했다. (성공 확률 ${Math.round(ex.chance*100)}%)<br>
+          교전에서만 빠져나왔을 뿐, 하강은 끝나지 않았다.<br><br>
           <b>귀환:</b> ${names(ex.evacuees)}<br>
-          <b>남겨짐:</b> ${names(ex.leftBehind)}${ex.leftBehind.length ? '<br><small>심도압박 50 이상이거나 이미 쓰러진 대원은 데려갈 수 없었다.</small>' : ''}
+          <b>남겨짐:</b> ${names(ex.leftBehind)}${ex.leftBehind.length ? '<br><small>심도압박 50 이상이거나 이미 쓰러진 대원은 데려갈 수 없었다. 두고 온 자리는 여관에서만 다시 채울 수 있다.</small>' : ''}
         </div>
         ${needsRelic ? `
           <div class="tier-tag">유물은 하나만 건져 올릴 수 있다</div>
@@ -6207,7 +6325,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
             ${relicTier(ex.keptRelic)}
             <div class="relic-boon">${ex.keptRelic.boon}</div>
           </div>` : `<div class="escape-note">건져 올린 유물 없이, 빈손으로 돌아왔다.</div>`}
-        ${needsRelic ? '' : `<button class="btn primary" data-action="restart">새로운 탐색을 시작한다</button>`}
+        ${needsRelic ? '' : `<button class="btn primary" data-action="emergency-continue">탐색을 이어간다</button>`}
       </div>`;
   }
 
@@ -6523,6 +6641,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       const relic = ex && S.relics.find(r=>r.id===el.dataset.id);
       if(ex && relic){ ex.keptRelic = relic; S.relics = [relic]; render(); }
     }
+    else if(action==='emergency-continue'){ finishEmergencyEscape(); render(); }
     else if(action==='relic-drop'){
       const sw = S.relicSwap;
       if(sw){
