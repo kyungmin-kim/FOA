@@ -745,7 +745,7 @@
   /* ---------- 중앙 무대: 적과 아군 사이, 상황이 읽히는 자리 ---------- */
   /* 모자랄 때 먼저 양보하는 쪽은 여기다. 기록 한 줄은 눌려도 읽히지만
      적 카드가 눌리면 초상과 예고가 잘린다. */
-  .mid-stage{ flex:0 1 auto; min-height:0; display:flex; align-items:center; justify-content:center; padding:6px 14px; }
+  .mid-stage{ flex:0 1 auto; min-height:0; display:flex; align-items:center; justify-content:center; padding:14px 14px; }
   .log-plate{
     width:100%; max-width:340px; padding:11px 16px; text-align:center;
     font-family:'Nanum Myeongjo',serif; font-size:13.5px; line-height:1.65;
@@ -1941,7 +1941,7 @@
     .portrait{ width:34px; height:34px; margin:0 auto 3px; }
     .dp-line .hpbar{ height:5px; }
 
-    .mid-stage{ padding:4px 10px; }
+    .mid-stage{ padding:9px 10px; }
     /* 카드가 커진 만큼 기록판이 설 자리가 줄었다. 글씨는 그대로 두고 여백만 깎아
        판이 대열 위로 넘치지 않게 한다. */
     .log-plate{ padding:6px 12px; }
@@ -2049,6 +2049,8 @@
      화면 자체가 세로로 넘쳐 손패가 잘린다 — 내용이 조금 넘치는 편이 낫다. */
   @media (max-height:600px){
     .card{ flex:0 0 112px; height:142px; }
+    /* 기록판 여백도 여기서는 늘리지 않는다 — 늘리면 화면이 통째로 넘친다 */
+    .mid-stage{ padding:4px 10px; }
   }
 
   } /* @layer pixel */
