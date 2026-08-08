@@ -1551,6 +1551,7 @@
   .af-row.sel.epic{ border-left-color:var(--card-epic); }
   .af-row.sel.legendary{ border-left-color:var(--card-legendary); }
   .af-row.locked{ opacity:0.42; cursor:not-allowed; }
+  .maintenance-display-card.locked{ opacity:0.42; cursor:not-allowed; pointer-events:none; }
   /* 합성 재료로 고른 카드는 "다 쓴" 것처럼 흐리게 죽이고, 나머지 후보는
      손대지 않아 평소 밝기 그대로 남는다 — 아직 고를 수 있다는 뜻이다. */
   .af-row.fuse-picked,

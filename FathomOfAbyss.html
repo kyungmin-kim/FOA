@@ -1607,6 +1607,7 @@
   .af-row.sel.epic{ border-left-color:var(--card-epic); }
   .af-row.sel.legendary{ border-left-color:var(--card-legendary); }
   .af-row.locked{ opacity:0.42; cursor:not-allowed; }
+  .maintenance-display-card.locked{ opacity:0.42; cursor:not-allowed; pointer-events:none; }
   /* 합성 재료로 고른 카드는 "다 쓴" 것처럼 흐리게 죽이고, 나머지 후보는
      손대지 않아 평소 밝기 그대로 남는다 — 아직 고를 수 있다는 뜻이다. */
   .af-row.fuse-picked,
@@ -1787,6 +1788,7 @@
   .relic-portrait.large{ width:88px; height:88px; flex-basis:88px; }
   /* 잠식 아래 선반은 시야를 가리지 않도록 기존 25px의 절반 크기로 둔다. */
   .relic-portrait.compact{ width:13px; height:13px; flex-basis:13px; background-size:269px auto; }
+  .relic-portrait.generated{ background-image:var(--relic-art); background-size:cover; background-position:center; image-rendering:pixelated; }
   .relic-glyph .relic-portrait{ margin:0; }
   .relic-tier{
     display:inline-block; margin-left:auto; padding:2px 4px; border:1px solid currentColor;
@@ -2388,6 +2390,7 @@
     image-rendering:pixelated;
     -ms-interpolation-mode:nearest-neighbor;
     filter:contrast(1.12) saturate(0.88);
+    max-width:100%;
   }
   /* 어두운 초상화만 살짝 들어 올려 실루엣과 표정을 읽기 쉽게 한다. */
   #app .portrait img,
@@ -2652,7 +2655,14 @@
     -webkit-mask-image:linear-gradient(180deg, #000 0%, #000 46%, rgba(0,0,0,0.25) 78%, transparent 100%);
             mask-image:linear-gradient(180deg, #000 0%, #000 46%, rgba(0,0,0,0.25) 78%, transparent 100%);
   }
-  @media (max-width:800px){ .title-art{ background-size:auto 100%; background-position:50% 0%; } }
+  @media (max-width:800px){
+    .title-art{ background-size:auto 100%; background-position:50% 0%; background-attachment:scroll; }
+    .map-screen,.battle-screen,.prologue-screen{ background-attachment:scroll; background-size:cover; }
+  }
+  @media (min-width:801px){
+    .title-art{ background-size:cover; background-position:center 20%; }
+    .map-screen,.battle-screen,.prologue-screen{ background-attachment:fixed; background-size:cover; }
+  }
   /* 타이틀의 배경 층들은 .title-layer 하나로 묶어 둔다 — 층이 늘 때마다 :not() 을
      덧붙이지 않아도 되고, 무엇이 배경이고 무엇이 글씨인지가 표시에서 바로 읽힌다.
      쌓이는 차례는 DOM 순서가 정한다: 아트 → 명멸 → 기포 → 비네트 → (글씨·버튼) */
@@ -2819,8 +2829,14 @@
     .screen:not(.battle-screen) .btn{ font-size:clamp(12px,.8vw,16px); }
   }
   .title-wordmark{
-    width:100%; max-width:318px; height:auto; display:block; margin:0 auto 2px;
-    mix-blend-mode:screen;
+    width:100%; max-width:258px; height:auto; display:block; margin:0 auto 2px;
+    mix-blend-mode:normal; background:transparent;
+  }
+  @media (min-width:801px){
+    .title-wordmark{ width:400px; max-width:400px; }
+  }
+  @media (max-width:800px){
+    .title-wordmark{ width:min(88vw,400px); max-width:88vw; }
   }
   /* 문장 — 배경이 깨끗한 결과·게임오버 화면에 세운다 */
   .title-crest{
@@ -2835,7 +2851,7 @@
     margin:0; color:rgba(214,208,194,0.58); font-size:9px; letter-spacing:0.12em;
     text-shadow:1px 1px 0 #000;
   }
-  @media (max-height:680px){
+  @media (max-height:680px) and (max-width:800px){
     .title-wordmark{ max-width:258px; }
     .title-crest{ width:78px; }
   }
@@ -3257,7 +3273,7 @@
   /* PC 안내 텍스트 최종 우선 규칙 — 아래의 공통 #app 픽셀 규칙에 덮어쓰이지 않게 한다. */
   @media (min-width:801px){
     #app .battle-screen{ grid-template-columns:minmax(620px,1.55fr) minmax(230px,.45fr); }
-    #app .battle-screen .enemy-zone{ padding-left:12px; padding-right:12px; }
+    #app .battle-screen .enemy-zone{ padding:9px 12px 12px; }
     #app .battle-screen .foe-row{
       display:flex; flex-wrap:nowrap; width:100%; min-width:0; overflow:hidden; gap:6px;
     }
@@ -3335,6 +3351,13 @@
       max-width:min(88vw,1100px);
     }
     #app .class-grid{ grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
+    /* PC 연구실 해금 목록의 병과 초상화 — 모바일 30px보다 읽기 쉽게 40px로 표시한다. */
+    #app .relic-offer.institute-wide-box .relic-opt-head > span:first-child > img{
+      width:40px !important;
+      height:40px !important;
+      flex:0 0 40px;
+      object-fit:cover;
+    }
     #app .rank-slots{ gap:12px; }
     #app .tavern-base-actions{ flex-direction:row; gap:12px; }
     #app .tavern-base-actions .btn{ flex:1 1 0; }
@@ -3443,6 +3466,15 @@
     #app .battle-screen .foe-row.crowded .confused-badge,
     #app .battle-screen .foe-row.crowded .foe-dead{ font-size:clamp(7px,.6vw,10px); }
     #app .battle-screen .foe-row.crowded .intent-badge{ min-width:0; padding:2px; }
+    /* PC 적 카드의 배지는 초상화·카드 배경보다 항상 위에 그린다. */
+    #app .battle-screen .foe-card .foe-rank,
+    #app .battle-screen .foe-card .intent-badge,
+    #app .battle-screen .foe-card .confused-badge,
+    #app .battle-screen .foe-card .foe-dead{
+      position:relative;
+      z-index:12;
+    }
+    #app .battle-screen .foe-card .status-stack{ top:2px; z-index:20; }
 
     /* PC 팝업은 게임 메뉴와 같은 컴팩트한 폭으로 유지한다. */
     #app .menu-panel{ width:100%; max-width:280px; }
@@ -3452,8 +3484,76 @@
     #app .card-system-guide-panel,
     #app .combat-rule-guide-panel,
     #app .core-guide-panel{ width:100%; max-width:330px; }
+    /* 전설 카드 안내와 같은 구조의 PC 가이드는 화면 폭에 비례해 확장한다. */
+    #app .upgrade-guide-panel,
+    #app .fusion-guide-panel,
+    #app .card-system-guide-panel,
+    #app .combat-rule-guide-panel,
+    #app .core-guide-panel,
+    #app .epic-guide-list,
+    #app .epic-guide .af-hint{
+      width:clamp(450px,42vw,760px);
+      max-width:calc(100vw - 48px);
+    }
     #app .sole-survivor-panel{ max-width:330px; }
     #app .tavern-detail-panel{ max-width:300px; }
+    /* 연구실의 병과 해금 테이블도 정비실 카드 테이블처럼 패널의 가용 폭을 사용한다. */
+    #app .maintenance-screen .institute-class-list{
+      width:100%;
+      max-width:100%;
+      box-sizing:border-box;
+    }
+  }
+
+  /* 연구실 해금 목록의 초상화는 인라인 이미지의 원본 크기가 부모를 키우지 않도록
+     전용 래퍼와 이미지 양쪽을 함께 고정한다. */
+  #app .institute-class-portrait{
+    display:inline-flex;
+    flex:0 0 40px;
+    width:40px !important;
+    height:40px !important;
+    overflow:hidden;
+  }
+  #app .institute-class-portrait img{
+    display:block;
+    width:40px !important;
+    height:40px !important;
+    max-width:40px !important;
+    max-height:40px !important;
+  }
+  /* 연구실 상단 정보 박스는 부모 패널을 넘지 않게 하고, 긴 문장은 내부에서 줄바꿈한다. */
+  #app .maintenance-screen .maintenance-panel > .maintenance-oil,
+  #app .maintenance-screen .maintenance-panel > .maintenance-locker{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    box-sizing:border-box;
+  }
+  #app .maintenance-screen .maintenance-panel > .maintenance-oil > div:first-child,
+  #app .maintenance-screen .maintenance-panel > .maintenance-locker .maintenance-locker-copy{
+    min-width:0;
+    overflow-wrap:anywhere;
+    word-break:keep-all;
+  }
+  #app .maintenance-screen .maintenance-panel > .maintenance-oil .institute-wide-btn,
+  #app .maintenance-screen .maintenance-panel > .maintenance-locker .institute-wide-btn{
+    max-width:100%;
+    min-width:0;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+  @media (max-width:800px){
+    #app .institute-class-portrait{
+      flex-basis:30px;
+      width:30px !important;
+      height:30px !important;
+    }
+    #app .institute-class-portrait img{
+      width:30px !important;
+      height:30px !important;
+      max-width:30px !important;
+      max-height:30px !important;
+    }
   }
 
   } /* @layer pixel */
@@ -3621,7 +3721,7 @@
   /* 외부 에셋 초상도 기존 픽셀 초상과 같은 틀에 넣는다. */
   function assetIcon(src, cls){
     return '<img class="px'+(cls?' '+cls:'')+'" src="'+src+'" alt="" draggable="false"'
-         + ' style="width:100%;height:100%;object-fit:cover;display:block;">';
+         + ' loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;display:block;">';
   }
 
   /* 시나리오의 인물과 수문장은 기록에서 남은 초상으로만 보인다.
@@ -3960,8 +4060,8 @@
   const ICON_JESTER = '<img src="data:image/jpeg;base64,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" alt="" draggable="false" style="width:100%;height:100%;object-fit:cover;display:block;">';
 
   const CLASS_ICON = {
-    vanguard: assetIcon('assets/classes/exec-c74c1756-7e60-41d8-9054-8faf6c29929d.png'), chemist: assetIcon('assets/classes/exec-7e06974a-11ec-47d0-beb2-e6794932f57d.png'), priest: assetIcon('assets/classes/exec-eee861cd-af69-409e-b11b-ca532550dcc2.png'), oracle: assetIcon('assets/classes/exec-da30ae8d-fe73-4bb7-b6b7-6df68daffc7d.png'),
-    hellion: assetIcon('assets/classes/exec-9f9df04e-2ba9-4fd5-99f5-2ae6e0586327.png'), robber: assetIcon('assets/classes/exec-8f48f640-0136-46c5-9927-4ab7b091df4d.png'), jester: assetIcon('assets/classes/exec-d972a28d-7a28-4da6-a76a-341bba9ddb8f.png'),
+    vanguard: assetIcon('assets/classes/vanguard.png'), chemist: assetIcon('assets/classes/chemist.png'), priest: assetIcon('assets/classes/priest.png'), oracle: assetIcon('assets/classes/oracle.png'),
+    hellion: assetIcon('assets/classes/hellion.png'), robber: assetIcon('assets/classes/robber.png'), jester: assetIcon('assets/classes/jester.png'),
   };
 
   /* ============ 사거리 ============
@@ -5341,7 +5441,19 @@
     v1:[-132,-299],v2:[-230,-299],v3:[-327,-299],v4:[-423,-299],v5:[-520,-299],v6:[-616,-299],
     l1:[-132,-394],l2:[-230,-394],l3:[-327,-394],l4:[-423,-394],l5:[-520,-394],l6:[-616,-394]
   };
+  const RELIC_GENERATED_ART = {
+    c1:'assets/relics/rare-offense.png', c2:'assets/relics/rare-pressure.png', c3:'assets/relics/rare-tempo.png', c4:'assets/relics/rare-warding.png', c5:'assets/relics/rare-offense.png', c6:'assets/relics/rare-tempo.png',
+    u1:'assets/relics/rare-pressure.png', u2:'assets/relics/rare-warding.png', u3:'assets/relics/rare-warding.png', u4:'assets/relics/rare-offense.png', u5:'assets/relics/rare-warding.png', u6:'assets/relics/rare-warding.png',
+    r1:'assets/relics/rare-pressure.png', r2:'assets/relics/rare-pressure.png', r3:'assets/relics/rare-tempo.png', r4:'assets/relics/rare-offense.png', r5:'assets/relics/rare-warding.png', r6:'assets/relics/rare-tempo.png',
+    v1:'assets/relics/very-rare-vitality.png', v2:'assets/relics/very-rare-warding.png', v3:'assets/relics/very-rare-knowledge.png',
+    v4:'assets/relics/very-rare-offense.png', v5:'assets/relics/very-rare-offense.png', v6:'assets/relics/very-rare-knowledge.png',
+    l1:'assets/relics/legendary-transcendence.png', l2:'assets/relics/legendary-power.png', l3:'assets/relics/very-rare-warding.png',
+    l4:'assets/relics/legendary-power.png', l5:'assets/relics/legendary-power.png', l6:'assets/relics/very-rare-warding.png',
+    third_hand_of_abyss:'assets/relics/legendary-transcendence.png'
+  };
   function relicPortrait(r, large, compact){
+    const generated = RELIC_GENERATED_ART[r.id];
+    if(generated) return `<span class="relic-portrait generated${large?' large':''}${compact?' compact':''}" style="--relic-art:url('${generated}')" aria-hidden="true"></span>`;
     const pos = (large ? RELIC_ART_LARGE_POS : RELIC_ART_POS)[r.art] || (large ? [-132,-14] : [-156,-37]);
     /* 상단 유물 선반은 아이콘과 스프라이트 좌표를 함께 절반으로 축소한다. */
     const scale = compact ? 0.35 : 1;
@@ -6477,6 +6589,7 @@
       maintenanceLibrary: [],
       residence: {roster:[], selectedIds:[], placements:[null,null,null,null], armedId:null, pendingGuests:[]},
       firstRunGuide: false,
+      firstRunCombatGuideCount: 0,
       firstRun: false,
       prologue: null,
       logMsg: '',
@@ -6558,6 +6671,8 @@
     S.starterDeckCardIds = S.runDeck.map(card=>card.defId);
     /* 새 런을 시작할 때마다 첫 전투에서 실제 조작 안내를 시작한다. */
     S.firstRunGuide = !hasSeenCoreGuide();
+    /* 첫 핵심 가이드 팝업도 전체 횟수에 포함한다. */
+    S.firstRunCombatGuideCount = S.firstRunGuide ? 1 : 0;
     S.firstRun = true;
     S.erosion = 0;
     drainLighthouseForDescent();
@@ -7292,8 +7407,13 @@
     const b=S && S.battle;
     if(!b || b.over || b.tutorialFirstBattle) return;
     if(hasSeenCombatRuleGuide(kind)) return;
+    /* 첫 런의 전투 규칙 안내는 길게 이어지지 않도록 전체 3회까지만 표시한다. */
+    if(S.firstRun && S.chapter===0 && (S.firstRunCombatGuideCount||0)>=3) return;
     if(!Array.isArray(b.combatGuideQueue)) b.combatGuideQueue=[];
-    if(!b.combatGuideQueue.includes(kind)) b.combatGuideQueue.push(kind);
+    if(!b.combatGuideQueue.includes(kind)){
+      b.combatGuideQueue.push(kind);
+      if(S.firstRun && S.chapter===0) S.firstRunCombatGuideCount=(S.firstRunCombatGuideCount||0)+1;
+    }
   }
   function canRiposte(defender, defRank, attacker, atkRank){
     if(!attacker || !attacker.alive) return false;
@@ -9360,10 +9480,10 @@
      seconds 는 원본의 정확한 길이 — 인코더가 덧댄 꼬리를 여기서 잘라 낸다.
      트랙마다 길이가 다르므로 한 값으로 묶어 두면 긴 곡이 중간에서 되감긴다. */
   const BGM_TRACKS = {
-    ambient: {src:'assets/bgm-ambient.m4a', gain:1,   seconds:213.75},
-    battle:  {src:'assets/bgm-battle.m4a',  gain:0.5, seconds:227.462},
-    fail:   {src:'assets/bgm-fail.m4a',    gain:0.8, seconds:242.502},
-    lighthouse: {src:'assets/bgm-lighthouse.m4a', gain:0.9, seconds:194.504},
+    ambient: {src:'assets/bgm-ambient.mp3', gain:1,   seconds:213.75},
+    battle:  {src:'assets/bgm-battle.mp3',  gain:0.5, seconds:227.462},
+    fail:   {src:'assets/bgm-fail.mp3',    gain:0.8, seconds:242.502},
+    lighthouse: {src:'assets/bgm-lighthouse.mp3', gain:0.9, seconds:194.504},
   };
   const BGM_KEY = 'fathom.bgm.v1';
   /* 음악은 배경이지 무대가 아니다 — 있는 줄 모르고 듣다가 없으면 허전한 정도로만 깐다. */
@@ -9377,8 +9497,10 @@
   let bgmPrimed = false;   /* 제스처 안에서 오디오 잠금을 푼 적이 있는가 */
   let bgmMode = null;      /* 'buffer' | 'element' — 실제로 소리가 나기 시작하면 정해진다 */
   let bgmBufferFailed = false;  /* Web Audio 로 받아 오지 못했다 — 요소로 물러서야 한다 */
+  let bgmFadeSeq = 0;      /* 빠르게 화면을 넘길 때 이전 페이드가 새 전환을 덮지 않게 한다 */
 
   function bgmDesiredTrack(){
+    if(S && S.screen === 'title') return 'ambient';
     if(S && S.screen === 'battle') return 'battle';
     if(S && S.screen === 'gameover') return 'fail';
     if(S && ['tavern','maintenance','institute','residence','relicSwap','epicAbsorb','epicAbsorbResult'].indexOf(S.screen)>=0) return 'lighthouse';
@@ -9400,7 +9522,8 @@
       const el = document.createElement('audio');
       el.src = BGM_TRACKS[key].src;
       el.loop = true;
-      el.preload = 'none';
+      /* 첫 화면에서 첫 입력과 동시에 재생할 수 있도록 음원을 미리 준비한다. */
+      el.preload = 'auto';
       el.playsInline = true;
       el.setAttribute('playsinline','');
       el.volume = 0;
@@ -9410,12 +9533,28 @@
     return bgmEls[key];
   }
   function bgmPlayFallback(key){
-    Object.keys(bgmEls).forEach(k=>{ if(k !== key) bgmEls[k].pause(); });
+    const token = ++bgmFadeSeq;
+    const old = Object.keys(bgmEls)
+      .filter(k=>k !== key && !bgmEls[k].paused)
+      .map(k=>({el:bgmEls[k], volume:bgmEls[k].volume}));
     const el = bgmEl(key);
-    el.volume = BGM_VOLUME * bgmTrackGain(key);
+    const targetVolume = BGM_VOLUME * bgmTrackGain(key);
+    el.volume = 0;
+    /* play()의 Promise가 끝날 때까지 기다리면 제스처 허가가 사라질 수 있다. */
+    bgmMode = 'element';
     const p = el.play();
-    if(p && p.then) p.then(()=>{ bgmMode = 'element'; }).catch(()=>{});
-    else bgmMode = 'element';
+    if(p && p.catch) p.catch(()=>{});
+    const started = performance.now();
+    const fade = now=>{
+      if(token !== bgmFadeSeq) return;
+      const ratio = BGM_FADE > 0 ? Math.min(1, (now-started)/(BGM_FADE*1000)) : 1;
+      old.forEach(item=>{ item.el.volume = item.volume * (1-ratio); });
+      el.volume = targetVolume * ratio;
+      if(ratio < 1){ requestAnimationFrame(fade); return; }
+      old.forEach(item=>{ item.el.pause(); item.el.volume = 0; });
+      el.volume = targetVolume;
+    };
+    requestAnimationFrame(fade);
   }
 
   /* ---- Web Audio ---- */
@@ -9484,6 +9623,16 @@
     if(!bgmOn || !bgmPrimed) return;
     bgmPlay(key);
   }
+  function bgmEnsureTitleAmbient(){
+    if(!bgmOn || !S || S.screen!=='title') return;
+    if(bgmTrack!=='ambient') bgmTrack='ambient';
+    if(!bgmPrimed) return;
+    if(bgmMode==='element'){
+      if(!bgmEls.ambient || bgmEls.ambient.paused) bgmPlayFallback('ambient');
+    } else if(!bgmMode){
+      bgmPlay('ambient');
+    }
+  }
 
   /* ---- 잠금 풀기 ----
      모바일은 데스크톱보다 훨씬 깐깐하다. 소리를 처음 내는 일은 반드시 '손가락이
@@ -9496,6 +9645,15 @@
      그대로 첫 끊김과 메모리 압박이 된다. 버퍼 재생이 실패한 뒤에는 다음 손길에서
      동기적으로 요소를 트므로(bgmGesture) 물러설 길은 그대로 남는다. */
   function bgmPrime(){
+    /* 첫 입력에서는 디코딩을 기다리지 않고 브라우저의 기본 오디오 요소를
+       바로 재생한다. Web Audio의 비동기 디코딩은 브라우저별 자동재생 정책에
+       따라 소리가 나지 않는 경우가 있어, 안정적인 요소 재생을 기본 경로로 둔다. */
+    if(!bgmTrack) bgmTrack = bgmDesiredTrack();
+    /* 버튼을 누를 때마다 같은 곡을 다시 페이드하지 않는다. */
+    if(!bgmEls[bgmTrack] || bgmEls[bgmTrack].paused) bgmPlayFallback(bgmTrack);
+    bgmPrimed = true;
+    return;
+
     /* file:// 로 실행하면 fetch 로 음원을 읽을 수 없을 수 있다. 이 경우 Web Audio를
        먼저 만들었다가 비동기 실패를 기다리면 첫 입력의 자동재생 허가를 놓친다 —
        같은 제스처 안에서 <audio> 요소를 바로 재생한다. */
@@ -9542,6 +9700,7 @@
     if(!bgmTrack) bgmTrack = bgmDesiredTrack();
     if(bgmBufferFailed && bgmMode !== 'element'){ bgmPlayFallback(bgmTrack); return; }
     if(!bgmMode) bgmPlay(bgmTrack);
+    else if(bgmMode === 'element' && bgmEls[bgmTrack] && bgmEls[bgmTrack].paused) bgmPlayFallback(bgmTrack);
     else if(bgmCtx && bgmCtx.state === 'suspended') bgmCtx.resume().catch(()=>{});
   }
   function setBgmOn(on){
@@ -10085,7 +10244,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
         <div class="title-flicker title-layer" aria-hidden="true"></div>
         <div class="title-bubbles title-layer" aria-hidden="true">${bubbles(14)}</div>
         <div class="title-vignette title-layer" aria-hidden="true"></div>
-        <img class="title-wordmark" src="${ART_WORDMARK}" alt="FATHOM OF ABYSS">
+        <img class="title-wordmark" src="assets/backgrounds/title-wordmark.png" alt="FATHOM OF ABYSS" decoding="async">
         ${hasSavedRun() ? `
           <button class="btn primary" data-action="continue-run">이어하기</button>
           <button class="btn" data-action="new-run">새게임</button>
@@ -10982,8 +11141,14 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
     for(let i=0;i<b.maxAp;i++){ pips += `<div class="pip ${i<b.ap?'filled':''}"></div>`; }
     for(let i=0;i<(b.tempAp||0);i++){ pips += `<div class="pip temp filled"></div>`; }
 
-    const heroesHtml = S.party.filter(h=>h).map(h=>heroCardHtml(h)).join('');
-    const foesHtml = b.enemies.map((en,i)=>foeCardHtml(en,i)).join('');
+    /* 사망자는 전투 대열의 자리를 차지하지 않는다. 게임 규칙의 effRank만 바뀌고
+       화면이 그대로면 뒤의 대원이 앞으로 당겨진 사실을 볼 수 없으므로, 실제 전투
+       화면도 생존자만 렌더링해 대열 변화를 보여 준다. 적은 원본 인덱스를 유지해
+       표적 선택 데이터가 전투 배열과 어긋나지 않게 한다. */
+    const activeHeroes = S.party.filter(h=>h && h.alive);
+    const activeFoes = b.enemies.filter(en=>en && en.alive);
+    const heroesHtml = activeHeroes.map(h=>heroCardHtml(h)).join('');
+    const foesHtml = activeFoes.map(en=>foeCardHtml(en,b.enemies.indexOf(en))).join('');
 
     const handHtml = b.hand.map(c=>{
       const playable = canPlayCard(c);
@@ -11020,7 +11185,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       ${renderTopbar()}
       <div class="screen battle-screen">
         <div class="enemy-zone">
-          <div class="foe-row ${b.enemies.length>2?'many':''} ${b.enemies.length>=4?'crowded':''}">${foesHtml}</div>
+          <div class="foe-row ${activeFoes.length>2?'many':''} ${activeFoes.length>=4?'crowded':''}">${foesHtml}</div>
         </div>
 
         <div class="mid-stage">
@@ -11166,6 +11331,8 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       const fusionEchoes = materials.length===2 ? fusionEchoCost(materials[0],materials[1]) : 0;
       const fusionCatalysts = materials.length===2 ? fusionCatalystCost(materials[0],materials[1]) : 0;
       const fusionAffordable = materials.length===2 && canPayFusion(materials[0],materials[1]);
+      const selectedFusionIds = new Set(a.fuseSelected||[]);
+      const availableFusionOpts = opts.filter(g=>g.defIds.some(id=>!selectedFusionIds.has(id)));
       /* 고른 재료도 눌러서 뺄 수 있다 — 목록까지 되돌아가 같은 줄을 찾을 이유가 없다 */
       const inspect = c => `<div class="card-inspect pickable ${cardVisualClass(c)}" data-action="unpick-fuse" data-defid="${c.defId}">
         <div class="card-inspect-head"><span>${cardTypeIcon(c)}${isLegendaryCard(c)?'◆ ':isEpicCard(c)?'✦ ':''}${c.name}</span><span class="card-inspect-meta">AP ${c.cost} · ${cardRarityLabel(c)} · ${ownerLabel(c.owner)}</span></div>
@@ -11173,11 +11340,11 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       </div>`;
       body = `
         <div class="af-list">
-          ${opts.length ? opts.map(g=>{
-            const picked = g.defIds.filter(id=>a.fuseSelected.includes(id)).length;
-            return `<div class="af-row ${cardVisualClass(g.card)} ${picked?'fuse-picked':''}" data-action="toggle-fuse" data-defid="${g.defId}">
+          ${availableFusionOpts.length ? availableFusionOpts.map(g=>{
+            const remaining = g.defIds.filter(id=>!selectedFusionIds.has(id)).length;
+            return `<div class="af-row ${cardVisualClass(g.card)}" data-action="toggle-fuse" data-defid="${g.defId}">
               <div class="af-row-name">${cardTypeIcon(g.card)}${g.name}</div>
-              <div class="af-row-owner">${cardRarityLabel(g.card)} · ${ownerLabel(g.owner)} · 보유 ${g.count}장${picked?` · <b>${picked}장 골랐다</b>`:''}</div>
+              <div class="af-row-owner">${cardRarityLabel(g.card)} · ${ownerLabel(g.owner)} · 남은 ${remaining}장</div>
             </div>`;
           }).join('') : `<div class="af-empty">합성할 수 있는 덱 카드가 없다.</div>`}
         </div>
@@ -11462,10 +11629,14 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
     const classRows = UNLOCKABLES.map((id,i)=>{
       const def = CLASS_DEFS[id];
       const unlocked = isUnlocked(id);
-      return `<div class="relic-opt ${unlocked?'sel':''}">
-        <div class="relic-opt-head"><span>${CLASS_ICON[id]||''} ${def.className}</span><span>${unlocked?'해금됨':`사거리 Lv.${i+1} 필요`}</span></div>
-        <div class="relic-boon">${def.tagline}</div>
-        <div class="relic-desc">${def.blurb}</div>
+      return `<div class="maintenance-card-row institute-class-row ${unlocked?'selected':''}">
+        <span class="institute-class-portrait">${CLASS_ICON[id]||''}</span>
+        <div class="maintenance-card-main">
+          <div class="maintenance-card-name">${def.className}</div>
+          <div class="maintenance-card-meta">${def.tagline}</div>
+          <div class="maintenance-card-meta">${def.blurb}</div>
+        </div>
+        <div class="maintenance-card-count">${unlocked?'해금됨':`사거리 Lv.${i+1} 필요`}</div>
       </div>`;
     }).join('');
     contentEl.innerHTML = `${renderTopbar()}<div class="screen maintenance-screen institute-screen">
@@ -11484,7 +11655,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
         ${nextCls ? `<button class="btn primary institute-wide-btn" data-action="institute-upgrade-range" ${canUpgrade?'':'disabled'}>사거리 확장 · 연구 포인트 ${nextCost}</button>` : ''}
       </div>
       <div class="tier-tag" style="margin-top:8px;">사거리로 해금되는 병과</div>
-      <div class="relic-offer institute-wide-box">${classRows}</div>
+      <div class="maintenance-card-list institute-wide-box institute-class-list">${classRows}</div>
       </div>
       <div class="maintenance-actions"><button class="btn" data-action="institute-close">연구실 나가기</button></div>
     </div>`;
@@ -11529,7 +11700,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       const upgradeCatalysts = selected ? upgradeCatalystCost(selected.card) : 0;
       const upgradeAffordable = selected ? canPayUpgrade(selected.card) : false;
       if(selected&&preview) maintenanceAction=`<button class="btn primary" data-action="maintenance-do-upgrade" data-defid="${selected.defId}" ${upgradeAffordable?'':'disabled'}>${upgradeNeedsMerge(selected)?'같은 카드 2장을 합쳐 강화한다':'이 카드를 강화한다'} · 잔향 ${upgradeEchoes}${upgradeCatalysts?` · 촉매 ${upgradeCatalysts}`:''}${upgradeAffordable?'':` · 재화 부족`}</button>`;
-      body = `<div class="af-list maintenance-card-list">${opts.length ? opts.map(g=>{ const isSelected=selected&&selected.defId===g.defId; const locked=selected&&!isSelected; return maintenanceDisplayCard(g.card, `보관 ${g.count}장 · +${g.level}/+${MAX_UPGRADE_LEVEL}<br>잔향 ${upgradeEchoCost(g.card)}${upgradeCatalystCost(g.card)?` · 촉매 ${upgradeCatalystCost(g.card)}`:''}`, locked?'': 'maintenance-select-upgrade', locked?'':g.defId, isSelected?'sel':'' ); }).join('') : '<div class="af-empty">강화할 수 있는 카드가 없습니다.</div>'}</div>${selected&&preview ? `<div class="upgrade-preview ${cardVisualClass(selected.card)}" data-action="maintenance-unselect-upgrade" role="button" tabindex="0" title="선택 해제"><div class="upgrade-preview-title">${selected.name} · +${selected.level} → <b>+${selected.level+1}</b></div><div class="upgrade-preview-line">AP ${preview.cost !== selected.card.cost ? `${selected.card.cost} → <b>${preview.cost}</b>` : selected.card.cost}</div><div class="upgrade-preview-line">현재: ${describeCard(selected.card)}</div><div class="upgrade-preview-line"><b>강화 후:</b> ${describeCard(preview)}</div><div class="upgrade-preview-line">비용: 심연 잔향 ${upgradeEchoes}${upgradeCatalystCost(selected.card)?` · 촉매 ${upgradeCatalysts}`:''}</div></div>` : ''}`;
+      body = `<div class="af-list maintenance-card-list">${opts.length ? opts.map(g=>{ const isSelected=selected&&selected.defId===g.defId; const locked=selected&&!isSelected; return maintenanceDisplayCard(g.card, `보관 ${g.count}장 · +${g.level}/+${MAX_UPGRADE_LEVEL}<br>잔향 ${upgradeEchoCost(g.card)}${upgradeCatalystCost(g.card)?` · 촉매 ${upgradeCatalystCost(g.card)}`:''}`, locked?'': 'maintenance-select-upgrade', locked?'':g.defId, `${isSelected?'sel':''} ${locked?'locked':''}` ); }).join('') : '<div class="af-empty">강화할 수 있는 카드가 없습니다.</div>'}</div>${selected&&preview ? `<div class="upgrade-preview ${cardVisualClass(selected.card)}" data-action="maintenance-unselect-upgrade" role="button" tabindex="0" title="선택 해제"><div class="upgrade-preview-title">${selected.name} · +${selected.level} → <b>+${selected.level+1}</b></div><div class="upgrade-preview-line">AP ${preview.cost !== selected.card.cost ? `${selected.card.cost} → <b>${preview.cost}</b>` : selected.card.cost}</div><div class="upgrade-preview-line">현재: ${describeCard(selected.card)}</div><div class="upgrade-preview-line"><b>강화 후:</b> ${describeCard(preview)}</div><div class="upgrade-preview-line">비용: 심연 잔향 ${upgradeEchoes}${upgradeCatalystCost(selected.card)?` · 촉매 ${upgradeCatalysts}`:''}</div></div>` : ''}`;
     } else if(m.tab==='fusion'){
       const materialCards = fusionMaterialCards();
       const opts = groupedFusionOptions();
@@ -11537,8 +11708,10 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       const fusionEchoes = materials.length===2 ? fusionEchoCost(materials[0],materials[1]) : 0;
       const fusionCatalysts = materials.length===2 ? fusionCatalystCost(materials[0],materials[1]) : 0;
       const fusionAffordable = materials.length===2 && canPayFusion(materials[0],materials[1]);
+      const selectedFusionIds = new Set(m.fuseSelected||[]);
+      const availableFusionOpts = opts.filter(g=>g.defIds.some(id=>!selectedFusionIds.has(id)));
       if(m.fuseSelected.length===2) maintenanceAction=`<button class="btn primary" data-action="maintenance-do-fuse" ${fusionAffordable?'':'disabled'}>합성하기${fusionAffordable?'':` · 재화 부족`}</button>`;
-      body = `<div class="af-list maintenance-card-list">${opts.length ? opts.map(g=>{ const picked=g.defIds.filter(id=>(m.fuseSelected||[]).includes(id)).length; return maintenanceDisplayCard(g.card, `보관 ${g.count}장${picked?` · ${picked}장 선택`:''}`, 'maintenance-toggle-fuse', g.defId, picked?'fuse-picked':''); }).join('') : '<div class="af-empty">합성할 수 있는 카드가 없습니다.</div>'}</div>${materials.length ? `<div class="fusion-inspect"><div class="af-hint">선택한 카드를 누르면 선택이 해제됩니다.</div>${materials.map(c=>`<div class="card-inspect pickable" data-action="maintenance-unpick-fuse" data-defid="${c.defId}"><div class="card-inspect-head"><span>${c.name}</span><span class="card-inspect-meta">AP ${c.cost}</span></div><div class="card-inspect-effect">${describeCard(c)}</div></div>`).join('')}</div>` : ''}${m.fuseSelected.length===2 ? `<div class="maintenance-copy">합성 비용: 심연 잔향 ${fusionEchoes}${fusionCatalysts?` · 심해 촉매 ${fusionCatalysts}`:''}</div>` : `<div class="maintenance-copy">카드를 두 장 선택하세요 (${m.fuseSelected.length}/2)</div>`}`;
+      body = `<div class="af-list maintenance-card-list">${availableFusionOpts.length ? availableFusionOpts.map(g=>{ const remaining=g.defIds.filter(id=>!selectedFusionIds.has(id)).length; return maintenanceDisplayCard(g.card, `남은 ${remaining}장`, 'maintenance-toggle-fuse', g.defId, ''); }).join('') : '<div class="af-empty">합성할 수 있는 카드가 없습니다.</div>'}</div>${materials.length ? `<div class="fusion-inspect"><div class="af-hint">선택한 카드를 누르면 선택이 해제됩니다.</div>${materials.map(c=>`<div class="card-inspect pickable" data-action="maintenance-unpick-fuse" data-defid="${c.defId}"><div class="card-inspect-head"><span>${c.name}</span><span class="card-inspect-meta">AP ${c.cost}</span></div><div class="card-inspect-effect">${describeCard(c)}</div></div>`).join('')}</div>` : ''}${m.fuseSelected.length===2 ? `<div class="maintenance-copy">합성 비용: 심연 잔향 ${fusionEchoes}${fusionCatalysts?` · 심해 촉매 ${fusionCatalysts}`:''}</div>` : `<div class="maintenance-copy">카드를 두 장 선택하세요 (${m.fuseSelected.length}/2)</div>`}`;
     } else if(m.tab==='endgame'){
       body = renderEndgameTab(pool);
     } else {
@@ -12015,6 +12188,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
     }
     lastScreenKey = key;
     bgmSetTrack(bgmDesiredTrack());   /* 전투에 들고 나는 순간 음악도 함께 넘어간다 */
+    bgmEnsureTitleAmbient();
     saveRun();
   }
 
@@ -13436,12 +13610,6 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       const arr = S.aftermath.fuseSelected = Array.from(new Set(S.aftermath.fuseSelected));
       const group = groupedFusionOptions().find(g=>g.defIds.includes(el.dataset.defid));
       if(!group) return;
-      const selectedInGroup=arr.filter(defId=>group.defIds.includes(defId));
-      if(selectedInGroup.length){
-        arr.splice(arr.indexOf(selectedInGroup[selectedInGroup.length-1]),1);
-        render();
-        return;
-      }
       const free = group.defIds.find(defId=>arr.indexOf(defId) < 0);
       let pushed = false;
       if(free && arr.length < 2){ arr.push(free); pushed = true; }
@@ -13729,12 +13897,9 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       if(m){
         const group=groupedFusionOptions().find(g=>g.defIds.includes(el.dataset.defid));
         if(!group) return;
-        const selectedInGroup=m.fuseSelected.filter(id=>group.defIds.includes(id));
-        if(selectedInGroup.length){
-          m.fuseSelected.splice(m.fuseSelected.indexOf(selectedInGroup[selectedInGroup.length-1]),1);
-          render();
-          return;
-        }
+        /* 목록의 한 줄은 같은 카드 여러 장을 묶어 표시한다. 첫 장을 고른 뒤
+           같은 줄을 다시 누르면 기존 선택을 지우지 않고, 묶음 안의 다음 실제
+           defId를 두 번째 재료로 채운다. 선택 해제는 아래 선택 목록에서 한다. */
         const free=group.defIds.find(id=>!m.fuseSelected.includes(id));
         let pushed=false;
         if(free && m.fuseSelected.length<2){ m.fuseSelected.push(free); pushed=true; }

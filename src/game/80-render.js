@@ -46,10 +46,10 @@
      seconds 는 원본의 정확한 길이 — 인코더가 덧댄 꼬리를 여기서 잘라 낸다.
      트랙마다 길이가 다르므로 한 값으로 묶어 두면 긴 곡이 중간에서 되감긴다. */
   const BGM_TRACKS = {
-    ambient: {src:'assets/bgm-ambient.m4a', gain:1,   seconds:213.75},
-    battle:  {src:'assets/bgm-battle.m4a',  gain:0.5, seconds:227.462},
-    fail:   {src:'assets/bgm-fail.m4a',    gain:0.8, seconds:242.502},
-    lighthouse: {src:'assets/bgm-lighthouse.m4a', gain:0.9, seconds:194.504},
+    ambient: {src:'assets/bgm-ambient.mp3', gain:1,   seconds:213.75},
+    battle:  {src:'assets/bgm-battle.mp3',  gain:0.5, seconds:227.462},
+    fail:   {src:'assets/bgm-fail.mp3',    gain:0.8, seconds:242.502},
+    lighthouse: {src:'assets/bgm-lighthouse.mp3', gain:0.9, seconds:194.504},
   };
   const BGM_KEY = 'fathom.bgm.v1';
   /* 음악은 배경이지 무대가 아니다 — 있는 줄 모르고 듣다가 없으면 허전한 정도로만 깐다. */
@@ -63,8 +63,10 @@
   let bgmPrimed = false;   /* 제스처 안에서 오디오 잠금을 푼 적이 있는가 */
   let bgmMode = null;      /* 'buffer' | 'element' — 실제로 소리가 나기 시작하면 정해진다 */
   let bgmBufferFailed = false;  /* Web Audio 로 받아 오지 못했다 — 요소로 물러서야 한다 */
+  let bgmFadeSeq = 0;      /* 빠르게 화면을 넘길 때 이전 페이드가 새 전환을 덮지 않게 한다 */
 
   function bgmDesiredTrack(){
+    if(S && S.screen === 'title') return 'ambient';
     if(S && S.screen === 'battle') return 'battle';
     if(S && S.screen === 'gameover') return 'fail';
     if(S && ['tavern','maintenance','institute','residence','relicSwap','epicAbsorb','epicAbsorbResult'].indexOf(S.screen)>=0) return 'lighthouse';
@@ -86,7 +88,8 @@
       const el = document.createElement('audio');
       el.src = BGM_TRACKS[key].src;
       el.loop = true;
-      el.preload = 'none';
+      /* 첫 화면에서 첫 입력과 동시에 재생할 수 있도록 음원을 미리 준비한다. */
+      el.preload = 'auto';
       el.playsInline = true;
       el.setAttribute('playsinline','');
       el.volume = 0;
@@ -96,12 +99,28 @@
     return bgmEls[key];
   }
   function bgmPlayFallback(key){
-    Object.keys(bgmEls).forEach(k=>{ if(k !== key) bgmEls[k].pause(); });
+    const token = ++bgmFadeSeq;
+    const old = Object.keys(bgmEls)
+      .filter(k=>k !== key && !bgmEls[k].paused)
+      .map(k=>({el:bgmEls[k], volume:bgmEls[k].volume}));
     const el = bgmEl(key);
-    el.volume = BGM_VOLUME * bgmTrackGain(key);
+    const targetVolume = BGM_VOLUME * bgmTrackGain(key);
+    el.volume = 0;
+    /* play()의 Promise가 끝날 때까지 기다리면 제스처 허가가 사라질 수 있다. */
+    bgmMode = 'element';
     const p = el.play();
-    if(p && p.then) p.then(()=>{ bgmMode = 'element'; }).catch(()=>{});
-    else bgmMode = 'element';
+    if(p && p.catch) p.catch(()=>{});
+    const started = performance.now();
+    const fade = now=>{
+      if(token !== bgmFadeSeq) return;
+      const ratio = BGM_FADE > 0 ? Math.min(1, (now-started)/(BGM_FADE*1000)) : 1;
+      old.forEach(item=>{ item.el.volume = item.volume * (1-ratio); });
+      el.volume = targetVolume * ratio;
+      if(ratio < 1){ requestAnimationFrame(fade); return; }
+      old.forEach(item=>{ item.el.pause(); item.el.volume = 0; });
+      el.volume = targetVolume;
+    };
+    requestAnimationFrame(fade);
   }
 
   /* ---- Web Audio ---- */
@@ -170,6 +189,16 @@
     if(!bgmOn || !bgmPrimed) return;
     bgmPlay(key);
   }
+  function bgmEnsureTitleAmbient(){
+    if(!bgmOn || !S || S.screen!=='title') return;
+    if(bgmTrack!=='ambient') bgmTrack='ambient';
+    if(!bgmPrimed) return;
+    if(bgmMode==='element'){
+      if(!bgmEls.ambient || bgmEls.ambient.paused) bgmPlayFallback('ambient');
+    } else if(!bgmMode){
+      bgmPlay('ambient');
+    }
+  }
 
   /* ---- 잠금 풀기 ----
      모바일은 데스크톱보다 훨씬 깐깐하다. 소리를 처음 내는 일은 반드시 '손가락이
@@ -182,6 +211,15 @@
      그대로 첫 끊김과 메모리 압박이 된다. 버퍼 재생이 실패한 뒤에는 다음 손길에서
      동기적으로 요소를 트므로(bgmGesture) 물러설 길은 그대로 남는다. */
   function bgmPrime(){
+    /* 첫 입력에서는 디코딩을 기다리지 않고 브라우저의 기본 오디오 요소를
+       바로 재생한다. Web Audio의 비동기 디코딩은 브라우저별 자동재생 정책에
+       따라 소리가 나지 않는 경우가 있어, 안정적인 요소 재생을 기본 경로로 둔다. */
+    if(!bgmTrack) bgmTrack = bgmDesiredTrack();
+    /* 버튼을 누를 때마다 같은 곡을 다시 페이드하지 않는다. */
+    if(!bgmEls[bgmTrack] || bgmEls[bgmTrack].paused) bgmPlayFallback(bgmTrack);
+    bgmPrimed = true;
+    return;
+
     /* file:// 로 실행하면 fetch 로 음원을 읽을 수 없을 수 있다. 이 경우 Web Audio를
        먼저 만들었다가 비동기 실패를 기다리면 첫 입력의 자동재생 허가를 놓친다 —
        같은 제스처 안에서 <audio> 요소를 바로 재생한다. */
@@ -228,6 +266,7 @@
     if(!bgmTrack) bgmTrack = bgmDesiredTrack();
     if(bgmBufferFailed && bgmMode !== 'element'){ bgmPlayFallback(bgmTrack); return; }
     if(!bgmMode) bgmPlay(bgmTrack);
+    else if(bgmMode === 'element' && bgmEls[bgmTrack] && bgmEls[bgmTrack].paused) bgmPlayFallback(bgmTrack);
     else if(bgmCtx && bgmCtx.state === 'suspended') bgmCtx.resume().catch(()=>{});
   }
   function setBgmOn(on){
@@ -1665,8 +1704,14 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
     for(let i=0;i<b.maxAp;i++){ pips += `<div class="pip ${i<b.ap?'filled':''}"></div>`; }
     for(let i=0;i<(b.tempAp||0);i++){ pips += `<div class="pip temp filled"></div>`; }
 
-    const heroesHtml = S.party.filter(h=>h).map(h=>heroCardHtml(h)).join('');
-    const foesHtml = b.enemies.map((en,i)=>foeCardHtml(en,i)).join('');
+    /* 사망자는 전투 대열의 자리를 차지하지 않는다. 게임 규칙의 effRank만 바뀌고
+       화면이 그대로면 뒤의 대원이 앞으로 당겨진 사실을 볼 수 없으므로, 실제 전투
+       화면도 생존자만 렌더링해 대열 변화를 보여 준다. 적은 원본 인덱스를 유지해
+       표적 선택 데이터가 전투 배열과 어긋나지 않게 한다. */
+    const activeHeroes = S.party.filter(h=>h && h.alive);
+    const activeFoes = b.enemies.filter(en=>en && en.alive);
+    const heroesHtml = activeHeroes.map(h=>heroCardHtml(h)).join('');
+    const foesHtml = activeFoes.map(en=>foeCardHtml(en,b.enemies.indexOf(en))).join('');
 
     const handHtml = b.hand.map(c=>{
       const playable = canPlayCard(c);
@@ -1703,7 +1748,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       ${renderTopbar()}
       <div class="screen battle-screen">
         <div class="enemy-zone">
-          <div class="foe-row ${b.enemies.length>2?'many':''} ${b.enemies.length>=4?'crowded':''}">${foesHtml}</div>
+          <div class="foe-row ${activeFoes.length>2?'many':''} ${activeFoes.length>=4?'crowded':''}">${foesHtml}</div>
         </div>
 
         <div class="mid-stage">
@@ -1817,7 +1862,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
           </div>
         </div>`;
     } else if(a.selecting==='upgrade'){
-      const opts = groupedUpgradeOptions();
+        const opts = groupedUpgradeOptions();
       const selected = opts.find(g=>g.defId===a.upgradeSelected) || null;
       const preview = selected ? previewUpgradeCard(selected.card) : null;
       const upgradeEchoes = selected ? upgradeEchoCost(selected.card) : 0;
@@ -1849,6 +1894,8 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       const fusionEchoes = materials.length===2 ? fusionEchoCost(materials[0],materials[1]) : 0;
       const fusionCatalysts = materials.length===2 ? fusionCatalystCost(materials[0],materials[1]) : 0;
       const fusionAffordable = materials.length===2 && canPayFusion(materials[0],materials[1]);
+      const selectedFusionIds = new Set(a.fuseSelected||[]);
+      const availableFusionOpts = opts.filter(g=>g.defIds.some(id=>!selectedFusionIds.has(id)));
       /* 고른 재료도 눌러서 뺄 수 있다 — 목록까지 되돌아가 같은 줄을 찾을 이유가 없다 */
       const inspect = c => `<div class="card-inspect pickable ${cardVisualClass(c)}" data-action="unpick-fuse" data-defid="${c.defId}">
         <div class="card-inspect-head"><span>${cardTypeIcon(c)}${isLegendaryCard(c)?'◆ ':isEpicCard(c)?'✦ ':''}${c.name}</span><span class="card-inspect-meta">AP ${c.cost} · ${cardRarityLabel(c)} · ${ownerLabel(c.owner)}</span></div>
@@ -1856,11 +1903,11 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       </div>`;
       body = `
         <div class="af-list">
-          ${opts.length ? opts.map(g=>{
-            const picked = g.defIds.filter(id=>a.fuseSelected.includes(id)).length;
-            return `<div class="af-row ${cardVisualClass(g.card)} ${picked?'fuse-picked':''}" data-action="toggle-fuse" data-defid="${g.defId}">
+          ${availableFusionOpts.length ? availableFusionOpts.map(g=>{
+            const remaining = g.defIds.filter(id=>!selectedFusionIds.has(id)).length;
+            return `<div class="af-row ${cardVisualClass(g.card)}" data-action="toggle-fuse" data-defid="${g.defId}">
               <div class="af-row-name">${cardTypeIcon(g.card)}${g.name}</div>
-              <div class="af-row-owner">${cardRarityLabel(g.card)} · ${ownerLabel(g.owner)} · 보유 ${g.count}장${picked?` · <b>${picked}장 골랐다</b>`:''}</div>
+              <div class="af-row-owner">${cardRarityLabel(g.card)} · ${ownerLabel(g.owner)} · 남은 ${remaining}장</div>
             </div>`;
           }).join('') : `<div class="af-empty">합성할 수 있는 덱 카드가 없다.</div>`}
         </div>
@@ -2145,10 +2192,14 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
     const classRows = UNLOCKABLES.map((id,i)=>{
       const def = CLASS_DEFS[id];
       const unlocked = isUnlocked(id);
-      return `<div class="relic-opt ${unlocked?'sel':''}">
-        <div class="relic-opt-head"><span>${CLASS_ICON[id]||''} ${def.className}</span><span>${unlocked?'해금됨':`사거리 Lv.${i+1} 필요`}</span></div>
-        <div class="relic-boon">${def.tagline}</div>
-        <div class="relic-desc">${def.blurb}</div>
+      return `<div class="maintenance-card-row institute-class-row ${unlocked?'selected':''}">
+        <span class="institute-class-portrait">${CLASS_ICON[id]||''}</span>
+        <div class="maintenance-card-main">
+          <div class="maintenance-card-name">${def.className}</div>
+          <div class="maintenance-card-meta">${def.tagline}</div>
+          <div class="maintenance-card-meta">${def.blurb}</div>
+        </div>
+        <div class="maintenance-card-count">${unlocked?'해금됨':`사거리 Lv.${i+1} 필요`}</div>
       </div>`;
     }).join('');
     contentEl.innerHTML = `${renderTopbar()}<div class="screen maintenance-screen">
@@ -2167,7 +2218,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
         ${nextCls ? `<button class="btn primary institute-wide-btn" data-action="institute-upgrade-range" ${canUpgrade?'':'disabled'}>사거리 확장 · 연구 포인트 ${nextCost}</button>` : ''}
       </div>
       <div class="tier-tag" style="margin-top:8px;">사거리로 해금되는 병과</div>
-      <div class="relic-offer institute-wide-box">${classRows}</div>
+      <div class="maintenance-card-list institute-wide-box institute-class-list">${classRows}</div>
       </div>
       <div class="maintenance-actions"><button class="btn" data-action="institute-close">연구실 나가기</button></div>
     </div>`;
@@ -2205,23 +2256,25 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       });
       body = `<div class="maintenance-copy">생환한 직업군(${Array.from(activeNames).join(' · ') || '없음'})과 중립 카드의 전체 목록입니다. 정비실에서 강화·합성한 뒤 덱에 넣을 카드를 선택합니다.</div><div class="maintenance-card-list">${rows.join('')}</div>`;
     } else if(m.tab==='upgrade'){
-      const opts = groupedUpgradeOptions();
+        const opts = groupedUpgradeOptions();
       const selected = opts.find(g=>g.defId===m.upgradeSelected) || null;
       const preview = selected ? previewUpgradeCard(selected.card) : null;
       const upgradeEchoes = selected ? upgradeEchoCost(selected.card) : 0;
       const upgradeCatalysts = selected ? upgradeCatalystCost(selected.card) : 0;
       const upgradeAffordable = selected ? canPayUpgrade(selected.card) : false;
       if(selected&&preview) maintenanceAction=`<button class="btn primary" data-action="maintenance-do-upgrade" data-defid="${selected.defId}" ${upgradeAffordable?'':'disabled'}>${upgradeNeedsMerge(selected)?'같은 카드 2장을 합쳐 강화한다':'이 카드를 강화한다'} · 잔향 ${upgradeEchoes}${upgradeCatalysts?` · 촉매 ${upgradeCatalysts}`:''}${upgradeAffordable?'':` · 재화 부족`}</button>`;
-      body = `<div class="af-list maintenance-card-list">${opts.length ? opts.map(g=>{ const isSelected=selected&&selected.defId===g.defId; const locked=selected&&!isSelected; return maintenanceDisplayCard(g.card, `보관 ${g.count}장 · +${g.level}/+${MAX_UPGRADE_LEVEL}<br>잔향 ${upgradeEchoCost(g.card)}${upgradeCatalystCost(g.card)?` · 촉매 ${upgradeCatalystCost(g.card)}`:''}`, locked?'': 'maintenance-select-upgrade', locked?'':g.defId, isSelected?'sel':'' ); }).join('') : '<div class="af-empty">강화할 수 있는 카드가 없습니다.</div>'}</div>${selected&&preview ? `<div class="upgrade-preview ${cardVisualClass(selected.card)}" data-action="maintenance-unselect-upgrade" role="button" tabindex="0" title="선택 해제"><div class="upgrade-preview-title">${selected.name} · +${selected.level} → <b>+${selected.level+1}</b></div><div class="upgrade-preview-line">AP ${preview.cost !== selected.card.cost ? `${selected.card.cost} → <b>${preview.cost}</b>` : selected.card.cost}</div><div class="upgrade-preview-line">현재: ${describeCard(selected.card)}</div><div class="upgrade-preview-line"><b>강화 후:</b> ${describeCard(preview)}</div><div class="upgrade-preview-line">비용: 심연 잔향 ${upgradeEchoes}${upgradeCatalystCost(selected.card)?` · 촉매 ${upgradeCatalysts}`:''}</div></div>` : ''}`;
+      body = `<div class="af-list maintenance-card-list">${opts.length ? opts.map(g=>{ const isSelected=selected&&selected.defId===g.defId; const locked=selected&&!isSelected; return maintenanceDisplayCard(g.card, `보관 ${g.count}장 · +${g.level}/+${MAX_UPGRADE_LEVEL}<br>잔향 ${upgradeEchoCost(g.card)}${upgradeCatalystCost(g.card)?` · 촉매 ${upgradeCatalystCost(g.card)}`:''}`, locked?'': 'maintenance-select-upgrade', locked?'':g.defId, `${isSelected?'sel':''} ${locked?'locked':''}` ); }).join('') : '<div class="af-empty">강화할 수 있는 카드가 없습니다.</div>'}</div>${selected&&preview ? `<div class="upgrade-preview ${cardVisualClass(selected.card)}" data-action="maintenance-unselect-upgrade" role="button" tabindex="0" title="선택 해제"><div class="upgrade-preview-title">${selected.name} · +${selected.level} → <b>+${selected.level+1}</b></div><div class="upgrade-preview-line">AP ${preview.cost !== selected.card.cost ? `${selected.card.cost} → <b>${preview.cost}</b>` : selected.card.cost}</div><div class="upgrade-preview-line">현재: ${describeCard(selected.card)}</div><div class="upgrade-preview-line"><b>강화 후:</b> ${describeCard(preview)}</div><div class="upgrade-preview-line">비용: 심연 잔향 ${upgradeEchoes}${upgradeCatalystCost(selected.card)?` · 촉매 ${upgradeCatalysts}`:''}</div></div>` : ''}`;
     } else if(m.tab==='fusion'){
       const materialCards = fusionMaterialCards();
-      const opts = groupedFusionOptions();
+        const opts = groupedFusionOptions();
       const materials = (m.fuseSelected||[]).map(id=>materialCards.find(c=>c.defId===id)).filter(Boolean);
       const fusionEchoes = materials.length===2 ? fusionEchoCost(materials[0],materials[1]) : 0;
       const fusionCatalysts = materials.length===2 ? fusionCatalystCost(materials[0],materials[1]) : 0;
       const fusionAffordable = materials.length===2 && canPayFusion(materials[0],materials[1]);
+      const selectedFusionIds = new Set(m.fuseSelected||[]);
+      const availableFusionOpts = opts.filter(g=>g.defIds.some(id=>!selectedFusionIds.has(id)));
       if(m.fuseSelected.length===2) maintenanceAction=`<button class="btn primary" data-action="maintenance-do-fuse" ${fusionAffordable?'':'disabled'}>합성하기${fusionAffordable?'':` · 재화 부족`}</button>`;
-      body = `<div class="af-list maintenance-card-list">${opts.length ? opts.map(g=>{ const picked=g.defIds.filter(id=>(m.fuseSelected||[]).includes(id)).length; return maintenanceDisplayCard(g.card, `보관 ${g.count}장${picked?` · ${picked}장 선택`:''}`, 'maintenance-toggle-fuse', g.defId, picked?'fuse-picked':''); }).join('') : '<div class="af-empty">합성할 수 있는 카드가 없습니다.</div>'}</div>${materials.length ? `<div class="fusion-inspect"><div class="af-hint">선택한 카드를 누르면 선택이 해제됩니다.</div>${materials.map(c=>`<div class="card-inspect pickable" data-action="maintenance-unpick-fuse" data-defid="${c.defId}"><div class="card-inspect-head"><span>${c.name}</span><span class="card-inspect-meta">AP ${c.cost}</span></div><div class="card-inspect-effect">${describeCard(c)}</div></div>`).join('')}</div>` : ''}${m.fuseSelected.length===2 ? `<div class="maintenance-copy">합성 비용: 심연 잔향 ${fusionEchoes}${fusionCatalysts?` · 심해 촉매 ${fusionCatalysts}`:''}</div>` : `<div class="maintenance-copy">카드를 두 장 선택하세요 (${m.fuseSelected.length}/2)</div>`}`;
+      body = `<div class="af-list maintenance-card-list">${availableFusionOpts.length ? availableFusionOpts.map(g=>{ const remaining=g.defIds.filter(id=>!selectedFusionIds.has(id)).length; return maintenanceDisplayCard(g.card, `남은 ${remaining}장`, 'maintenance-toggle-fuse', g.defId, ''); }).join('') : '<div class="af-empty">합성할 수 있는 카드가 없습니다.</div>'}</div>${materials.length ? `<div class="fusion-inspect"><div class="af-hint">선택한 카드를 누르면 선택이 해제됩니다.</div>${materials.map(c=>`<div class="card-inspect pickable" data-action="maintenance-unpick-fuse" data-defid="${c.defId}"><div class="card-inspect-head"><span>${c.name}</span><span class="card-inspect-meta">AP ${c.cost}</span></div><div class="card-inspect-effect">${describeCard(c)}</div></div>`).join('')}</div>` : ''}${m.fuseSelected.length===2 ? `<div class="maintenance-copy">합성 비용: 심연 잔향 ${fusionEchoes}${fusionCatalysts?` · 심해 촉매 ${fusionCatalysts}`:''}</div>` : `<div class="maintenance-copy">카드를 두 장 선택하세요 (${m.fuseSelected.length}/2)</div>`}`;
     } else if(m.tab==='endgame'){
       body = renderEndgameTab(pool);
     } else {
@@ -2698,6 +2751,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
     }
     lastScreenKey = key;
     bgmSetTrack(bgmDesiredTrack());   /* 전투에 들고 나는 순간 음악도 함께 넘어간다 */
+    bgmEnsureTitleAmbient();
     saveRun();
   }
 

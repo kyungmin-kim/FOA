@@ -427,12 +427,6 @@
       const arr = S.aftermath.fuseSelected = Array.from(new Set(S.aftermath.fuseSelected));
       const group = groupedFusionOptions().find(g=>g.defIds.includes(el.dataset.defid));
       if(!group) return;
-      const selectedInGroup=arr.filter(defId=>group.defIds.includes(defId));
-      if(selectedInGroup.length){
-        arr.splice(arr.indexOf(selectedInGroup[selectedInGroup.length-1]),1);
-        render();
-        return;
-      }
       const free = group.defIds.find(defId=>arr.indexOf(defId) < 0);
       let pushed = false;
       if(free && arr.length < 2){ arr.push(free); pushed = true; }
@@ -720,12 +714,9 @@
       if(m){
         const group=groupedFusionOptions().find(g=>g.defIds.includes(el.dataset.defid));
         if(!group) return;
-        const selectedInGroup=m.fuseSelected.filter(id=>group.defIds.includes(id));
-        if(selectedInGroup.length){
-          m.fuseSelected.splice(m.fuseSelected.indexOf(selectedInGroup[selectedInGroup.length-1]),1);
-          render();
-          return;
-        }
+        /* 목록의 한 줄은 같은 카드 여러 장을 묶어 표시한다. 첫 장을 고른 뒤
+           같은 줄을 다시 누르면 기존 선택을 지우지 않고, 묶음 안의 다음 실제
+           defId를 두 번째 재료로 채운다. 선택 해제는 아래 선택 목록에서 한다. */
         const free=group.defIds.find(id=>!m.fuseSelected.includes(id));
         let pushed=false;
         if(free && m.fuseSelected.length<2){ m.fuseSelected.push(free); pushed=true; }

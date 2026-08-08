@@ -451,7 +451,7 @@
     .screen:not(.battle-screen) .btn{ font-size:clamp(12px,.8vw,16px); }
   }
   .title-wordmark{
-    width:100%; max-width:318px; height:auto; display:block; margin:0 auto 2px;
+    width:100%; max-width:258px; height:auto; display:block; margin:0 auto 2px;
     mix-blend-mode:screen;
   }
   /* 문장 — 배경이 깨끗한 결과·게임오버 화면에 세운다 */
@@ -889,7 +889,7 @@
   /* PC 안내 텍스트 최종 우선 규칙 — 아래의 공통 #app 픽셀 규칙에 덮어쓰이지 않게 한다. */
   @media (min-width:801px){
     #app .battle-screen{ grid-template-columns:minmax(620px,1.55fr) minmax(230px,.45fr); }
-    #app .battle-screen .enemy-zone{ padding-left:12px; padding-right:12px; }
+    #app .battle-screen .enemy-zone{ padding:9px 12px 12px; }
     #app .battle-screen .foe-row{
       display:flex; flex-wrap:nowrap; width:100%; min-width:0; overflow:hidden; gap:6px;
     }
@@ -967,6 +967,13 @@
       max-width:min(88vw,1100px);
     }
     #app .class-grid{ grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
+    /* PC 연구실 해금 목록의 병과 초상화 — 모바일 30px보다 읽기 쉽게 40px로 표시한다. */
+    #app .relic-offer.institute-wide-box .relic-opt-head > span:first-child > img{
+      width:40px !important;
+      height:40px !important;
+      flex:0 0 40px;
+      object-fit:cover;
+    }
     #app .rank-slots{ gap:12px; }
     #app .tavern-base-actions{ flex-direction:row; gap:12px; }
     #app .tavern-base-actions .btn{ flex:1 1 0; }
@@ -1075,6 +1082,15 @@
     #app .battle-screen .foe-row.crowded .confused-badge,
     #app .battle-screen .foe-row.crowded .foe-dead{ font-size:clamp(7px,.6vw,10px); }
     #app .battle-screen .foe-row.crowded .intent-badge{ min-width:0; padding:2px; }
+    /* PC 적 카드의 배지는 초상화·카드 배경보다 항상 위에 그린다. */
+    #app .battle-screen .foe-card .foe-rank,
+    #app .battle-screen .foe-card .intent-badge,
+    #app .battle-screen .foe-card .confused-badge,
+    #app .battle-screen .foe-card .foe-dead{
+      position:relative;
+      z-index:12;
+    }
+    #app .battle-screen .foe-card .status-stack{ top:2px; z-index:20; }
 
     /* PC 팝업은 게임 메뉴와 같은 컴팩트한 폭으로 유지한다. */
     #app .menu-panel{ width:100%; max-width:280px; }
@@ -1084,8 +1100,76 @@
     #app .card-system-guide-panel,
     #app .combat-rule-guide-panel,
     #app .core-guide-panel{ width:100%; max-width:330px; }
+    /* 전설 카드 안내와 같은 구조의 PC 가이드는 화면 폭에 비례해 확장한다. */
+    #app .upgrade-guide-panel,
+    #app .fusion-guide-panel,
+    #app .card-system-guide-panel,
+    #app .combat-rule-guide-panel,
+    #app .core-guide-panel,
+    #app .epic-guide-list,
+    #app .epic-guide .af-hint{
+      width:clamp(450px,42vw,760px);
+      max-width:calc(100vw - 48px);
+    }
     #app .sole-survivor-panel{ max-width:330px; }
     #app .tavern-detail-panel{ max-width:300px; }
+    /* 연구실의 병과 해금 테이블도 정비실 카드 테이블처럼 패널의 가용 폭을 사용한다. */
+    #app .maintenance-screen .institute-class-list{
+      width:100%;
+      max-width:100%;
+      box-sizing:border-box;
+    }
+  }
+
+  /* 연구실 해금 목록의 초상화는 인라인 이미지의 원본 크기가 부모를 키우지 않도록
+     전용 래퍼와 이미지 양쪽을 함께 고정한다. */
+  #app .institute-class-portrait{
+    display:inline-flex;
+    flex:0 0 40px;
+    width:40px !important;
+    height:40px !important;
+    overflow:hidden;
+  }
+  #app .institute-class-portrait img{
+    display:block;
+    width:40px !important;
+    height:40px !important;
+    max-width:40px !important;
+    max-height:40px !important;
+  }
+  /* 연구실 상단 정보 박스는 부모 패널을 넘지 않게 하고, 긴 문장은 내부에서 줄바꿈한다. */
+  #app .maintenance-screen .maintenance-panel > .maintenance-oil,
+  #app .maintenance-screen .maintenance-panel > .maintenance-locker{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    box-sizing:border-box;
+  }
+  #app .maintenance-screen .maintenance-panel > .maintenance-oil > div:first-child,
+  #app .maintenance-screen .maintenance-panel > .maintenance-locker .maintenance-locker-copy{
+    min-width:0;
+    overflow-wrap:anywhere;
+    word-break:keep-all;
+  }
+  #app .maintenance-screen .maintenance-panel > .maintenance-oil .institute-wide-btn,
+  #app .maintenance-screen .maintenance-panel > .maintenance-locker .institute-wide-btn{
+    max-width:100%;
+    min-width:0;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+  @media (max-width:800px){
+    #app .institute-class-portrait{
+      flex-basis:30px;
+      width:30px !important;
+      height:30px !important;
+    }
+    #app .institute-class-portrait img{
+      width:30px !important;
+      height:30px !important;
+      max-width:30px !important;
+      max-height:30px !important;
+    }
   }
 
   } /* @layer pixel */

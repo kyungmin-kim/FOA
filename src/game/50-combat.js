@@ -537,8 +537,13 @@
     const b=S && S.battle;
     if(!b || b.over || b.tutorialFirstBattle) return;
     if(hasSeenCombatRuleGuide(kind)) return;
+    /* 첫 런의 전투 규칙 안내는 길게 이어지지 않도록 전체 3회까지만 표시한다. */
+    if(S.firstRun && S.chapter===0 && (S.firstRunCombatGuideCount||0)>=3) return;
     if(!Array.isArray(b.combatGuideQueue)) b.combatGuideQueue=[];
-    if(!b.combatGuideQueue.includes(kind)) b.combatGuideQueue.push(kind);
+    if(!b.combatGuideQueue.includes(kind)){
+      b.combatGuideQueue.push(kind);
+      if(S.firstRun && S.chapter===0) S.firstRunCombatGuideCount=(S.firstRunCombatGuideCount||0)+1;
+    }
   }
   function canRiposte(defender, defRank, attacker, atkRank){
     if(!attacker || !attacker.alive) return false;

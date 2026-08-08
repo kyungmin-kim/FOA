@@ -932,6 +932,7 @@
       maintenanceLibrary: [],
       residence: {roster:[], selectedIds:[], placements:[null,null,null,null], armedId:null, pendingGuests:[]},
       firstRunGuide: false,
+      firstRunCombatGuideCount: 0,
       firstRun: false,
       prologue: null,
       logMsg: '',
@@ -1013,6 +1014,8 @@
     S.starterDeckCardIds = S.runDeck.map(card=>card.defId);
     /* 새 런을 시작할 때마다 첫 전투에서 실제 조작 안내를 시작한다. */
     S.firstRunGuide = !hasSeenCoreGuide();
+    /* 첫 핵심 가이드 팝업도 전체 횟수에 포함한다. */
+    S.firstRunCombatGuideCount = S.firstRunGuide ? 1 : 0;
     S.firstRun = true;
     S.erosion = 0;
     drainLighthouseForDescent();
