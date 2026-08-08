@@ -56,7 +56,20 @@
     v1:[-132,-299],v2:[-230,-299],v3:[-327,-299],v4:[-423,-299],v5:[-520,-299],v6:[-616,-299],
     l1:[-132,-394],l2:[-230,-394],l3:[-327,-394],l4:[-423,-394],l5:[-520,-394],l6:[-616,-394]
   };
+  /* 유물 스프라이트 원본이 없는 배포본에서도 실제 relics 폴더의 이미지를 직접 사용한다. */
+  const RELIC_GENERATED_ART = {
+    c1:'assets/relics/rare-offense.png', c2:'assets/relics/rare-pressure.png', c3:'assets/relics/rare-tempo.png', c4:'assets/relics/rare-warding.png', c5:'assets/relics/rare-offense.png', c6:'assets/relics/rare-tempo.png',
+    u1:'assets/relics/rare-pressure.png', u2:'assets/relics/rare-warding.png', u3:'assets/relics/rare-warding.png', u4:'assets/relics/rare-offense.png', u5:'assets/relics/rare-warding.png', u6:'assets/relics/rare-warding.png',
+    r1:'assets/relics/rare-pressure.png', r2:'assets/relics/rare-pressure.png', r3:'assets/relics/rare-tempo.png', r4:'assets/relics/rare-offense.png', r5:'assets/relics/rare-warding.png', r6:'assets/relics/rare-tempo.png',
+    v1:'assets/relics/very-rare-vitality.png', v2:'assets/relics/very-rare-warding.png', v3:'assets/relics/very-rare-knowledge.png',
+    v4:'assets/relics/very-rare-offense.png', v5:'assets/relics/very-rare-offense.png', v6:'assets/relics/very-rare-knowledge.png',
+    l1:'assets/relics/legendary-transcendence.png', l2:'assets/relics/legendary-power.png', l3:'assets/relics/very-rare-warding.png',
+    l4:'assets/relics/legendary-power.png', l5:'assets/relics/legendary-power.png', l6:'assets/relics/very-rare-warding.png',
+    third_hand_of_abyss:'assets/relics/legendary-transcendence.png'
+  };
   function relicPortrait(r, large, compact){
+    const generated = RELIC_GENERATED_ART[r.id];
+    if(generated) return '<span class="relic-portrait generated'+(large?' large':'')+(compact?' compact':'')+'" aria-hidden="true"><img src="'+generated+'" alt=""></span>';
     const pos = (large ? RELIC_ART_LARGE_POS : RELIC_ART_POS)[r.art] || (large ? [-132,-14] : [-156,-37]);
     /* 상단 유물 선반은 아이콘과 스프라이트 좌표를 함께 절반으로 축소한다. */
     const scale = compact ? 0.35 : 1;

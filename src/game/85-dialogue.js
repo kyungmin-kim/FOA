@@ -297,9 +297,11 @@
       const t = sayTyped(beat.note);
       SAY.shownAt = Date.now(); SAY.typeMs = t.ms;
       el.className = live + 'say-open';
-      el.innerHTML = `<div class="say-box say-note" data-action="say-advance">
-        <div class="say-line" style="--step:${t.step}ms">${t.html}</div>
-        <div class="say-more" aria-hidden="true">▾</div>
+      el.innerHTML = `<div class="say-note-capture" data-action="say-advance">
+        <div class="say-box say-note">
+          <div class="say-line" style="--step:${t.step}ms">${t.html}</div>
+          <div class="say-more" aria-hidden="true">▾</div>
+        </div>
       </div>`;
       return;
     }

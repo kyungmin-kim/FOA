@@ -213,7 +213,14 @@
 
   #say{ position:absolute; inset:0; z-index:45; pointer-events:none;
         display:flex; align-items:center; justify-content:center; padding:0 10px; }
-  #say.say-open{ pointer-events:auto; }
+  /* 말상자는 화면 전체를 덮지만, 실제 입력을 받아야 하는 부분은 박스뿐이다.
+     전체 레이어가 pointer-events:auto 이면 오프닝 건너뛰기·노드 버튼 위에
+     보이지 않는 클릭 차단막이 생겨 버튼까지 도달하지 않는다. */
+  #say.say-open{ pointer-events:none; }
+  #say.say-open .say-box,
+  #say.say-open .say-holdtap{ pointer-events:auto; }
+  /* 노트는 배경을 눌러도 다음 문장으로 진행할 수 있게 전체 화면을 입력 영역으로 쓴다. */
+  .say-note-capture{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:auto; cursor:pointer; padding:0 10px; }
   /* 안내는 화면 한복판에 세운다 — 무엇을 눌러야 하는지가 가장 먼저 읽혀야 한다.
      #say 의 기본값이 이미 가운데 정렬이므로 여기서는 덮어쓰지 않고 그대로 통과시킨다.
      pointer-events 는 계속 없다 — 가운데를 가려도 밑의 카드와 버튼은 그대로 눌린다. */
@@ -1788,7 +1795,8 @@
   .relic-portrait.large{ width:88px; height:88px; flex-basis:88px; }
   /* 잠식 아래 선반은 시야를 가리지 않도록 기존 25px의 절반 크기로 둔다. */
   .relic-portrait.compact{ width:13px; height:13px; flex-basis:13px; background-size:269px auto; }
-  .relic-portrait.generated{ background-image:var(--relic-art); background-size:cover; background-position:center; image-rendering:pixelated; }
+  .relic-portrait.generated{ background:none; overflow:hidden; image-rendering:pixelated; }
+  .relic-portrait.generated img{ display:block; width:100%; height:100%; object-fit:cover; image-rendering:pixelated; }
   .relic-glyph .relic-portrait{ margin:0; }
   .relic-tier{
     display:inline-block; margin-left:auto; padding:2px 4px; border:1px solid currentColor;
@@ -3476,6 +3484,18 @@
     }
     #app .battle-screen .foe-card .status-stack{ top:2px; z-index:20; }
 
+    /* PC 클래스 초상화 최적화:
+       원본 클래스 아트는 1254px 정사각형이므로, 작은 픽셀 아이콘처럼
+       nearest-neighbor로 확대하지 않고 브라우저의 고품질 축소 보간을 사용한다.
+       모바일과 절차적으로 그려지는 픽셀 아이콘은 기존 픽셀 렌더링을 유지한다. */
+    #app .portrait img[src^="assets/classes/"]{
+      image-rendering:auto !important;
+      -ms-interpolation-mode:auto !important;
+      object-fit:cover;
+      object-position:center center;
+      backface-visibility:hidden;
+    }
+
     /* PC 팝업은 게임 메뉴와 같은 컴팩트한 폭으로 유지한다. */
     #app .menu-panel{ width:100%; max-width:280px; }
     #app .menu-panel.wide{ max-width:320px; }
@@ -3567,6 +3587,21 @@
   #app .battle-screen .foe-card.dead .enemy-portrait img{
     filter:grayscale(1) brightness(.48) !important;
     animation:none !important;
+  }
+
+  /* 모바일 초상화 최적화:
+     고해상도 클래스·적 아트를 작은 프레임에 맞출 때도 계단 현상을 줄인다.
+     data/svg 기반 픽셀 아이콘과 카드 이미지는 기존 픽셀 렌더링을 유지한다. */
+  @media (max-width:800px){
+    #app .portrait img[src^="assets/classes/"],
+    #app .enemy-portrait img[src^="assets/enemies/"],
+    #app .institute-class-portrait img[src^="assets/classes/"]{
+      image-rendering:auto !important;
+      -ms-interpolation-mode:auto !important;
+      object-fit:cover;
+      object-position:center center;
+      backface-visibility:hidden;
+    }
   }
 
   } /* @layer pixel */
@@ -5466,7 +5501,7 @@
   };
   function relicPortrait(r, large, compact){
     const generated = RELIC_GENERATED_ART[r.id];
-    if(generated) return `<span class="relic-portrait generated${large?' large':''}${compact?' compact':''}" style="--relic-art:url('${generated}')" aria-hidden="true"></span>`;
+    if(generated) return '<span class="relic-portrait generated'+(large?' large':'')+(compact?' compact':'')+'" aria-hidden="true"><img src="'+generated+'" alt=""></span>';
     const pos = (large ? RELIC_ART_LARGE_POS : RELIC_ART_POS)[r.art] || (large ? [-132,-14] : [-156,-37]);
     /* 상단 유물 선반은 아이콘과 스프라이트 좌표를 함께 절반으로 축소한다. */
     const scale = compact ? 0.35 : 1;
@@ -11155,6 +11190,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
     /* 사망자는 초상화를 남긴 비활성 슬롯으로 표시한다. 생존자 우선으로 정렬해
        앞이 쓰러졌을 때 뒤의 대원·적이 실제 화면에서도 앞으로 당겨진다. 적의 원본
        인덱스는 유지해 표적 선택 데이터와 어긋나지 않게 한다. */
+    const activeFoes = b.enemies.filter(en=>en && en.alive);
     const battleOrder = units => units.filter(Boolean).slice().sort((a,b)=>Number(!b.alive)-Number(!a.alive));
     const heroesHtml = battleOrder(S.party).map(h=>heroCardHtml(h)).join('');
     const foesHtml = battleOrder(b.enemies).map(en=>foeCardHtml(en,b.enemies.indexOf(en))).join('');
@@ -12536,9 +12572,11 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       const t = sayTyped(beat.note);
       SAY.shownAt = Date.now(); SAY.typeMs = t.ms;
       el.className = live + 'say-open';
-      el.innerHTML = `<div class="say-box say-note" data-action="say-advance">
-        <div class="say-line" style="--step:${t.step}ms">${t.html}</div>
-        <div class="say-more" aria-hidden="true">▾</div>
+      el.innerHTML = `<div class="say-note-capture" data-action="say-advance">
+        <div class="say-box say-note">
+          <div class="say-line" style="--step:${t.step}ms">${t.html}</div>
+          <div class="say-more" aria-hidden="true">▾</div>
+        </div>
       </div>`;
       return;
     }
@@ -13309,7 +13347,13 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
       || clickedAction==='menu-back' || clickedAction==='menu-confirm'
       || clickedAction==='menu-toggle-setting' || clickedAction==='menu-guide-toggle';
     /* 안내 팝업은 대사 레이어가 남아 있어도 먼저 닫을 수 있어야 한다. */
-    if(SAY && !guideAction && !menuAction && !SAY.waiting && !sayChoiceOpen()){
+    /* 대화 상자가 실제로 눌린 경우에만 대화를 진행한다.
+       이전에는 SAY가 살아 있기만 하면 밑의 모든 data-action을 sayAdvance()가
+       가로챘다. say-through 상태가 모바일/WebView에서 투명해지거나, 장면 전환
+       중 대화 상태가 한 프레임 남는 경우에는 새 게임·맵·정비실 버튼까지 전부
+       무시되는 문제가 생겼다. 실제 대화 진행 요소는 data-action으로 명확히
+       구분되어 있으므로 그 경우만 먼저 처리한다. */
+    if(clickedAction==='say-advance'){
       e.preventDefault();
       e.stopPropagation();
       sayAdvance();
@@ -13318,6 +13362,14 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
     const el = clicked;
     if(!el || el.disabled) return;
     const action = el.dataset.action;
+    /* 일반 대화가 진행 중일 때는 밑 화면의 조작을 잠근다. 단, 사용자가
+       명시적으로 누른 오프닝 건너뛰기와 메뉴/가이드 조작은 항상 허용한다. */
+    if(SAY && !SAY.waiting && !sayChoiceOpen() && !guideAction && !menuAction
+       && action!=='skip-opening' && action!=='enter-node'){
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     if(SELECT_ACTIONS.has(action) && performance.now() < suppressSelectionClickUntil){
       e.preventDefault();
       return;

@@ -1732,6 +1732,8 @@
   .relic-portrait.large{ width:88px; height:88px; flex-basis:88px; }
   /* 잠식 아래 선반은 시야를 가리지 않도록 기존 25px의 절반 크기로 둔다. */
   .relic-portrait.compact{ width:13px; height:13px; flex-basis:13px; background-size:269px auto; }
+  .relic-portrait.generated{ background:none; overflow:hidden; image-rendering:pixelated; }
+  .relic-portrait.generated img{ display:block; width:100%; height:100%; object-fit:cover; image-rendering:pixelated; }
   .relic-glyph .relic-portrait{ margin:0; }
   .relic-tier{
     display:inline-block; margin-left:auto; padding:2px 4px; border:1px solid currentColor;

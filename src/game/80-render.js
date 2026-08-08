@@ -1705,6 +1705,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
     /* 사망자는 초상화를 남긴 비활성 슬롯으로 표시한다. 생존자 우선으로 정렬해
        앞이 쓰러졌을 때 뒤의 대원·적이 실제 화면에서도 앞으로 당겨진다. 적의 원본
        인덱스는 유지해 표적 선택 데이터와 어긋나지 않게 한다. */
+    const activeFoes = b.enemies.filter(en=>en && en.alive);
     const battleOrder = units => units.filter(Boolean).slice().sort((a,b)=>Number(!b.alive)-Number(!a.alive));
     const heroesHtml = battleOrder(S.party).map(h=>heroCardHtml(h)).join('');
     const foesHtml = battleOrder(b.enemies).map(en=>foeCardHtml(en,b.enemies.indexOf(en))).join('');

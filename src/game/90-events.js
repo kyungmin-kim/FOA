@@ -117,7 +117,13 @@
       || clickedAction==='menu-back' || clickedAction==='menu-confirm'
       || clickedAction==='menu-toggle-setting' || clickedAction==='menu-guide-toggle';
     /* 안내 팝업은 대사 레이어가 남아 있어도 먼저 닫을 수 있어야 한다. */
-    if(SAY && !guideAction && !menuAction && !SAY.waiting && !sayChoiceOpen()){
+    /* 대화 상자가 실제로 눌린 경우에만 대화를 진행한다.
+       이전에는 SAY가 살아 있기만 하면 밑의 모든 data-action을 sayAdvance()가
+       가로챘다. say-through 상태가 모바일/WebView에서 투명해지거나, 장면 전환
+       중 대화 상태가 한 프레임 남는 경우에는 새 게임·맵·정비실 버튼까지 전부
+       무시되는 문제가 생겼다. 실제 대화 진행 요소는 data-action으로 명확히
+       구분되어 있으므로 그 경우만 먼저 처리한다. */
+    if(clickedAction==='say-advance'){
       e.preventDefault();
       e.stopPropagation();
       sayAdvance();
@@ -126,6 +132,14 @@
     const el = clicked;
     if(!el || el.disabled) return;
     const action = el.dataset.action;
+    /* 일반 대화가 진행 중일 때는 밑 화면의 조작을 잠근다. 단, 사용자가
+       명시적으로 누른 오프닝 건너뛰기와 메뉴/가이드 조작은 항상 허용한다. */
+    if(SAY && !SAY.waiting && !sayChoiceOpen() && !guideAction && !menuAction
+       && action!=='skip-opening' && action!=='enter-node'){
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     if(SELECT_ACTIONS.has(action) && performance.now() < suppressSelectionClickUntil){
       e.preventDefault();
       return;
