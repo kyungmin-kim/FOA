@@ -7146,6 +7146,16 @@
     S.screen = 'battle';
   }
 
+  /* 사망자는 대열의 맨 뒤로 밀려난다. 생존자와 전사자의 상대 순서는 유지해
+     사용자가 정한 기본 대형을 최대한 보존하면서, 실제 카드 위치도 함께 당긴다. */
+  function moveFallenHeroesToRear(){
+    if(!S || !Array.isArray(S.party)) return;
+    const living = S.party.filter(p=>p && p.alive);
+    const fallen = S.party.filter(p=>p && !p.alive);
+    const vacant = S.party.filter(p=>!p);
+    S.party = living.concat(fallen, vacant);
+  }
+
   /* 죽은 자는 열을 차지하지 않는다 — 앞이 쓰러지면 뒤가 당겨진다 (다키스트던전식) */
   function effRank(arr, idx){
     let r = 0;
@@ -7684,6 +7694,7 @@
     if(res.kind==='guard'){ queueFx('guard', hero, res.reduced); pushLog(`${ga(hero.name)} 흘려 막았다. (${res.dealt} 피해)`); }
     if(hero.hp<=0 && hero.alive){
       hero.alive = false;
+      moveFallenHeroesToRear();
       purgeDeadClassCards(hero);
       recordResidenceDeath(hero);
       queueFx('death', hero);
