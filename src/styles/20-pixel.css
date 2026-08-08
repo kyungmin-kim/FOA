@@ -221,6 +221,14 @@
   }
   .hit-shake{ animation:hitShake 240ms steps(1,end); }
 
+  /* 타격감 강화 애니메이션은 픽셀 스킨에서도 더 큰 정수 이동으로 표현한다. */
+  #app .attack-lunge{ animation:attackLunge 190ms steps(4,end) both; }
+  #app .impact-hit{ animation:impactHit 250ms steps(5,end) both; }
+  #app .impact-heavy{ animation:impactHeavy 330ms steps(7,end) both; }
+  #app .impact-critical{ animation:impactCritical 430ms steps(9,end) both; }
+  #app .battle-screen.combat-impact{ animation:combatImpact 210ms steps(5,end) both; }
+  #app .battle-screen.combat-critical{ animation:combatCritical 360ms steps(7,end) both; }
+
   /* ---- 스프라이트 숨쉬기 ----
      물속에 떠 있는 것들은 가만히 있지 않는다. 한 픽셀씩만 오르내린다. */
   @keyframes pxFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-2px); } }

@@ -309,11 +309,18 @@
      피해 판정은 render() 앞에서 끝나지만 그때의 DOM 은 곧 버려진다.
      그래서 이벤트만 큐에 쌓아두고, 다시 그린 뒤 카드 위치를 찾아 뿌린다. */
   let fxQueue = [];
-  function queueFx(kind, unit, amount, crit){
-    if(!S.battle) return;
+  function fxRef(unit){
+    if(!unit || !S.battle) return null;
     const side = S.party.indexOf(unit) >= 0 ? 'hero' : 'foe';
     const key  = side==='hero' ? unit.id : S.battle.enemies.indexOf(unit);
-    fxQueue.push({kind:kind, side:side, key:key, amount:amount||0, crit:!!crit});
+    return {side:side, key:key};
+  }
+  function queueFx(kind, unit, amount, crit, source){
+    const target = fxRef(unit);
+    if(!target) return;
+    const origin = source && source!==unit ? fxRef(source) : null;
+    fxQueue.push({kind:kind, side:target.side, key:target.key, amount:amount||0, crit:!!crit,
+      sourceSide:origin && origin.side, sourceKey:origin && origin.key});
   }
 
   /* 낸 카드는 곧 손패에서 지워지고 전투판이 통째로 다시 그려진다.
@@ -417,7 +424,15 @@
     }
   }
 
-  function playFx(ev, el, stack){
+  function retriggerFxClass(el, cls, life){
+    if(!el) return;
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+    setTimeout(()=>{ if(el) el.classList.remove(cls); }, life||420);
+  }
+
+  function playFx(ev, el, stack, sourceEl){
     const ar = app.getBoundingClientRect();
     const r  = el.getBoundingClientRect();
     const cx = r.left - ar.left + r.width/2;
@@ -439,6 +454,16 @@
       /* 큰 피해일수록 크게, 오래 남는다. 치명타는 거기서 한 번 더 키운다. */
       const big = ev.amount >= 12;
       const s = stack || 0;
+      const impactClass = ev.crit ? 'impact-critical' : (big ? 'impact-heavy' : 'impact-hit');
+      retriggerFxClass(el, impactClass, ev.crit ? 500 : (big ? 390 : 300));
+      const battleEl = contentEl.querySelector('.battle-screen');
+      retriggerFxClass(battleEl, ev.crit ? 'combat-critical' : 'combat-impact', ev.crit ? 420 : 260);
+      if(sourceEl && sourceEl!==el){
+        const sr = sourceEl.getBoundingClientRect();
+        const dir = (r.left + r.width/2) >= (sr.left + sr.width/2) ? 8 : -8;
+        sourceEl.style.setProperty('--attack-dir', dir+'px');
+        retriggerFxClass(sourceEl, 'attack-lunge', 230);
+      }
       const size = Math.round((big?19:15) * (ev.crit ? 1.25 : 1));
       spawn('p-dmg', fx + (s%2 ? 13 : -13)*Math.ceil(s/2), fy - s*7,
             mine ? FX_COLOR.dmgHero : FX_COLOR.dmgFoe, null,
@@ -519,12 +544,18 @@
         : '.foe-card[data-idx="'+ev.key+'"]';
       const el = contentEl.querySelector(sel);
       if(!el) return;
+      const sourceSel = ev.sourceSide
+        ? (ev.sourceSide==='hero'
+          ? '.hero-card[data-id="'+ev.sourceKey+'"]'
+          : '.foe-card[data-idx="'+ev.sourceKey+'"]')
+        : null;
+      const sourceEl = sourceSel ? contentEl.querySelector(sourceSel) : null;
       let stack = 0;
       if(ev.kind==='impact'){
         const id = ev.side+':'+ev.key;
         stack = hitSeen[id] = (hitSeen[id]||0) + 1;
       }
-      playFx(ev, el, stack - 1);
+      playFx(ev, el, stack - 1, sourceEl);
     });
   }
   function flash(type){

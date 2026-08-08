@@ -1254,6 +1254,57 @@
     80%{ transform:translateX(1px); }
   }
 
+  /* 공격·피격 강화: 공격자는 짧게 파고들고, 맞은 쪽은 피해량에 따라 크게 반동한다. */
+  #app .attack-lunge{
+    animation:attackLunge 190ms cubic-bezier(.16,.8,.25,1) both;
+    transform-origin:center center;
+    z-index:4;
+  }
+  @keyframes attackLunge{
+    0%{ transform:translate(0,0) scale(1); }
+    28%{ transform:translate(var(--attack-dir,8px),-2px) scale(1.06); }
+    58%{ transform:translate(calc(var(--attack-dir,8px) * .42),0) scale(1.02); }
+    100%{ transform:translate(0,0) scale(1); }
+  }
+  #app .impact-hit{ animation:impactHit 250ms cubic-bezier(.36,.07,.19,.97) both; }
+  #app .impact-heavy{ animation:impactHeavy 330ms cubic-bezier(.22,.72,.26,1) both; }
+  #app .impact-critical{ animation:impactCritical 430ms cubic-bezier(.16,.82,.24,1) both; }
+  @keyframes impactHit{
+    0%,100%{ transform:translateX(0); filter:brightness(1); }
+    18%{ transform:translateX(-4px); filter:brightness(1.35); }
+    42%{ transform:translateX(5px); filter:brightness(.82); }
+    68%{ transform:translateX(-3px); filter:brightness(1.12); }
+  }
+  @keyframes impactHeavy{
+    0%,100%{ transform:translateX(0) scale(1); filter:brightness(1); }
+    16%{ transform:translateX(-7px) scale(.985); filter:brightness(1.55); }
+    38%{ transform:translateX(8px) scale(1.015); filter:brightness(.72); }
+    62%{ transform:translateX(-5px) scale(.995); filter:brightness(1.22); }
+    82%{ transform:translateX(3px) scale(1.005); filter:brightness(.92); }
+  }
+  @keyframes impactCritical{
+    0%,100%{ transform:translateX(0) scale(1); filter:brightness(1); }
+    12%{ transform:translateX(-10px) scale(.97); filter:brightness(1.8) saturate(1.35); }
+    28%{ transform:translateX(11px) scale(1.035); filter:brightness(.58) saturate(1.45); }
+    48%{ transform:translateX(-7px) scale(.99); filter:brightness(1.35); }
+    70%{ transform:translateX(5px) scale(1.01); filter:brightness(.82); }
+  }
+  #app .battle-screen.combat-impact{ animation:combatImpact 210ms steps(5,end) both; }
+  #app .battle-screen.combat-critical{ animation:combatCritical 360ms steps(7,end) both; }
+  @keyframes combatImpact{
+    0%,100%{ transform:translate(0,0); }
+    25%{ transform:translate(-2px,1px); }
+    50%{ transform:translate(2px,-1px); }
+    75%{ transform:translate(-1px,0); }
+  }
+  @keyframes combatCritical{
+    0%,100%{ transform:translate(0,0); }
+    18%{ transform:translate(-4px,2px); }
+    36%{ transform:translate(5px,-2px); }
+    54%{ transform:translate(-3px,1px); }
+    72%{ transform:translate(2px,0); }
+  }
+
   /* 발톱 자국 — 아군이 적을 때릴 때만 적 카드 위로 대각선 발톱 세 줄이 스치고 사라진다 */
   .foe-card.scratch-hit::after{
     content:''; position:absolute; inset:0; z-index:5; pointer-events:none;
@@ -1281,6 +1332,16 @@
     }
     .hit-shake{ animation:none !important; }
     .foe-card.scratch-hit::after{ animation:none !important; opacity:0; }
+    #app .attack-lunge,
+    #app .impact-hit,
+    #app .impact-heavy,
+    #app .impact-critical,
+    #app .battle-screen.combat-impact,
+    #app .battle-screen.combat-critical{
+      animation:none !important;
+      transform:none !important;
+      filter:none !important;
+    }
   }
 
   /* ---------- 사거리 / 피격 반응 표식 ---------- */

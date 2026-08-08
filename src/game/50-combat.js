@@ -686,7 +686,7 @@
     if(res.kind==='guard') queueCombatRuleGuide('guard');
     if(res.dealt>0){
       flash('red');
-      queueFx('impact', hero, res.dealt, res.crit);
+      queueFx('impact', hero, res.dealt, res.crit, attacker);
       if(res.crit) pushLog(`급소를 찔렸다 — ${hero.name}이(가) 치명타로 ${res.dealt} 피해.`);
       if(stress) addDp(hero, 4);
       /* 진혼악사 — 얻어맞는 순간에도 손이 절로 현을 뜯는다. 무작위 아군의 압박을 달랜다 */
@@ -845,7 +845,7 @@
     if(res.blocked>0) queueCombatRuleGuide('defense');
     if(res.kind==='guard') queueCombatRuleGuide('guard');
     if(res.dealt>0){
-      queueFx('impact', en, res.dealt, res.crit);
+      queueFx('impact', en, res.dealt, res.crit, opts.from);
       if(res.crit) pushLog(`급소를 꿰뚫었다 — ${foeDisplayName(en)}에게 치명타로 ${res.dealt} 피해.`);
     }
     if(res.kind==='guard'){
