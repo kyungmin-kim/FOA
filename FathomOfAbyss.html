@@ -3496,7 +3496,7 @@
       max-width:calc(100vw - 48px);
     }
     #app .sole-survivor-panel{ max-width:330px; }
-    #app .tavern-detail-panel{ max-width:300px; }
+  #app .tavern-detail-panel{ max-width:300px; }
     /* 연구실의 병과 해금 테이블도 정비실 카드 테이블처럼 패널의 가용 폭을 사용한다. */
     #app .maintenance-screen .institute-class-list{
       width:100%;
@@ -3554,6 +3554,19 @@
       max-width:30px !important;
       max-height:30px !important;
     }
+  }
+
+  /* 사망한 유닛도 전투 대열에 남긴다. 생존자는 앞쪽으로 당겨지고,
+     사망자는 초상화를 유지한 채 어둡게 비활성화해 상태를 보여 준다. */
+  #app .battle-screen .hero-card.dead,
+  #app .battle-screen .foe-card.dead{
+    opacity:.42;
+    filter:grayscale(.85) brightness(.62);
+  }
+  #app .battle-screen .hero-card.dead .portrait img.px,
+  #app .battle-screen .foe-card.dead .enemy-portrait img{
+    filter:grayscale(1) brightness(.48) !important;
+    animation:none !important;
   }
 
   } /* @layer pixel */
@@ -9481,13 +9494,13 @@
      트랙마다 길이가 다르므로 한 값으로 묶어 두면 긴 곡이 중간에서 되감긴다. */
   const BGM_TRACKS = {
     ambient: {src:'assets/bgm-ambient.mp3', gain:1,   seconds:213.75},
-    battle:  {src:'assets/bgm-battle.mp3',  gain:0.5, seconds:227.462},
-    fail:   {src:'assets/bgm-fail.mp3',    gain:0.8, seconds:242.502},
-    lighthouse: {src:'assets/bgm-lighthouse.mp3', gain:0.9, seconds:194.504},
+    battle:  {src:'assets/bgm-battle.mp3',  gain:1, seconds:227.462},
+    fail:   {src:'assets/bgm-fail.mp3',    gain:1, seconds:242.502},
+    lighthouse: {src:'assets/bgm-lighthouse.mp3', gain:1, seconds:194.504},
   };
   const BGM_KEY = 'fathom.bgm.v1';
   /* 음악은 배경이지 무대가 아니다 — 있는 줄 모르고 듣다가 없으면 허전한 정도로만 깐다. */
-  const BGM_VOLUME = 0.0675;
+  const BGM_VOLUME = 1;
   const BGM_FADE = 0.7;          /* 트랙을 겹쳐 넘기는 시간(초) */
   let bgmOn = Store.get(BGM_KEY) !== 'off';
   let bgmCtx = null, bgmMaster = null, bgmTrack = null;
@@ -10783,8 +10796,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
     const flexGlow = !dead && !!hero.reachFlexible;
     const breakingDown = !dead && (hero.breakdown||0)>0;
     return `
-      <div class="hero-card cls-${hero.cls} ${hero.collapsed?'collapsed':''} ${breakingDown?'breakdown':''} ${targetable?'targetable':''} ${tutorialPulse?'tutorial-pulse':''} ${idle?'idle':''} ${marks?'has-marks':''} ${flexGlow?'flex-imprint':''}"
-           style="${dead?'opacity:0.35;':''}"
+      <div class="hero-card cls-${hero.cls} ${hero.collapsed?'collapsed':''} ${dead?'dead':''} ${breakingDown?'breakdown':''} ${targetable?'targetable':''} ${tutorialPulse?'tutorial-pulse':''} ${idle?'idle':''} ${marks?'has-marks':''} ${flexGlow?'flex-imprint':''}"
            data-action="choose-target" data-domain="${repositioning?'ally-slot':'ally'}" data-id="${hero.id}">
         ${marks}
         <div class="status-stack">
@@ -10833,8 +10845,7 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
     const tutorialPulse = targetable && sayHighlightsUnit(en);
     const confused = en.alive && (en.confused||0)>0;
     return `
-      <div class="foe-card ${targetable?'targetable':''} ${tutorialPulse?'tutorial-pulse':''} ${isElite?'elite-foe':''} ${isBoss?'boss-foe':''} ${isAwakened?'boss-awakened':''} ${idle?'idle':''} ${confused?'confused':''}"
-           style="${dead?'opacity:0.3;':''}"
+      <div class="foe-card ${dead?'dead':''} ${targetable?'targetable':''} ${tutorialPulse?'tutorial-pulse':''} ${isElite?'elite-foe':''} ${isBoss?'boss-foe':''} ${isAwakened?'boss-awakened':''} ${idle?'idle':''} ${confused?'confused':''}"
            data-idx="${i}" ${targetable?`data-action="choose-target" data-domain="enemy"`:''}>
         <div class="status-stack">
           ${en.isLeader && en.alive ? `<div class="leader-tag" title="우두머리 — 먼저 쓰러뜨리면 남은 무리가 혼란에 빠진다">★ 우두머리</div>` : ''}
@@ -11141,14 +11152,12 @@ ${(ownedMarkers().length || S.relics.length) ? `<div class="topbar-collection ${
     for(let i=0;i<b.maxAp;i++){ pips += `<div class="pip ${i<b.ap?'filled':''}"></div>`; }
     for(let i=0;i<(b.tempAp||0);i++){ pips += `<div class="pip temp filled"></div>`; }
 
-    /* 사망자는 전투 대열의 자리를 차지하지 않는다. 게임 규칙의 effRank만 바뀌고
-       화면이 그대로면 뒤의 대원이 앞으로 당겨진 사실을 볼 수 없으므로, 실제 전투
-       화면도 생존자만 렌더링해 대열 변화를 보여 준다. 적은 원본 인덱스를 유지해
-       표적 선택 데이터가 전투 배열과 어긋나지 않게 한다. */
-    const activeHeroes = S.party.filter(h=>h && h.alive);
-    const activeFoes = b.enemies.filter(en=>en && en.alive);
-    const heroesHtml = activeHeroes.map(h=>heroCardHtml(h)).join('');
-    const foesHtml = activeFoes.map(en=>foeCardHtml(en,b.enemies.indexOf(en))).join('');
+    /* 사망자는 초상화를 남긴 비활성 슬롯으로 표시한다. 생존자 우선으로 정렬해
+       앞이 쓰러졌을 때 뒤의 대원·적이 실제 화면에서도 앞으로 당겨진다. 적의 원본
+       인덱스는 유지해 표적 선택 데이터와 어긋나지 않게 한다. */
+    const battleOrder = units => units.filter(Boolean).slice().sort((a,b)=>Number(!b.alive)-Number(!a.alive));
+    const heroesHtml = battleOrder(S.party).map(h=>heroCardHtml(h)).join('');
+    const foesHtml = battleOrder(b.enemies).map(en=>foeCardHtml(en,b.enemies.indexOf(en))).join('');
 
     const handHtml = b.hand.map(c=>{
       const playable = canPlayCard(c);

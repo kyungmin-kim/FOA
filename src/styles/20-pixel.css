@@ -1112,7 +1112,7 @@
       max-width:calc(100vw - 48px);
     }
     #app .sole-survivor-panel{ max-width:330px; }
-    #app .tavern-detail-panel{ max-width:300px; }
+  #app .tavern-detail-panel{ max-width:300px; }
     /* 연구실의 병과 해금 테이블도 정비실 카드 테이블처럼 패널의 가용 폭을 사용한다. */
     #app .maintenance-screen .institute-class-list{
       width:100%;
@@ -1170,6 +1170,19 @@
       max-width:30px !important;
       max-height:30px !important;
     }
+  }
+
+  /* 사망한 유닛도 전투 대열에 남긴다. 생존자는 앞쪽으로 당겨지고,
+     사망자는 초상화를 유지한 채 어둡게 비활성화해 상태를 보여 준다. */
+  #app .battle-screen .hero-card.dead,
+  #app .battle-screen .foe-card.dead{
+    opacity:.42;
+    filter:grayscale(.85) brightness(.62);
+  }
+  #app .battle-screen .hero-card.dead .portrait img.px,
+  #app .battle-screen .foe-card.dead .enemy-portrait img{
+    filter:grayscale(1) brightness(.48) !important;
+    animation:none !important;
   }
 
   } /* @layer pixel */
