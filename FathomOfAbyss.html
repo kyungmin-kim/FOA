@@ -5561,7 +5561,9 @@
     third_hand_of_abyss:'assets/relics/legendary-transcendence.png'
   };
   function relicPortrait(r, large, compact){
-    const generated = RELIC_GENERATED_ART[r.id];
+    /* 새 카테고리 이미지는 id 기준으로 우선 찾고, 기존 스프라이트의 art 코드도
+       보조 키로 허용한다. 세이브 데이터나 구버전 유물 객체가 섞여도 초상이 끊기지 않는다. */
+    const generated = RELIC_GENERATED_ART[r.id] || RELIC_GENERATED_ART[r.art];
     if(generated) return '<span class="relic-portrait generated'+(large?' large':'')+(compact?' compact':'')+'" aria-hidden="true"><img src="'+generated+'" alt=""></span>';
     const pos = (large ? RELIC_ART_LARGE_POS : RELIC_ART_POS)[r.art] || (large ? [-132,-14] : [-156,-37]);
     /* 상단 유물 선반은 아이콘과 스프라이트 좌표를 함께 절반으로 축소한다. */
