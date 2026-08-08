@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>FATHOM OF ABYSS</title>
+<!--
+  이 문서는 문패일 뿐이고, 게임은 FathomOfAbyss.html 한 장에 들어 있다.
+
+  replace 로 넘긴다 — 그냥 넘기면 방문 기록에 이 문패가 남아, 게임에서 뒤로가기를
+  누르면 여기로 왔다가 곧바로 다시 튕겨 나간다. 빠져나갈 수가 없다.
+  meta refresh 는 스크립트가 막힌 곳을 위한 뒷문이고, 아래 링크는 그마저 막혔을 때다.
+-->
+<script>location.replace('FathomOfAbyss.html');</script>
+<noscript><meta http-equiv="refresh" content="0; url=FathomOfAbyss.html"></noscript>
+<style>
+  /* 넘어가는 찰나에 흰 화면이 번쩍이지 않도록 게임과 같은 어둠으로 깔아 둔다 */
+  html,body{ height:100%; margin:0; background:#04070a; color:#b8934f;
+             font-family:'Nanum Myeongjo',serif; }
+  main{ height:100%; display:flex; align-items:center; justify-content:center; }
+  a{ color:#e0aa4c; letter-spacing:0.12em; text-decoration:none;
+     border-bottom:1px solid #6b5530; padding-bottom:4px; }
+</style>
+</head>
+<body>
+<main><a href="FathomOfAbyss.html">FATHOM OF ABYSS 로 들어간다</a></main>
+</body>
+</html>
