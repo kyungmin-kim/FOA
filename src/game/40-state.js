@@ -381,9 +381,9 @@
   /* 전멸 직후 부른다 — 특정 병과가 아니라 사거리(근접·중거리·원거리) 기준으로 본다.
      숙소에 산 사람 중 그 사거리를 가진 병과가 하나도 없을 때만 채운다 — 이미
      해금해 키워 둔 병과(헬리온·로버·제스터 등)가 그 사거리를 맡고 있으면 굳이
-     기본 병과를 또 끼워 넣지 않는다. 채울 때는 늘 해금돼 있는 기본 4병과 중
-     그 사거리의 대표(근접=vanguard, 중거리=chemist, 원거리=oracle)를 쓴다.
-     숙소 전체가 몰살한 경우엔 셋 다 비어 있으므로 세 대표가 전부 새로 들어온다. */
+     기본 병과를 또 끼워 넣지 않는다. 다만 죽은 대원이 그 사거리의 병과였다면
+     먼저 같은 병과로 증원한다. 사망자의 자리를 완전히 다른 병과로 바꾸면
+     플레이어가 키운 대열과 덱의 역할이 갑자기 달라지는 문제가 생기기 때문이다. */
   const REACH_REPRESENTATIVE = {melee:'vanguard', mid:'chemist', ranged:'oracle'};
   function refillReachCoverageInResidence(){
     const r=ensureResidence();
@@ -391,7 +391,10 @@
       .map(p=>{ const def=CLASS_DEFS[p.cls]; return def && def.reach; })
       .filter(Boolean));
     Object.keys(REACH_REPRESENTATIVE).forEach(reachId=>{
-      if(!aliveReaches.has(reachId)) addResidenceGuest(REACH_REPRESENTATIVE[reachId]);
+      if(!aliveReaches.has(reachId)){
+        const fallen=r.roster.find(p=>p && p.alive===false && CLASS_DEFS[p.cls] && CLASS_DEFS[p.cls].reach===reachId);
+        addResidenceGuest(fallen ? fallen.cls : REACH_REPRESENTATIVE[reachId]);
+      }
     });
   }
   /* 묘지에서 대원을 되살린다 — 네크로맨서 전직을 마쳐야 열린다. 죽은 대원이
@@ -834,14 +837,15 @@
     render();
   }
   function restartFromGameOver(){
+    const fallenClass=(S.party||[]).find(p=>p && !p.alive && p.cls);
     startDirectRun();
     S.firstRun=false;
     S.firstRunGuide=false;
     S.tavern={recruited:[], slot:null, unlocked:null, seated:false};
     const residence=ensureResidence();
-    const guest=addResidenceGuest();
-    /* 게임오버 뒤에는 등대에서 무작위 신입 한 명을 더해 네 명으로
-       바로 재출정할 수 있게 한다. */
+    const guest=addResidenceGuest(fallenClass ? fallenClass.cls : null);
+    /* 게임오버 뒤에는 마지막으로 쓰러진 대원의 클래스와 같은 신입을 우선해
+       등대에 더하고, 네 명으로 바로 재출정할 수 있게 한다. */
     if(guest && residence.roster.indexOf(guest)>=0){
       const hero=makeHero(guest.cls,guest.name,guest.id,guest.profile);
       attachArrivalCard(hero,guest.arrivalCard,guest.arrivalCardPending!==false);

@@ -318,14 +318,16 @@
   function enterTavern(){
     /* 잃은 인원 수를 여기서 먼저 세어 둔다 — 아래에서 숙소 명단을 정리하고 나면
        누가 죽었는지는 roster 의 alive 플래그로만 남는다. */
-    const lostCount = (S.party||[]).filter(p=>p && !p.alive).length;
+    const fallenClasses = (S.party||[]).filter(p=>p && !p.alive && p.cls).map(p=>p.cls);
+    const lostCount = fallenClasses.length;
     settleFuelCargo();
     recoverSalvageLocker(1);
     recoverAtResidence();
     /* 구조는 물속에서 이미 끝났다. 등대 기지는 무작위로 찾아온 새 대원이 머무는 자리다. */
     S.tavern = {recruited:[], slot:null, unlocked:null, seated:false};
     const firstOracleArrival = !!S.firstRun && S.chapter===0;
-    const returnGuest = addResidenceGuest(firstOracleArrival ? 'oracle' : null);
+    const replacementClasses = fallenClasses.slice();
+    const returnGuest = addResidenceGuest(firstOracleArrival ? 'oracle' : (replacementClasses.shift() || null));
     /* 첫 런은 사망한 객체도 자리로 센다. 죽은 대원을 빈 슬롯으로 보지 않으면
        첫 귀환에서 예언자만 숙소에 남고, 다음 하강이 2~3인으로 시작하는 문제가 생긴다. */
     if(firstOracleArrival){
@@ -336,11 +338,15 @@
       }
       const aliveClasses=new Set(S.party.filter(p=>p&&p.alive).map(p=>p.cls));
       const requiredClasses=BASE_CLASSES.filter(cls=>!aliveClasses.has(cls));
-      const guests=[returnGuest];
-      while(guests.length<emptySeats.length){
-        const forced=requiredClasses.shift() || null;
-        guests.push(addResidenceGuest(forced));
-      }
+      let returnGuestUsed=false;
+      const guests=emptySeats.map(seat=>{
+        const fallen=S.party[seat];
+        /* 첫 런의 조류관측자는 빈 슬롯에 앉힌다. 이미 죽은 슬롯에는
+           그 자리에 있던 대원의 클래스를 우선 배정해 역할을 보존한다. */
+        if(fallen && !fallen.alive) return addResidenceGuest(fallenClasses.shift() || fallen.cls);
+        if(!returnGuestUsed){ returnGuestUsed=true; return returnGuest; }
+        return addResidenceGuest(fallenClasses.shift() || requiredClasses.shift() || null);
+      });
       emptySeats.forEach((seat,i)=>{
         const guest=guests[i];
         const hero=guest ? recruitInto(seat,guest) : null;
@@ -349,8 +355,9 @@
       S.tavern.unlocked = 'oracle';
       S.tavern.seated = S.tavern.recruited.length>0;
     } else {
-      /* 본편은 기존 규칙대로 매 귀환 신규 대원 1명과 사망자 보충분을 숙소에 보낸다. */
-      for(let i=1; i<lostCount; i++) addResidenceGuest();
+      /* 본편은 매 귀환 신규 대원 1명과 사망자 보충분을 숙소에 보낸다.
+         사망자가 있으면 보충 순서대로 같은 클래스를 강제한다. */
+      for(let i=1; i<Math.max(1,lostCount); i++) addResidenceGuest(replacementClasses.shift() || null);
     }
     const residence = ensureResidence();
     residence.selectedIds = S.party.filter(p=>p&&p.alive).map(p=>p.characterId||p.id);
@@ -549,7 +556,8 @@
   function forayToWorldMap(){
     S.forayResult = null;
     S.tavern = {recruited:[], slot:null, unlocked:null, seated:false};
-    addResidenceGuest();
+    const fallenClass=(S.party||[]).find(p=>p && !p.alive && p.cls);
+    addResidenceGuest(fallenClass ? fallenClass.cls : null);
     sayStop();
     startLighthouseReturnCutscene(()=>{
       enterWorldMap();
